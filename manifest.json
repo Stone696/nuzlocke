@@ -1,12 +1,12 @@
 {
   "id": "nuzlocke",
   "name": "Nuzlocke",
-  "version": "2.0.0-beta.22",
+  "version": "2.0.0-beta.25",
   "api": 2,
   "entry": "main.lua",
   "profile": "content",
   "category": "GAMEPLAY",
-  "game_version": ">=0.0.0-dev <1.0.0",
+  "game_version": ">=0.1.78 <2.0.0",
   "priority": 100,
   "permissions": [
     "engine_internals"
@@ -14,6 +14,11 @@
   "dependencies": [],
   "optional_dependencies": [],
   "conflicts": [],
-  "description": "A configurable Gen 1 Nuzlocke with permanent death, area-based encounters, legacy catch recovery, duplicate/species-family clauses, optional whiteout, battle and overworld item restrictions, configurable starting resources, encounter tracking, world-building dialogue, and Red/Blue/Yellow level caps.",
-  "github": "Stone696/nuzlocke"
+  "description": "A configurable Nuzlocke for Gen1Recomp with regression-hardened Red/Blue/Yellow support and conservative experimental Gold compatibility adapters.",
+  "github": "bryanthaboi/nuzlocke",
+  "games": [
+    "gen1",
+    "gold"
+  ],
+  "gen2compat": true
 }
