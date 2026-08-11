@@ -1,5 +1,16 @@
--- Nuzlocke Rules 2.0.0-beta.22 - static integrity + version/persistence hardening
+-- Nuzlocke Rules 2.0.0-beta.25 - R/B/Y stabilization and conservative Gold compatibility
+--
+-- Surgical follow-up from beta.24:
+-- * stabilizes the established R/B/Y gameplay paths before release
+-- * restores the proven Gym Guide Rare Candy selector used by older betas
+-- * uses the shared Gold intro hook only at the real NEW GAME boundary
+-- * keeps Gold-only adapters isolated behind explicit generation checks
+-- * preserves schema 4 and the existing persisted rule surface
+--
+-- IMPORTANT: beta.25 is built only from beta.24. Older behavior is ported
+-- only as targeted fixes after comparison; no older branch is restored wholesale.
 return function(mod)
+  mod.exports.__beta25 = { build = "25D4", setupProfileScope = "gen1" }
   local Stats = require("src.pokemon.Stats")
   local Growth = require("src.pokemon.Growth")
   local Data = require("src.core.Data")
@@ -11,6 +22,10 @@ return function(mod)
   local refreshGymGuideVisibility
   local getGameVersion
   local LEGENDARIES, MYTHICALS
+  local finalizeNuzlockeBattle
+  local evaluateItemUsePolicy
+  local RECOMP_COMPAT_AUDITED = "0.1.78"
+  local WONDERLOCKE_WIP = true
 
   ---------------------------------------------------------------------
   -- FUTURE-SAFE SAVE SCHEMA
@@ -95,11 +110,12 @@ return function(mod)
       end
   end)
 
-  mod.events:on("game.ready", function(game)
-      currentGame = game
-      currentSave = game and game.save or currentSave
+  mod.events:on("game.ready", function(ev)
+      local game = type(ev) == "table" and ev.game or ev
+      currentGame = game or currentGame
+      currentSave = (game and game.save) or currentSave
       -- Wonderlocke is WIP and cannot be enabled in this beta.
-      if mod.save:get("wonderlocke", false) ~= false then
+      if WONDERLOCKE_WIP and mod.save:get("wonderlocke", false) ~= false then
           mod.save:set("wonderlocke", false)
       end
   end)
@@ -117,12 +133,12 @@ return function(mod)
   local COMPAT_PROVIDERS = {
       level_caps = nil, postgame_caps = nil, escape = nil, encounters = nil,
       npc_talk = nil, npc_behavior = nil, npc_visibility = nil, npc_movement = nil,
-      wonder_trade = nil, pokemon_identity = nil,
+      wonder_trade = nil, pokemon_identity = nil, species_metadata = nil,
   }
   local COMPAT_CAPABILITIES = {
       "level_caps", "postgame_caps", "escape", "encounters",
       "npc_talk", "npc_behavior", "npc_visibility", "npc_movement", "wonder_trade",
-      "pokemon_identity",
+      "pokemon_identity", "species_metadata",
   }
 
   local function providerValue(exports, capability)
@@ -228,29 +244,59 @@ return function(mod)
   end
 
   mod.exports.nuzlocke_compat = {
-      version = 7,
+      version = 10,
+      audited_recomp = RECOMP_COMPAT_AUDITED,
       capabilities = COMPAT_CAPABILITIES,
       ownership = {
           encounter_tracking = true,
           gym_guide_rare_candy = true,
+          pokemon_fields = {
+              "nuzlockeId", "nuzlockeDead", "nuzlockeOrigin",
+              "nuzlockeEncounterType", "nuzlockeEncounterSource",
+              "nuzlockeEncounterProvider", "nuzlockeEncounterProviderVersion",
+              "nuzlockeEncounterContext", "nuzlockeExternalIdentity",
+              "nuzlockeIdentityProvider", "nuzlockeIdentityDuplicateOf",
+              "nuzlockeNeedsNickname", "nuzlockeNicknameRequired",
+              "nuzlockeInvalidAcquisition", "nuzlockeTrackerRegistered",
+              "nuzlockeWonderTradeOrigin", "nuzlockeWorldCapNotified",
+              "deathLocation", "deathCause", "deathCauseText",
+              "deathEncounterType", "deathOpponentSpecies", "deathMove",
+              "deathCritical", "deathStatusCondition",
+          },
       },
       wonderlocke = {
+          status = "WIP",
+          enabled = false,
           capability = "wonder_trade",
-          contract = "Provider may expose get_context(game) returning { area = <source encounter area> } for a Wonder Trade receipt. Event fields such as originArea/wonderTradeArea are accepted as fallback.",
+          contract = "Reserved for future Wonderlocke integration. This beta does not consume, replace, remove, block, or otherwise alter Wonder Trade transactions.",
       },
       pokemon_identity = {
           capability = "pokemon_identity",
           contract = "Optional provider for mods that recreate/extend Pokemon objects. Expose get_id(mon, game), get_identity(mon, game), or get_pokemon_id(mon, game) and return a stable string/number for the same Pokemon across saves/evolution.",
       },
-      -- Wonderlocke is intentionally marked BETA in the player-facing rule name/description.
-   -- Keep the provider contract experimental until real Wonder Trade mods have been
-   -- tested against it; do not present it as a fully certified mechanic yet.
+      species_metadata = {
+          capability = "species_metadata",
+          contract = "Optional provider for merged species classification. Expose get_metadata(game, species), metadata(game, species), or get_species_metadata(game, species); return a table with legendary/mythical flags or category/classification/rarity.",
+      },
+      canCapture = function(game, battle, species)
+          if type(catchDeniedReason) ~= "function" then return true end
+          local reason = catchDeniedReason(game, battle, species)
+          return reason == nil, reason
+      end,
+      -- Wonderlocke remains a visible WIP placeholder only. Keep the capability
+      -- name reserved so future provider work can resume without interfering with
+      -- installed Wonder Trade mods today.
    -- These helpers are intentionally behavioral rather than name based.
       -- Other mods may use them to decide whether a Nuzlocke feature should
       -- compose with their own NPC systems.
       isTrainerDefinition = isTrainerDefinition,
       talkEntryIsExternal = talkEntryIsExternal,
   }
+  -- Machine-readable ownership declaration for compatibility-aware mods.
+  -- Keep it as the same table exposed inside nuzlocke_compat so the two
+  -- contracts cannot drift.
+  mod.exports.owns = mod.exports.nuzlocke_compat.ownership
+
   mod.events:on("mods.loaded", function(ev) discoverCompatProviders(ev and ev.loader) end)
 
   ---------------------------------------------------------------------
@@ -437,7 +483,7 @@ return function(mod)
       -- Unknown map IDs are intentionally accepted. This makes the tracker
       -- compatible with map/overworld mods instead of silently rejecting a
       -- perfectly valid new area just because vanilla Gen 1 never had it.
-      if mapId:match("^[%w_%-]+$") then
+      if mapId:match("^[%w_%-%:]+$") then
           return mapId
       end
 
@@ -795,6 +841,10 @@ return function(mod)
           mapId = game.overworld.map.id
       end
 
+      if not mapId and game and game.world and game.world.map then
+          mapId = game.world.map.id
+      end
+
       if not mapId and game and game.save and game.save.player then
           mapId = game.save.player.map
       end
@@ -1050,18 +1100,39 @@ return function(mod)
       return data[species] or data[tostring(species or ""):upper()]
   end
 
+  local function providerSpeciesMetadata(game, species)
+      local provider = activeCompatProvider("species_metadata", game, nil)
+      local value = provider and provider.value
+      if not provider then return nil end
+
+      local getter
+      if type(value) == "function" then
+          getter = value
+      elseif type(value) == "table" then
+          getter = value.get_metadata or value.metadata or value.get_species_metadata
+      end
+      if type(getter) ~= "function" then return nil end
+
+      local ok, result = pcall(getter, game, species)
+      if not ok then ok, result = pcall(getter, species, game) end
+      return ok and type(result) == "table" and result or nil
+  end
+
+  local function metadataHasFlag(meta, kind)
+      if type(meta) ~= "table" then return false end
+      if kind == "legendary" then
+          if meta.isLegendary == true or meta.legendary == true or meta.is_legendary == true then return true end
+      elseif kind == "mythical" then
+          if meta.isMythical == true or meta.mythical == true or meta.is_mythical == true then return true end
+      end
+      local category = tostring(meta.category or meta.classification or meta.rarity or ""):lower()
+      return category == kind
+  end
+
   local function speciesHasFlag(game, species, kind)
       local def = speciesDefinition(game, species)
-      if type(def) ~= "table" then return false end
-
-      if kind == "legendary" then
-          if def.isLegendary == true or def.legendary == true or def.is_legendary == true then return true end
-      elseif kind == "mythical" then
-          if def.isMythical == true or def.mythical == true or def.is_mythical == true then return true end
-      end
-
-      local category = tostring(def.category or def.classification or def.rarity or ""):lower()
-      return category == kind
+      if metadataHasFlag(def, kind) then return true end
+      return metadataHasFlag(providerSpeciesMetadata(game, species), kind)
   end
 
   local function isLegendarySpecies(game, species)
@@ -2530,8 +2601,8 @@ return function(mod)
           rules = {
               { key = "overworld_encounters", name = "Overworld", desc = "Allow Pokemon caught from overworld spawns to count as area encounters." },
               { key = "town_catches",         name = "Town Catches", desc = "Allow Pokemon caught in towns/cities to count as encounters. Pallet Town starter slot is always tracked regardless." },
-              { key = "ban_legendaries",      name = "No Legend", desc = "Legendary Pokemon (Articuno, Zapdos, Moltres, Mewtwo) cannot be caught or used." },
-              { key = "ban_mythicals",        name = "No Mythic", desc = "Mythical Pokemon (Mew) cannot be caught or used." },
+              { key = "ban_legendaries",      name = "No Legend", desc = "Legendary Pokemon cannot be caught, gifted, or received in trades while this rule is active. Existing Pokemon are not removed." },
+              { key = "ban_mythicals",        name = "No Mythic", desc = "Mythical Pokemon cannot be caught, gifted, or received in trades while this rule is active. Existing Pokemon are not removed." },
               { key = "allow_gifts",      name = "Gift Pokemon", desc = "Gift Pokemon (Eevee, Lapras, Fossils, etc.) are allowed and consume the area slot where they were received." },
               { key = "allow_trades",     name = "In-Game Trades", desc = "In-game traded Pokemon are allowed and consume the area slot where the trade NPC lives. Version-specific trades (Red/Blue/Yellow) are all accounted for." },
               { key = "wonderlocke", name = "Wonderlocke WIP", desc = "WIP: Wonderlocke is not currently selectable or active. It remains disabled while Wonder Trade compatibility is being completed and tested." },
@@ -2541,6 +2612,7 @@ return function(mod)
           title = "- HARDCORE -",
           rules = {
               { key = "level_cap_scope", name = "Level Cap Scope", numeric = true, digits = 1, min = 0, max = 4, desc = "Choose how far level caps continue. NONE = no caps. GYMS = Gym caps only. E4 = continue through Lorelei, Bruno, Agatha, and Lance. CHAMP = also cap the Champion. POSTGAME = also accept an active post-game cap provider from another mod. Each option includes everything before it. RECOMMENDED: E4 or CHAMP for a full Kanto run; POSTGAME if another mod adds post-game content." },
+              { key = "expanded_postgame", name = "Expanded Postgame", desc = "Allow compatible content providers to append level-cap stages after the built-in game ladder is complete. OFF keeps the canonical game progression only." },
               { key = "no_healing_items", name = "No Healing Items", desc = "Potions, Revives, and status-healing items cannot be used in battle." },
               { key = "no_battle_items",  name = "No X Items", desc = "X Attack, X Defend, and similar non-healing battle items cannot be used in battle. Poke Balls are unaffected." },
               { key = "no_escape",         name = "No Escape", desc = "You cannot run from wild Pokemon. The RUN command always fails and the turn is spent." },
@@ -2552,7 +2624,7 @@ return function(mod)
               { key = "no_repels", name = "No Repels", desc = "Repel, Super Repel, and Max Repel cannot be used in the field. They may still be obtained, stored, tossed, or sold." },
               { key = "no_escape_rope", name = "No Escape Rope", desc = "Escape Rope cannot be used. It may still be obtained, stored, tossed, or sold." },
               { key = "no_field_healing", name = "No Field Heal", desc = "HP, status, and revival medicine cannot be used outside battle. PP recovery is controlled separately by No PP Items." },
-              { key = "no_pp_items", name = "No PP Items", desc = "Ether and Elixir-style PP recovery items cannot be used in or out of battle. This is independent of the battle-healing rule." },
+              { key = "no_pp_items", name = "No PP Items", desc = "Ether/Elixer-family PP recovery and PP Up-style PP boosters cannot be used in or out of battle. This is independent of the battle-healing rule." },
           }
       },
       {
@@ -2614,7 +2686,31 @@ return function(mod)
       return areaGuideEnabled
   end
 
-  local SETUP_PROFILE_FILE = "nuzlocke_setup_profile.lua"
+  mod.exports.__beta25.legacySetupProfileFile = "nuzlocke_setup_profile.lua"
+  mod.exports.__beta25.setupProfileFiles = {
+      gen1 = "nuzlocke_setup_profile_gen1.lua",
+      gold = "nuzlocke_setup_profile_gold.lua",
+  }
+
+  function mod.exports.__beta25.runtimeIsGold(game)
+      if game and tonumber(game.generation) == 2 then return true end
+      local okVersion, GameVersion = pcall(require, "src.core.GameVersion")
+      if okVersion and type(GameVersion) == "table"
+          and type(GameVersion.isGold) == "function" then
+          local okGold, isGold = pcall(GameVersion.isGold)
+          if okGold then return isGold == true end
+      end
+      return false
+  end
+
+  function mod.exports.__beta25.profileScopeForGame(game)
+      return mod.exports.__beta25.runtimeIsGold(game) and "gold" or "gen1"
+  end
+
+  function mod.exports.__beta25.setupProfileFilename()
+      return mod.exports.__beta25.setupProfileFiles[mod.exports.__beta25.setupProfileScope]
+          or mod.exports.__beta25.setupProfileFiles.gen1
+  end
 
   -- Shared rules profile used by the title-screen setup and the active save.
   -- When no save is loaded yet this is the staged setup for the next save.
@@ -2629,10 +2725,32 @@ return function(mod)
   local newGameRulesCommitPending = false
   local newGameCommitPassesRemaining = 0
 
+  function mod.exports.__beta25.selectSetupProfileScope(game)
+      local scope = mod.exports.__beta25.profileScopeForGame(game)
+      if mod.exports.__beta25.setupProfileScope ~= scope then
+          mod.exports.__beta25.setupProfileScope = scope
+          pendingNewGameRules = nil
+          pendingRulesDirty = false
+          pendingNewGameRulesForNextSave = false
+          newGameRulesSnapshot = nil
+          newGameRulesCommitPending = false
+          newGameCommitPassesRemaining = 0
+      end
+      return scope
+  end
+
   -- These keys persist the staged setup independently of the active save-rule
   -- keys.  They are declared here and used after copyRuleProfile is defined.
   local STAGED_PROFILE_KEY = "__nuzlocke_staged_new_game_profile"
   local STAGED_INTENT_KEY = "__nuzlocke_staged_new_game_intent"
+
+  local function stagedProfileKey()
+      return STAGED_PROFILE_KEY .. ":" .. mod.exports.__beta25.setupProfileScope
+  end
+
+  local function stagedIntentKey()
+      return STAGED_INTENT_KEY .. ":" .. mod.exports.__beta25.setupProfileScope
+  end
 
   ---------------------------------------------------------------------
   -- NEW GAME STARTER SETTINGS
@@ -2677,7 +2795,130 @@ return function(mod)
       return result or targetSave
   end)
 
+  ---------------------------------------------------------------------
+  -- LOCKE TYPE PRESETS
+  --
+  -- These presets only expose playstyles the current rule engine can already
+  -- enforce without inventing a new subsystem. Optional clauses (Dupes/Shiny,
+  -- gifts/trades, legendary bans), UI options, world-building, Gym Guide,
+  -- and starting resources remain independent of the selected preset.
+  --
+  -- CUSTOM    = preserve the player's hand-built rules.
+  -- NUZLOCKE  = classic core: permadeath, first encounter, failed encounter,
+  --             and required nicknames.
+  -- HARDCORE  = NUZLOCKE + caps through Champion + no healing/X items in battle.
+  --             Gen1Recomp's native Battle Style option remains authoritative;
+  --             players who want full Hardcore should set it to SET.
+  -- SOLO      = NUZLOCKE + Solo Only + Whiteout, so the active solo faint ends
+  --             the run. PC swaps remain available because that is how the
+  --             existing Solo Only rule is intentionally implemented.
+  ---------------------------------------------------------------------
+  local LockePreset = {
+      labels = {
+          [0] = "CUSTOM",
+          [1] = "NUZ",
+          [2] = "HARD",
+          [3] = "SOLO",
+      },
+      names = {
+          [0] = "CUSTOM",
+          [1] = "NUZLOCKE",
+          [2] = "HARDCORE",
+          [3] = "SOLO",
+      },
+      managed = {
+          nuzlocke_enabled = true,
+          permadeath = true,
+          encounter_limit = true,
+          failed_encounter = true,
+          nickname_rule = true,
+          level_cap_scope = true,
+          no_healing_items = true,
+          no_battle_items = true,
+          no_escape = true,
+          no_repels = true,
+          no_escape_rope = true,
+          no_field_healing = true,
+          no_pp_items = true,
+          no_buying = true,
+          no_selling = true,
+          no_poke_center = true,
+          no_mom_heal = true,
+          whiteout_clause = true,
+          solo_active = true,
+      },
+      presets = {
+          [1] = {
+              nuzlocke_enabled = true,
+              permadeath = true,
+              encounter_limit = true,
+              failed_encounter = true,
+              nickname_rule = true,
+              level_cap_scope = 0,
+              no_healing_items = false,
+              no_battle_items = false,
+              no_escape = false,
+              no_repels = false,
+              no_escape_rope = false,
+              no_field_healing = false,
+              no_pp_items = false,
+              no_buying = false,
+              no_selling = false,
+              no_poke_center = false,
+              no_mom_heal = false,
+              whiteout_clause = false,
+              solo_active = false,
+          },
+          [2] = {
+              nuzlocke_enabled = true,
+              permadeath = true,
+              encounter_limit = true,
+              failed_encounter = true,
+              nickname_rule = true,
+              level_cap_scope = 3,
+              no_healing_items = true,
+              no_battle_items = true,
+              no_escape = false,
+              no_repels = false,
+              no_escape_rope = false,
+              no_field_healing = false,
+              no_pp_items = false,
+              no_buying = false,
+              no_selling = false,
+              no_poke_center = false,
+              no_mom_heal = false,
+              whiteout_clause = false,
+              solo_active = false,
+          },
+          [3] = {
+              nuzlocke_enabled = true,
+              permadeath = true,
+              encounter_limit = true,
+              failed_encounter = true,
+              nickname_rule = true,
+              level_cap_scope = 0,
+              no_healing_items = false,
+              no_battle_items = false,
+              no_escape = false,
+              no_repels = false,
+              no_escape_rope = false,
+              no_field_healing = false,
+              no_pp_items = false,
+              no_buying = false,
+              no_selling = false,
+              no_poke_center = false,
+              no_mom_heal = false,
+              whiteout_clause = true,
+              solo_active = true,
+          },
+      },
+      applying = false,
+  }
+
   local function defaultRuleValue(key)
+      if key == "locke_type" then
+          return 0      -- CUSTOM; preserves the existing configurable defaults
+      end
       if key == "starting_money" then
           return 0      -- NEW GAME default; configurable in SETUP
       end
@@ -2760,6 +3001,7 @@ return function(mod)
               values[rule.key] = defaultRuleValue(rule.key)
           end
       end
+      values.locke_type = defaultRuleValue("locke_type")
       values.starting_money = defaultRuleValue("starting_money")
       values.starting_pokeballs = defaultRuleValue("starting_pokeballs")
       values.starting_rare_candies = defaultRuleValue("starting_rare_candies")
@@ -2781,6 +3023,9 @@ return function(mod)
           end
       end
 
+      values.locke_type = math.max(0, math.min(3,
+          math.floor(tonumber(mod.save:get("locke_type",
+              defaultRuleValue("locke_type"))) or 0)))
       values.area_guide_enabled = loadAreaGuideState()
       values.rules_locked =
           mod.save:get("rules_locked", defaultRuleValue("rules_locked")) == true
@@ -2816,6 +3061,9 @@ return function(mod)
               copy[rule.key] = normalizeRuleValue(rule, v)
           end
       end
+      copy.locke_type = math.max(0, math.min(3,
+          math.floor(tonumber(source and source.locke_type)
+              or defaultRuleValue("locke_type"))))
       if source and source.area_guide_enabled ~= nil then
           copy.area_guide_enabled = source.area_guide_enabled == true
       else
@@ -2868,7 +3116,7 @@ return function(mod)
           return false
       end
       local ok = love.filesystem.write(
-          SETUP_PROFILE_FILE,
+          mod.exports.__beta25.setupProfileFilename(),
           serializeSetupProfile(copyRuleProfile(profile))
       )
       return ok == true
@@ -2879,10 +3127,16 @@ return function(mod)
           and love.filesystem.read) then
           return nil
       end
-      if not love.filesystem.getInfo(SETUP_PROFILE_FILE) then
-          return nil
+      local filename = mod.exports.__beta25.setupProfileFilename()
+      if not love.filesystem.getInfo(filename) then
+          if mod.exports.__beta25.setupProfileScope == "gen1"
+              and love.filesystem.getInfo(mod.exports.__beta25.legacySetupProfileFile) then
+              filename = mod.exports.__beta25.legacySetupProfileFile
+          else
+              return nil
+          end
       end
-      local raw = love.filesystem.read(SETUP_PROFILE_FILE)
+      local raw = love.filesystem.read(filename)
       if type(raw) ~= "string" or raw == "" then return nil end
       local chunk = loadstring(raw)
       if not chunk then return nil end
@@ -2893,15 +3147,15 @@ return function(mod)
 
   local function persistStagedProfile(profile)
       if not profile then return end
-      mod.save:set(STAGED_PROFILE_KEY, copyRuleProfile(profile))
-      mod.save:set(STAGED_INTENT_KEY, true)
+      mod.save:set(stagedProfileKey(), copyRuleProfile(profile))
+      mod.save:set(stagedIntentKey(), true)
   end
 
   local function loadPersistedStagedProfile()
-      if mod.save:get(STAGED_INTENT_KEY, false) ~= true then
+      if mod.save:get(stagedIntentKey(), false) ~= true then
           return nil
       end
-      local profile = mod.save:get(STAGED_PROFILE_KEY, nil)
+      local profile = mod.save:get(stagedProfileKey(), nil)
       if type(profile) ~= "table" then
           return nil
       end
@@ -2909,8 +3163,8 @@ return function(mod)
   end
 
   local function clearPersistedStagedProfile()
-      mod.save:set(STAGED_INTENT_KEY, false)
-      mod.save:set(STAGED_PROFILE_KEY, nil)
+      mod.save:set(stagedIntentKey(), false)
+      mod.save:set(stagedProfileKey(), nil)
   end
 
   local function saveCurrentSetupProfile()
@@ -2932,6 +3186,8 @@ return function(mod)
               mod.save:set(rule.key, normalizeRuleValue(rule, profile[rule.key]))
           end
       end
+      mod.save:set("locke_type", math.max(0, math.min(3,
+          math.floor(tonumber(profile.locke_type) or 0))))
       saveAreaGuideState(profile.area_guide_enabled == true)
       mod.save:set("rules_locked", profile.rules_locked == true)
       mod.save:set("infinite_rare_candies", profile.infinite_rare_candies == true)
@@ -3003,6 +3259,12 @@ return function(mod)
               end
           end
       end
+      local lockeTypeActual = math.max(0, math.min(3,
+          math.floor(tonumber(mod.save:get("locke_type", 0)) or 0)))
+      if lockeTypeActual ~= math.max(0, math.min(3,
+          math.floor(tonumber(profile.locke_type) or 0))) then
+          allVerified = false
+      end
       local guideActual = mod.save:get("area_guide_enabled", nil)
       if guideActual ~= (profile.area_guide_enabled == true) then
           allVerified = false
@@ -3061,12 +3323,9 @@ return function(mod)
   ---------------------------------------------------------------------
   -- DEFINITIVE NEW-GAME COMMIT
   --
-  -- The example_silly_oak mod uses intro.oak_speech.finished to write
-  -- answers into mod.save.  That is the important lifecycle seam here:
-  -- by the time Oak's intro has finished, the new game's mod.save exists and
-  -- is the correct per-save home for Nuzlocke state.  The title-screen
-  -- profile is therefore only the source configuration; this event performs
-  -- the definitive transfer into the actual save.
+  -- RBY exposes intro.oak_speech.finished after its introduction. It remains
+  -- a useful RBY commit point. Gold uses the shared intro step-list hook below
+  -- after its real post-game.ready save.created event identifies NEW GAME.
   ---------------------------------------------------------------------
   local function commitDurableSetupProfileToActiveSave()
       local profile = loadSetupProfileFromDisk()
@@ -3077,6 +3336,8 @@ return function(mod)
               mod.save:set(rule.key, normalizeRuleValue(rule, profile[rule.key]))
           end
       end
+      mod.save:set("locke_type", math.max(0, math.min(3,
+          math.floor(tonumber(profile.locke_type) or 0))))
       saveAreaGuideState(profile.area_guide_enabled == true)
       mod.save:set("rules_locked", profile.rules_locked == true)
       mod.save:set("infinite_rare_candies", profile.infinite_rare_candies == true)
@@ -3091,6 +3352,12 @@ return function(mod)
               end
           end
           if not verified then break end
+      end
+      local durableLockeType = math.max(0, math.min(3,
+          math.floor(tonumber(mod.save:get("locke_type", 0)) or 0)))
+      if durableLockeType ~= math.max(0, math.min(3,
+          math.floor(tonumber(profile.locke_type) or 0))) then
+          verified = false
       end
       if mod.save:get("area_guide_enabled", nil) ~= (profile.area_guide_enabled == true) then
           verified = false
@@ -3116,10 +3383,10 @@ return function(mod)
   end
 
   mod.events:on("intro.oak_speech.finished", function()
-      -- Only consume a profile when this is a NEW GAME transition.  A
-      -- CONTINUE load never runs the Oak intro, so this event cannot alter an
-      -- existing save.
-      commitDurableSetupProfileToActiveSave()
+      local ver = getGameVersion and getGameVersion() or "RED"
+      if ver == "RED" or ver == "BLUE" or ver == "YELLOW" then
+          commitDurableSetupProfileToActiveSave()
+      end
   end)
 
   mod.events:on("save.loaded", function(ev)
@@ -3131,7 +3398,8 @@ return function(mod)
       end
   end)
 
-  mod.events:on("game.ready", function(game)
+  mod.events:on("game.ready", function(ev)
+      local game = type(ev) == "table" and ev.game or ev
       currentGame = game or currentGame
       currentSave = (game and game.save) or currentSave
       if recoverNewGameSnapshotIfNeeded() then
@@ -3233,11 +3501,13 @@ return function(mod)
   end
 
   mod.events:on("intro.oak_speech.finished", function()
-      if worldTier(currentGame) >= 3 then
+      local ver = getGameVersion and getGameVersion() or "RED"
+      if (ver == "RED" or ver == "BLUE" or ver == "YELLOW") and worldTier(currentGame) >= 3 then
           worldOnce(currentGame, "oak_intro",
-              "Professor Oak has a feeling this run will be interesting.\n\"Your Pokédex will record everything.\nYour Nuzlocke will remember the rest.\"")
+              "Professor Oak has a feeling this run will be interesting.\nYour Nuzlocke will remember the result.")
       end
   end)
+
 
   ---------------------------------------------------------------------
   -- LEVEL CAP ENFORCEMENT
@@ -3247,16 +3517,41 @@ return function(mod)
   -- Each higher scope includes everything before it. Legacy saves that still
   -- contain hardcore_mode / elite_four_caps are migrated on read.
   ---------------------------------------------------------------------
-  local RED_BLUE_LEVEL_CAPS = { 14, 21, 24, 29, 43, 43, 47, 50 }
-  local LEVEL_CAPS_BY_VERSION = {
-      RED = RED_BLUE_LEVEL_CAPS,
-      BLUE = RED_BLUE_LEVEL_CAPS,
-      YELLOW = { 12, 21, 28, 32, 50, 50, 54, 55 },
+  -- Version-family progression. RBY keeps the established beta.20 tables.
+  -- GSC uses one shared family ladder with version-specific profiles so Gold
+  -- can be exercised now without turning Silver/Crystal groundwork into a
+  -- support claim. Kanto stages after Lance never lower the active cap.
+  local VersionCompat = {
+      profiles = {
+          RED={family="RBY",region="KANTO",status="supported"},
+          BLUE={family="RBY",region="KANTO",status="supported"},
+          YELLOW={family="RBY",region="KANTO",status="supported"},
+          GOLD={family="GSC",region="JOHTO_KANTO",status="experimental"},
+          SILVER={family="GSC",region="JOHTO_KANTO",status="groundwork"},
+          CRYSTAL={family="GSC",region="JOHTO_KANTO",status="groundwork"},
+      },
+      rbyGymCaps = {
+          RED={14,21,24,29,43,43,47,50}, BLUE={14,21,24,29,43,43,47,50},
+          YELLOW={12,21,28,32,50,50,54,55},
+      },
+      rbyGymNames = {"BROCK","MISTY","LT SURGE","ERIKA","KOGA","SABRINA","BLAINE","GIOVANNI"},
+      gscStages = {
+          {name="FALKNER",cap=9,phase="GYM"},{name="BUGSY",cap=16,phase="GYM"},
+          {name="WHITNEY",cap=20,phase="GYM"},{name="MORTY",cap=25,phase="GYM"},
+          {name="CHUCK",cap=30,phase="GYM"},{name="JASMINE",cap=35,phase="GYM"},
+          {name="PRYCE",cap=31,phase="GYM"},{name="CLAIR",cap=40,phase="GYM"},
+          {name="WILL",cap=42,phase="E4"},{name="KOGA",cap=44,phase="E4"},
+          {name="BRUNO",cap=46,phase="E4"},{name="KAREN",cap=47,phase="E4"},
+          {name="LANCE",cap=50,phase="CHAMP"},
+          {name="LT SURGE",cap=50,phase="POST"},{name="SABRINA",cap=50,phase="POST"},
+          {name="MISTY",cap=50,phase="POST"},{name="ERIKA",cap=50,phase="POST"},
+          {name="JANINE",cap=50,phase="POST"},{name="BROCK",cap=50,phase="POST"},
+          {name="BLAINE",cap=50,phase="POST"},{name="BLUE",cap=58,phase="POST"},
+          {name="RED",cap=81,phase="POST"},
+      },
   }
-  local LEVEL_CAP_GYM_LEADERS = {
-      "BROCK", "MISTY", "LT SURGE", "ERIKA",
-      "KOGA", "SABRINA", "BLAINE", "GIOVANNI"
-  }
+  local LEVEL_CAPS_BY_VERSION = VersionCompat.rbyGymCaps
+  local LEVEL_CAP_GYM_LEADERS = VersionCompat.rbyGymNames
   local ELITE_FOUR_CAPS = {
       { id = "OPP_LORELEI", name = "LORELEI", cap = 56 },
       { id = "OPP_BRUNO",   name = "BRUNO",   cap = 58 },
@@ -3264,6 +3559,15 @@ return function(mod)
       { id = "OPP_LANCE",   name = "LANCE",   cap = 62 },
   }
   local CHAMPION_CAP = { name = "CHAMPION", cap = 65 }
+
+  if mod.exports.nuzlocke_compat then
+      mod.exports.nuzlocke_compat.game_profiles = VersionCompat.profiles
+      mod.exports.nuzlocke_compat.getGameVersion = function() return getGameVersion and getGameVersion() or "RED" end
+      mod.exports.nuzlocke_compat.getGameProfile = function()
+          local v = getGameVersion and getGameVersion() or "RED"
+          return VersionCompat.profiles[v]
+      end
+  end
 
   local function levelCapScope()
       local raw = mod.save:get("level_cap_scope", nil)
@@ -3319,7 +3623,37 @@ return function(mod)
   end
 
   local function postgameCapInfo(save)
-      return providerCapInfo("postgame_caps", save, "POSTGAME", false)
+      if mod.save:get("expanded_postgame", false) ~= true then return nil end
+      local provider = activeCompatProvider("postgame_caps", currentGame, nil)
+      local value = provider and provider.value
+      if type(value) == "table" then
+          local stages = value.stages or value.postgameStages
+          if type(value.get_stages) == "function" then
+              local ok, got = pcall(value.get_stages, currentGame, save)
+              if ok and type(got) == "table" then stages = got end
+          end
+          if type(stages) == "table" then
+              for _, stage in ipairs(stages) do
+                  if type(stage) == "table" then
+                      local defeated = stage.defeated
+                      local done = defeated == true
+                      if type(defeated) == "function" then
+                          local ok, got = pcall(defeated, currentGame, save, stage)
+                          done = ok and got == true
+                      elseif type(defeated) == "string" then
+                          done = mod.save:get(defeated, false) == true
+                      end
+                      if not done then
+                          local cap = tonumber(stage.cap or stage.level or stage.max_level)
+                          if cap and cap > 0 and cap <= 100 then
+                              return cap, tostring(stage.name or stage.id or "POSTGAME")
+                          end
+                      end
+                  end
+              end
+          end
+      end
+      return providerCapInfo("postgame_caps", save, "POSTGAME", true)
   end
 
   local function nextEliteFourCapInfo()
@@ -3384,7 +3718,28 @@ return function(mod)
 
   local function currentGymLevelCaps()
       local version = getGameVersion and getGameVersion() or "RED"
-      return LEVEL_CAPS_BY_VERSION[version] or LEVEL_CAPS_BY_VERSION.RED
+      return LEVEL_CAPS_BY_VERSION[version]
+  end
+
+  local function gscProgress(save)
+      local progress = mod.save:get("nuzlocke_gsc_defeated", nil)
+      if type(progress) ~= "table" then progress = {}; mod.save:set("nuzlocke_gsc_defeated", progress) end
+      return progress
+  end
+
+  local function nextGscCapInfo(save, scope)
+      local progress = gscProgress(save)
+      for _, stage in ipairs(VersionCompat.gscStages) do
+          local allowed = stage.phase == "GYM" or (stage.phase == "E4" and scope >= 2)
+              or (stage.phase == "CHAMP" and scope >= 3) or (stage.phase == "POST" and scope >= 4)
+          if allowed and progress[stage.name] ~= true then return stage.cap, stage.name end
+          if not allowed and progress[stage.name] ~= true then return 100, "MAX" end
+      end
+      if scope >= 4 then
+          local cap, name = postgameCapInfo(save)
+          if cap then return math.max(81, cap), name end
+      end
+      return 100, "MAX"
   end
 
   local function externalLevelCapInfo(save)
@@ -3399,6 +3754,12 @@ return function(mod)
 
       local scope = levelCapScope()
       if scope <= 0 then return 100, "MAX" end
+
+      local version = getGameVersion and getGameVersion() or "RED"
+      local profile = VersionCompat.profiles[version]
+      if profile and profile.family == "GSC" then
+          return nextGscCapInfo(save, scope)
+      end
 
       local badges = currentGymProgressCount(save)
       local gymCaps = currentGymLevelCaps()
@@ -3535,6 +3896,50 @@ return function(mod)
   end
 
   ---------------------------------------------------------------------
+  -- GOLD BETA RULE SURFACE
+  ---------------------------------------------------------------------
+  mod.exports.__beta25.goldBetaRules = {
+      nuzlocke_enabled = true,
+      permadeath = true,
+      encounter_limit = true,
+      failed_encounter = true,
+      nickname_rule = true,
+      dupes_mode = true,
+      shiny_clause = true,
+      level_cap_scope = true,
+      no_escape = true,
+      no_buying = true,
+      no_selling = true,
+      whiteout_clause = true,
+      area_guide_enabled = true,
+  }
+
+  mod.exports.__beta25.goldBetaDescriptions = {
+      nuzlocke_enabled = "GOLD BETA master switch. Only the Gold-compatible rules shown here are expected to enforce on Gold.",
+      permadeath = "GOLD BETA: fainted party Pokemon are marked lost and removed through Gold's battle faint event path.",
+      encounter_limit = "GOLD BETA: blocks another catch after an area has already been consumed.",
+      failed_encounter = "GOLD BETA: failed first encounters can consume the area through the shared battle lifecycle. Runtime validation is still in progress.",
+      nickname_rule = "GOLD BETA: Gold's native nickname prompt is forced and an empty nickname cannot be accepted.",
+      dupes_mode = "GOLD BETA duplicate handling through the Gold capture gate. OFF = normal, SPEC = exact species, FAM = evolution family.",
+      shiny_clause = "GOLD BETA: shiny catches can bypass Dupes/area restrictions where the shared capture policy allows it.",
+      level_cap_scope = "GOLD BETA: uses the Johto Gyms -> Elite Four/Champion -> Kanto Gyms -> Red progression model. Full runtime validation is still pending.",
+      no_escape = "GOLD BETA: blocks the shared battle RUN action. Gold runtime validation is still pending.",
+      no_buying = "GOLD BETA: blocks purchases through Gold's native Mart menu adapter. Selling remains allowed.",
+      no_selling = "GOLD BETA: blocks selling through Gold's native Mart menu adapter. Buying remains allowed.",
+      whiteout_clause = "GOLD BETA: arms run-ending Whiteout when no healthy party Pokemon remain after a faint.",
+      area_guide_enabled = "GOLD BETA: toggles Gold's discovery-driven Tracker map page instead of preloading the Gen1 area list.",
+  }
+
+  function mod.exports.__beta25.ruleForConfigSurface(rule, goldMode)
+      if not goldMode then return rule end
+      if not (rule and mod.exports.__beta25.goldBetaRules[rule.key]) then return nil end
+      local copy = {}
+      for k, v in pairs(rule) do copy[k] = v end
+      copy.desc = mod.exports.__beta25.goldBetaDescriptions[rule.key] or copy.desc
+      return copy
+  end
+
+  ---------------------------------------------------------------------
   -- FLAT RULE LIST
   -- MISC contains settings that belong to the Nuzlocke utility layer.
   -- Gym Guide Rare Candy is available both during NEW GAME setup and in
@@ -3542,69 +3947,87 @@ return function(mod)
   -- inventory/state (Money, Poke Balls, and the chosen starting Rare Candy
   -- amount) are NEW-GAME ONLY.
   ---------------------------------------------------------------------
-  local function buildFlatItemList(preGame)
+  local function buildFlatItemList(preGame, goldMode)
       local list = {}
 
+      if not goldMode then
+          table.insert(list, {
+              isHeader = false, isControl = true, isLockeTypeControl = true,
+              rule = {
+                  key = "locke_type", name = "Locke Type",
+                  desc = "Choose a preset using rules already supported by this mod. CUSTOM keeps manual settings. NUZ = classic Nuzlocke. HARD = Nuzlocke plus Champion level caps and no healing/X items in battle; set Battle Style to SET in native Options for the full Hardcore format. SOLO = Nuzlocke plus Solo Only and Whiteout."
+              }
+          })
+      end
+
       table.insert(list, {
-          isHeader = false,
-          isControl = true,
+          isHeader = false, isControl = true,
           rule = {
-              key = "rules_locked",
-              name = "Lock Rules",
-              desc = "Lock all Nuzlocke rules in place. The LOCK control itself can always be toggled."
+              key = "rules_locked", name = "Lock Rules",
+              desc = goldMode
+                  and "GOLD BETA: lock the Gold-compatible settings shown here. This control always remains usable."
+                  or "Lock all Nuzlocke rules in place. The LOCK control itself can always be toggled."
           }
       })
 
       for _, cat in ipairs(ruleCategories) do
-          table.insert(list, { isHeader = true, name = cat.title })
+          local visible = {}
           for _, rule in ipairs(cat.rules) do
-              table.insert(list, { isHeader = false, rule = rule })
+              local r = mod.exports.__beta25.ruleForConfigSurface(rule, goldMode)
+              if r then visible[#visible + 1] = r end
+          end
+          if #visible > 0 then
+              table.insert(list, { isHeader = true, name = cat.title })
+              for _, rule in ipairs(visible) do
+                  table.insert(list, { isHeader = false, rule = rule })
+              end
           end
       end
 
-      -- MISC contains only the live Gym Guide utility.  Save/Setup and
-      -- Recover Catches are deliberately unheaded controls at the absolute
-      -- bottom so they remain visually important without becoming another
-      -- gameplay category.
-      table.insert(list, { isHeader = true, name = "- MISC -" })
-      table.insert(list, {
-          isHeader = false,
-          rule = {
-              key = "infinite_rare_candies",
-              name = "Gym Guide Rare Candy",
-              desc = "Gym Guides keep their normal dialogue, then offer repeatable Rare Candies in batches of 1, 10, 25, 50, or 99. Can be changed at any time. Recommended for players who want convenient level-cap training."
-          }
-      })
+      if not goldMode then
+          table.insert(list, { isHeader = true, name = "- MISC -" })
+          table.insert(list, {
+              isHeader = false,
+              rule = {
+                  key = "infinite_rare_candies", name = "Gym Guide Rare Candy",
+                  desc = "Gym Guides keep their normal dialogue, then offer repeatable Rare Candies in batches of 1, 10, 25, 50, or 99."
+              }
+          })
+      end
 
-      -- Bottom controls intentionally have no section header.
       if not preGame then
           table.insert(list, {
               isHeader = false, isControl = true, isInGameSave = true,
               rule = { key = "save_in_game_rules", name = "Save Rules",
-                  desc = "Save the current NUZLOCKE RULES to the active game save." }
+                  desc = goldMode
+                      and "Save the current GOLD BETA-compatible settings to the active Gold save."
+                      or "Save the current NUZLOCKE RULES to the active game save." }
           })
-          table.insert(list, {
-              isHeader = false, isControl = true, isRecoveryControl = true,
-              rule = { key = "recover_legacy_catches", name = "Recover Catches",
-                  desc = "Review Pokemon from older saves whose catch location could not be recovered automatically." }
-          })
-      else
+          if not goldMode then
+              table.insert(list, {
+                  isHeader = false, isControl = true, isRecoveryControl = true,
+                  rule = { key = "recover_legacy_catches", name = "Recover Catches",
+                      desc = "Review Pokemon from older saves whose catch location could not be recovered automatically." }
+              })
+          end
+      elseif not goldMode then
           table.insert(list, { isHeader = false, rule = {
               key = "starting_money", name = "Money", numeric = true, digits = 4, min = 0, max = 9999,
-              desc = "Starting money for NEW GAME. You will have this money when the new game begins. Press A to edit; LEFT/RIGHT selects a digit; UP/DOWN changes it." } })
+              desc = "Starting money for R/B/Y NEW GAME." } })
           table.insert(list, { isHeader = false, rule = {
               key = "starting_pokeballs", name = "Poke Balls", numeric = true, digits = 2, min = 0, max = 99,
-              desc = "Starting Poke Balls for NEW GAME. They are placed in the PC in your room. Press A to edit; LEFT/RIGHT selects a digit; UP/DOWN changes it." } })
+              desc = "Starting Poke Balls for R/B/Y NEW GAME. They are placed in the room PC." } })
           table.insert(list, { isHeader = false, rule = {
               key = "starting_rare_candies", name = "Rare Candy", numeric = true, digits = 2, min = 0, max = 99,
-              desc = "Starting Rare Candies for NEW GAME. They are placed in the PC in your room. Choose any amount from 00 to 99." } })
+              desc = "Starting Rare Candies for R/B/Y NEW GAME. They are placed in the room PC." } })
       end
 
-      -- Save controls always come last, with no header.
       if preGame then
           table.insert(list, { isHeader = false, isControl = true, isSetupSave = true,
               rule = { key = "save_setup_options", name = "Save Setup",
-                  desc = "Save these NUZLOCKE SETUP options for the next NEW GAME. The saved profile is kept separately from your game save." } })
+                  desc = goldMode
+                      and "Save this separate GOLD BETA profile for the next Gold NEW GAME. It does not replace the R/B/Y profile."
+                      or "Save this separate R/B/Y profile for the next Gen1 NEW GAME. It does not replace the Gold profile." } })
       end
       return list
   end
@@ -3619,6 +4042,12 @@ return function(mod)
 
       if key == "area_guide_enabled" then
           return routeListShowsAll()
+      end
+
+      if key == "locke_type" then
+          return math.max(0, math.min(3,
+              math.floor(tonumber(mod.save:get("locke_type",
+                  defaultRuleValue("locke_type"))) or 0)))
       end
 
       if key == "level_cap_scope" then
@@ -3649,7 +4078,9 @@ return function(mod)
 
 
   local function setConfigValue(key, value, preGame)
-      if key == "starting_money" then
+      if key == "locke_type" then
+          value = math.max(0, math.min(3, math.floor(tonumber(value) or 0)))
+      elseif key == "starting_money" then
           value = math.max(0, math.min(9999, math.floor(tonumber(value) or 0)))
       elseif key == "starting_pokeballs" or key == "starting_rare_candies" then
           value = math.max(0, math.min(99, math.floor(tonumber(value) or 0)))
@@ -3668,6 +4099,10 @@ return function(mod)
               pendingNewGameRules = makeDefaultPreGameRules()
           end
           pendingNewGameRules[key] = value
+          if key ~= "locke_type" and LockePreset.managed[key]
+              and not LockePreset.applying then
+              pendingNewGameRules.locke_type = 0
+          end
           if key == "level_cap_scope" then
               pendingNewGameRules.hardcore_mode = value > 0
               pendingNewGameRules.elite_four_caps = value >= 2
@@ -3690,6 +4125,11 @@ return function(mod)
           end
       end
 
+      if key ~= "locke_type" and LockePreset.managed[key]
+          and not LockePreset.applying then
+          mod.save:set("locke_type", 0)
+      end
+
       -- Trainer Card and other live UI consumers can use this revision as a
       -- cheap invalidation signal. The actual value remains mod.save's source
       -- of truth, so toggles take effect immediately without requiring a save.
@@ -3700,11 +4140,40 @@ return function(mod)
           pendingNewGameRules = makeDefaultPreGameRules()
       end
       pendingNewGameRules[key] = value
+      if key ~= "locke_type" and LockePreset.managed[key]
+          and not LockePreset.applying then
+          pendingNewGameRules.locke_type = 0
+      end
       if key == "level_cap_scope" then
           pendingNewGameRules.hardcore_mode = value > 0
           pendingNewGameRules.elite_four_caps = value >= 2
       end
       pendingRulesDirty = false
+      if key == "infinite_rare_candies" and refreshGymGuideVisibility and currentGame then
+          refreshGymGuideVisibility(currentGame)
+      end
+  end
+
+  LockePreset.apply = function(mode, preGame)
+      mode = math.max(0, math.min(3, math.floor(tonumber(mode) or 0)))
+
+      -- CUSTOM is intentionally non-destructive: it only drops the preset label
+      -- and keeps the player's current rule combination intact.
+      if mode == 0 then
+          setConfigValue("locke_type", 0, preGame)
+          return true
+      end
+
+      local preset = LockePreset.presets[mode]
+      if type(preset) ~= "table" then return false end
+
+      LockePreset.applying = true
+      for key, value in pairs(preset) do
+          setConfigValue(key, value, preGame)
+      end
+      setConfigValue("locke_type", mode, preGame)
+      LockePreset.applying = false
+      return true
   end
 
   ---------------------------------------------------------------------
@@ -3761,6 +4230,7 @@ return function(mod)
   mod.content.screens:register("NuzlockeConfigScreen", {
       new = function(game, ctx)
           local preGame = ctx and ctx.preGame == true
+          local autoNewGame = ctx and ctx.autoNewGame == true
 
           if preGame and not pendingNewGameRules then
               pendingNewGameRules = loadSetupProfileFromDisk()
@@ -3775,12 +4245,14 @@ return function(mod)
                   pendingNewGameRules.area_guide_enabled ~= false
           end
 
-          local flatItemList = buildFlatItemList(preGame)
+          local flatItemList = buildFlatItemList(preGame, goldMode)
 
           local self = {
               game = game,
               isOpaque = true,
               preGame = preGame,
+              autoNewGame = autoNewGame,
+              onDone = ctx and ctx.onDone,
               cursor = 1,
               scroll = 0,
               pageSize = 3,
@@ -3820,7 +4292,18 @@ return function(mod)
                       self.digitIndex = 1
                       self.descScroll = 0
                   else
+                      if self.preGame and self.autoNewGame then
+                          saveCurrentSetupProfile()
+                          stageNewGameProfile()
+                          applyNewGameSnapshot()
+                          commitDurableSetupProfileToActiveSave()
+                      end
                       self.game.stack:pop()
+                      if type(self.onDone) == "function" then
+                          local cb = self.onDone
+                          self.onDone = nil
+                          cb()
+                      end
                   end
                   return
               end
@@ -3862,8 +4345,20 @@ return function(mod)
                   return flatItemList[self.cursor]
               end
 
-              local function activateControl(item)
+              local function activateControl(item, delta)
                   if not item or not item.isControl then return false end
+                  if item.isLockeTypeControl then
+                      if getConfigValue("rules_locked", self.preGame) then
+                          return true
+                      end
+                      local current = tonumber(getConfigValue("locke_type",
+                          self.preGame)) or 0
+                      local step = tonumber(delta) or 1
+                      local nextMode = (current + step) % 4
+                      LockePreset.apply(nextMode, self.preGame)
+                      self.descScroll = 0
+                      return true
+                  end
                   if item.isSetupSave and self.preGame then
                       local ok = saveCurrentSetupProfile()
                       self.setupSaveFlash = ok and 1.5 or -1.5
@@ -3896,6 +4391,9 @@ return function(mod)
                       or item.isInGameSave or item.isSetupSave
                       or item.isRecoveryControl) then
                       return true
+                  end
+                  if item.isLockeTypeControl then
+                      return not getConfigValue("rules_locked", self.preGame)
                   end
 
                   if item.rule and item.rule.key == "wonderlocke" then
@@ -3940,7 +4438,10 @@ return function(mod)
               elseif self.game.input:wasPressed("up") then
                   moveCursor(-1)
               elseif self.game.input:wasPressed("right") or self.game.input:wasPressed("left") then
-                  if item and item.rule and item.rule.key ~= "wonderlocke"
+                  if item and item.isLockeTypeControl and canChangeSelected(item) then
+                      activateControl(item,
+                          self.game.input:wasPressed("right") and 1 or -1)
+                  elseif item and item.rule and item.rule.key ~= "wonderlocke"
                       and item.rule.numeric and canChangeSelected(item) then
                       self.editingNumber = true
                       self.digitIndex = 1
@@ -3963,7 +4464,9 @@ return function(mod)
               end
 
               if self.game.input:wasPressed("a") and not editingAtStart then
-                  if item and item.isControl then
+                  if item and item.isLockeTypeControl then
+                      if canChangeSelected(item) then activateControl(item, 1) end
+                  elseif item and item.isControl then
                       activateControl(item)
                   elseif item and item.rule and item.rule.key ~= "wonderlocke"
                       and item.rule.numeric and canChangeSelected(item) then
@@ -3990,12 +4493,14 @@ return function(mod)
               local locked = getConfigValue("rules_locked", self.preGame)
               if self.preGame then
                   Font.draw("NUZLOCKE SETUP", 10, 10)
-                  Font.draw("NEW GAME ONLY", 15, 22)
+                  Font.draw(self.goldMode and "GOLD BETA" or "NEW GAME ONLY", 15, 22)
               else
                   Font.draw("NUZLOCKE RULES", 10, 10)
-                  -- Show a lock indicator in the top-right when rules are locked.
+                  if self.goldMode then Font.draw("GOLD BETA", 15, 22) end
                   if locked then
                       Font.draw("[LK]", 116, 10)
+                  else
+                      Font.draw("D3", 136, 10)
                   end
               end
 
@@ -4008,7 +4513,7 @@ return function(mod)
               end
 
               -- List starts lower in preGame to clear the two-line header.
-              local startY = self.preGame and 36 or 28
+              local startY = (self.preGame or self.goldMode) and 40 or 28
 
               for i = self.scroll + 1,
                   math.min(self.scroll + self.pageSize, #flatItemList) do
@@ -4048,7 +4553,12 @@ return function(mod)
                       )
                       Font.draw(displayName, 30, drawY)
 
-                      if item.isRecoveryControl then
+                      if item.isLockeTypeControl then
+                          local mode = math.max(0, math.min(3,
+                              math.floor(tonumber(val) or 0)))
+                          Font.draw(LockePreset.labels[mode] or "CUSTOM",
+                              108, drawY)
+                      elseif item.isRecoveryControl then
                           local legacy = trackerLog().__LEGACY__
                           local count = type(legacy) == "table" and #legacy or 0
                           Font.draw(tostring(count), 118, drawY)
@@ -4169,6 +4679,10 @@ return function(mod)
 
       if game.overworld and game.overworld.map then
           candidates[#candidates + 1] = game.overworld.map.id
+      end
+
+      if game.world and game.world.map then
+          candidates[#candidates + 1] = game.world.map.id
       end
 
       if game.save and game.save.player then
@@ -4351,6 +4865,7 @@ return function(mod)
               nuzlockeStatusPage = false,
               ruleScroll = 0,
               ruleArrowTime = 0,
+              ruleMarqueeTime = 0,
               ruleRevision = tonumber(mod.save:get("nuzlocke_rule_revision", 0)) or 0,
           }
 
@@ -4359,6 +4874,12 @@ return function(mod)
               -- the in-game Rules screen.  Never read the staged NEW GAME
               -- table here; once the save exists, mod.save is authoritative.
               local names = {}
+              local lockeType = math.max(0, math.min(3,
+                  math.floor(tonumber(mod.save:get("locke_type", 0)) or 0)))
+              if lockeType > 0 then
+                  names[#names + 1] = "Locke " ..
+                      (LockePreset.names[lockeType] or "CUSTOM")
+              end
               local function boolSetting(value)
                   if value == true then return true end
                   if type(value) == "number" then return value ~= 0 end
@@ -4372,7 +4893,7 @@ return function(mod)
                   local value = getConfigValue(rule.key, false)
                   if rule.key == "world_building_tier" then
                       local tier = tonumber(value) or 0
-                      if tier > 0 then return "World " .. ({ [1] = "T1", [2] = "T2", [3] = "T3" })[tier] end
+                      if tier > 0 then return "World " .. ({ [1] = "TIER 1", [2] = "TIER 2", [3] = "TIER 3" })[tier] end
                       return nil
                   elseif rule.key == "level_cap_scope" then
                       local rawScope = mod.save:get("level_cap_scope", nil)
@@ -4417,12 +4938,14 @@ return function(mod)
                   self.ruleRevision = revision
                   self.ruleScroll = 0
                   self.ruleArrowTime = 0
+                  self.ruleMarqueeTime = 0
               end
 
               if input:wasPressed("a") then
                   self.nuzlockeStatusPage = not self.nuzlockeStatusPage
                   self.ruleScroll = 0
                   self.ruleArrowTime = 0
+                  self.ruleMarqueeTime = 0
                   return
               end
 
@@ -4433,13 +4956,20 @@ return function(mod)
 
               if self.nuzlockeStatusPage then
                   local names = activeRuleNames()
+                  -- draw() has two physical rule rows in the beta.21 layout.
+                  -- Keep update() on that same window size so the final rule is
+                  -- reachable and the native more-arrow disappears correctly.
                   local visible = 2
                   local maxScroll = math.max(0, #names - visible)
 
                   if input:wasPressed("down") and self.ruleScroll < maxScroll then
                       self.ruleScroll = self.ruleScroll + 1
+                      self.ruleMarqueeTime = 0
                   elseif input:wasPressed("up") and self.ruleScroll > 0 then
                       self.ruleScroll = self.ruleScroll - 1
+                      self.ruleMarqueeTime = 0
+                  else
+                      self.ruleMarqueeTime = self.ruleMarqueeTime + (dt or 0)
                   end
 
                   -- Clamp the scroll position every update.  The arrow is
@@ -4458,6 +4988,7 @@ return function(mod)
               else
                   self.ruleScroll = 0
                   self.ruleArrowTime = 0
+                  self.ruleMarqueeTime = 0
               end
           end
 
@@ -4500,7 +5031,7 @@ return function(mod)
               Font.draw(cap >= 100 and "MAX" or ("LV" .. tostring(cap)), 88, 82)
 
               local names = activeRuleNames()
-              local visible = 1
+              local visible = 2
               local maxScroll = math.max(0, #names - visible)
               if self.ruleScroll > maxScroll then
                   self.ruleScroll = maxScroll
@@ -4517,7 +5048,8 @@ return function(mod)
                       local idx = self.ruleScroll + row
                       local name = names[idx]
                       if name then
-                          Font.draw(marqueeText(name, 14, 0), 16, ruleRowsY + (row - 1) * 10)
+                          Font.draw(marqueeText(name, 14, self.ruleMarqueeTime),
+                              16, ruleRowsY + (row - 1) * 10)
                       end
                   end
               end
@@ -4572,11 +5104,9 @@ return function(mod)
 
   -- A small foreground screen.  It intentionally has no dependency on the
   -- Nuzlocke config screen, so it can be used safely from any Gym Guide.
-  local rareCandyMenuContext = nil
-
   mod.content.screens:register("NuzlockeRareCandyMenu", {
-      new = function(game)
-          local context = rareCandyMenuContext or {}
+      new = function(game, context)
+          context = context or {}
           local self = {
               game = game,
               selected = 1,
@@ -4636,94 +5166,55 @@ return function(mod)
   mod.content.commands:register("nuzlocke:infinite_rare_candy", {
       foreground = true,
       fn = function(ctx)
-          if mod.save:get("infinite_rare_candies", false) ~= true then
-              return
-          end
-
-          -- A talk provider may explicitly claim exclusive ownership. Most
-          -- providers should leave this false so their NPC behavior composes
-          -- with the Nuzlocke reward.
-          if providerExclusive("npc_talk", ctx and ctx.game, nil) then
-              return
-          end
+          if mod.save:get("infinite_rare_candies", false) ~= true then return end
+          if providerExclusive("npc_talk", ctx and ctx.game, nil) then return end
 
           local Commands = require("src.script.Commands")
           Commands.show_text(ctx,
               "Psst... doing a Nuzlocke?\nI won't tell the League.\nHow many RARE CANDY do you want?")
 
-          local runner = ctx.runner
-          local Screens = require("src.ui.Screens")
-          rareCandyMenuContext = {
-              onSelect = function(amount)
-                  local okBag, Bag = pcall(require, "src.inventory.Bag")
-                  if not okBag or not Bag then
-                      runner:resume()
-                      return
-                  end
-
-                  local inventory = ctx.save.inventory or {}
-                  local current = tonumber(inventory.RARE_CANDY) or 0
-                  local room = math.max(0, 99 - current)
-                  local give = math.min(tonumber(amount) or 0, room)
-
-                  if give <= 0 then
-                      local TextBox = require("src.render.TextBox")
-                      ctx.game.stack:push(TextBox.new(ctx.game,
-                          "You already have\n99 RARE CANDY!",
-                          function() runner:resume() end))
-                      return
-                  end
-
-                  if not Bag.add(ctx.save, "RARE_CANDY", give, ctx.game.data) then
-                      local TextBox = require("src.render.TextBox")
-                      ctx.game.stack:push(TextBox.new(ctx.game,
-                          "Your BAG is full!",
-                          function() runner:resume() end))
-                      return
-                  end
-
-                  local TextBox = require("src.render.TextBox")
-                  local noun = give == 1 and "RARE CANDY" or "RARE CANDIES"
-                  ctx.game.stack:push(TextBox.new(ctx.game,
-                      ("You got %d %s!"):format(give, noun),
-                      function() runner:resume() end))
-              end,
-              onCancel = function()
-                  runner:resume()
-              end,
-          }
-          local function openCandyMenu()
-              local pushed = Screens.push(ctx.game, "NuzlockeRareCandyMenu", function()
-                  rareCandyMenuContext = nil
-              end)
-              if pushed == false then
-                  rareCandyMenuContext = nil
-                  runner:resume()
-              else
-                  runner:yield()
-              end
-          end
-
           local tier = worldTier(ctx.game)
           if tier >= 2 and levelCapScope() > 0 then
               local cap, leader = nextLevelCapInfo(ctx.game.save)
-              ctx.game.stack:push(TextBox.new(ctx.game,
+              Commands.show_text(ctx,
                   tier >= 3
                       and ("Gym Guide: Careful!\nYour current cap is LV. " .. tostring(cap) .. ".\n" .. tostring(leader) .. " won't be impressed.")
-                      or ("Nice try.\nRare Candies don't beat the level cap.\nCurrent cap: LV. " .. tostring(cap) .. "."),
-                  function() openCandyMenu() end))
-              runner:yield()
-          else
-              openCandyMenu()
+                      or ("Nice try.\nRare Candies don't beat the level cap.\nCurrent cap: LV. " .. tostring(cap) .. "."))
           end
+
+          local selectedAmount
+          Commands.push_screen(ctx, "NuzlockeRareCandyMenu", {
+              onSelect = function(amount) selectedAmount = tonumber(amount) end,
+              onCancel = function() selectedAmount = nil end,
+          })
+          if not selectedAmount then return end
+
+          local okBag, Bag = pcall(require, "src.inventory.Bag")
+          if not okBag or not Bag then
+              Commands.show_text(ctx, "Rare Candy service is unavailable.")
+              return
+          end
+
+          local inventory = ctx.save.inventory or {}
+          local room = math.max(0, 99 - (tonumber(inventory.RARE_CANDY) or 0))
+          local give = math.min(selectedAmount, room)
+          if give <= 0 then
+              Commands.show_text(ctx, "You already have\n99 RARE CANDY!")
+              return
+          end
+          if not Bag.add(ctx.save, "RARE_CANDY", give, ctx.game.data) then
+              Commands.show_text(ctx, "Your BAG is full!")
+              return
+          end
+          Commands.show_text(ctx,
+              ("You got %d %s!"):format(give, give == 1 and "RARE CANDY" or "RARE CANDIES"))
       end,
   })
 
   -- Compose the actual vanilla talk rows with our post-dialogue command.
-  -- MapScripts.baseTalk() returns the base row list, not a callable function;
-  -- treating it as a function was the reason the Guide could appear but become
-  -- silent on existing saves.  We copy the rows so the original script remains
-  -- intact and append our reward only after vanilla finishes.
+  -- This is the long-lived beta.8-beta.16 R/B/Y implementation: baseTalk()
+  -- returns ScriptRunner rows, so copy those rows and append the candy command
+  -- directly. Do not nest a second foreground command/runner around them.
   local function registerGymGuideCandyTalk(mapId, textId)
       local MapScripts = require("src.script.MapScripts")
       local baseRows = MapScripts.baseTalk(mapId, textId)
@@ -4781,6 +5272,9 @@ return function(mod)
   end
 
   refreshGymGuideVisibility = function(game)
+      -- The Gym Guide candy bridge is an R/B/Y map-script feature. Gold has a
+      -- separate script VM and no Gen 2 consumer for the map_scripts registry.
+      if game and tonumber(game.generation) == 2 then return end
       if mod.save:get("infinite_rare_candies", false) ~= true then
           return
       end
@@ -4829,8 +5323,24 @@ return function(mod)
       end
   end
 
-  for mapId, textId in pairs(GYM_GUIDE_TALKS) do
-      registerGymGuideCandyTalk(mapId, textId)
+  -- The Gym Guide bridge is a Gen 1 map-script feature. Determine the boot
+  -- target from GameVersion rather than mod.game: at mod entry time mod.game
+  -- is not guaranteed to carry the active generation, which could suppress
+  -- the R/B/Y registrations entirely. This restores the established R/B/Y
+  -- registration path while keeping Gold away from the Gen 1 registry.
+  local gymGuideGoldBoot = false
+  do
+      local okVersion, GameVersion = pcall(require, "src.core.GameVersion")
+      if okVersion and type(GameVersion) == "table"
+          and type(GameVersion.isGold) == "function" then
+          local okGold, isGold = pcall(GameVersion.isGold)
+          gymGuideGoldBoot = okGold and isGold == true
+      end
+  end
+  if not gymGuideGoldBoot then
+      for mapId, textId in pairs(GYM_GUIDE_TALKS) do
+          registerGymGuideCandyTalk(mapId, textId)
+      end
   end
 
   mod.events:on("save.loaded", function(ev)
@@ -4842,7 +5352,8 @@ return function(mod)
       end
   end)
 
-  mod.events:on("game.ready", function(game)
+  mod.events:on("game.ready", function(ev)
+      local game = type(ev) == "table" and ev.game or ev
       refreshGymGuideVisibility(game)
   end)
 
@@ -5433,18 +5944,20 @@ return function(mod)
               Font.draw(dead and "LOST" or "ALIVE", 92, 114)
 
               if dead then
+                  -- Reserve the final two 8px rows for the loss summary. The
+                  -- previous y=130/142 placement clipped row two and could
+                  -- overlap the back hint when the cause fit on one line.
                   local cause = tostring(mon.deathCauseText or mon.deathCause or "BATTLE")
-                  local lines = wrapText(cause, 18)
-                  if lines[1] then Font.draw(lines[1], 16, 130) end
-                  if lines[2] then Font.draw(lines[2], 16, 142) end
+                  local lines = wrapText(cause, 16)
+                  if lines[1] then Font.draw(lines[1], 16, 126) end
+                  if lines[2] then Font.draw(lines[2], 16, 136) end
               elseif Identity.isShiny(mon) then
-                  Font.draw("SHINY", 88, 114)
-              end
-
-              -- A/B remains the established back control.  It is deliberately
-              -- omitted when a two-line death cause reaches the bottom edge.
-              if not dead or #wrapText(tostring(mon.deathCauseText or mon.deathCause or "BATTLE"), 18) < 2 then
-                  Font.draw("A/B: BACK", 40, 124)
+                  -- Keep STATUS=ALIVE readable; SHINY is an additional fact,
+                  -- not a replacement drawn on top of the status value.
+                  Font.draw("SHINY", 16, 126)
+                  Font.draw("A/B:BACK", 88, 126)
+              else
+                  Font.draw("A/B: BACK", 40, 126)
               end
           end
 
@@ -5454,40 +5967,11 @@ return function(mod)
 
   ---------------------------------------------------------------------
   -- TITLE MENU HOOK
-  -- NZLCKE SETUP must appear whenever the title screen has NO REAL SAVE.
   --
-  -- IMPORTANT: game.save is an in-memory/default save object even on a
-  -- completely fresh title screen, so checking game.save.player incorrectly
-  -- made SETUP disappear on fresh Red/Blue starts. The engine's own title
-  -- screen uses the presence of the actual save file instead.
+  -- SETUP is a NEW-GAME-only entry. The engine's own final title menu is
+  -- authoritative: if it contains CONTINUE, a valid save exists for the
+  -- currently selected version/slot and SETUP must stay hidden.
   ---------------------------------------------------------------------
-  local function hasActualSaveFile()
-      local ok, info = pcall(function()
-          local SaveData = require("src.core.SaveData")
-          if type(SaveData.saveFilename) ~= "function" then return nil end
-
-          local filename = SaveData.saveFilename(
-              getGameVersion and getGameVersion() or "RED"
-          )
-          if type(filename) ~= "string" or filename == "" then return nil end
-
-          if type(SaveData.persistenceFs) == "function" then
-              local okFs, fs = pcall(SaveData.persistenceFs)
-              if okFs and fs and type(fs.getInfo) == "function" then
-                  local okInfo, value = pcall(fs.getInfo, filename)
-                  if okInfo then return value end
-              end
-          end
-
-          if love and love.filesystem
-              and type(love.filesystem.getInfo) == "function" then
-              return love.filesystem.getInfo(filename)
-          end
-          return nil
-      end)
-      return ok and info ~= nil
-  end
-
   mod.hooks:wrap("ui.title_menu.items", function(next, game, items)
       local result = next(game, items)
       if type(result) ~= "table" then
@@ -5499,6 +5983,7 @@ return function(mod)
           if item and item.label == "NEW GAME" and type(item.onSelect) == "function" then
               local originalNewGame = item.onSelect
               item.onSelect = function()
+                  mod.exports.__beta25.selectSetupProfileScope(game)
                   if not pendingNewGameRules then
                       pendingNewGameRules = loadSetupProfileFromDisk()
                           or makeDefaultPreGameRules()
@@ -5529,23 +6014,114 @@ return function(mod)
           end
       end
 
-      -- SETUP button only appears when there is no real save file yet.
-      if not hasActualSaveFile() then
-          mod.ui.insertBefore(result, "NEW GAME", {
-              label = "SETUP",
-              onSelect = function()
-                  if not pendingNewGameRules or not pendingRulesDirty then
-                      pendingNewGameRules = loadSetupProfileFromDisk()
-                          or makeDefaultPreGameRules()
-                      pendingRulesDirty = false
-                  end
-                  mod.ui.push(game, "NuzlockeConfigScreen", { preGame = true })
+      -- Use the engine's FINAL title-menu result as the source of truth.
+      -- If CONTINUE exists, the engine has already resolved a valid save for
+      -- this version/slot (including portable mode and save-slot routing).
+      -- This is more reliable than independently re-checking a filename here.
+      local hasContinue = false
+      for _, item in ipairs(result) do
+          if item and item.label == "CONTINUE" then
+              hasContinue = true
+              break
+          end
+      end
+
+      -- SETUP is strictly pre-new-game. R/B/Y rows use {label,onSelect};
+      -- Gold rows use {label,value}. Support each native row shape rather than
+      -- trying to force the Gen 1 callback form onto Gold.
+      local newGameRow
+      for _, item in ipairs(result) do
+          if item and item.label == "NEW GAME" then
+              newGameRow = item
+              break
+          end
+      end
+      if newGameRow then
+          if type(newGameRow.onSelect) == "function" then
+              -- Preserve the established R/B/Y behavior: SETUP is shown only
+              -- before the first save exists.
+              if not hasContinue then
+                  mod.ui.insertBefore(result, "NEW GAME", {
+                      label = "SETUP",
+                      onSelect = function()
+                          mod.exports.__beta25.selectSetupProfileScope(game)
+                          if not pendingNewGameRules or not pendingRulesDirty then
+                              pendingNewGameRules = loadSetupProfileFromDisk()
+                                  or makeDefaultPreGameRules()
+                              pendingRulesDirty = false
+                          end
+                          mod.ui.push(game, "NuzlockeConfigScreen", { preGame = true })
+                      end
+                  })
               end
-          })
+          elseif newGameRow.value == "new" then
+              -- Gold can offer CONTINUE and NEW GAME at the same time. SETUP
+              -- belongs immediately before NEW GAME regardless of whether an
+              -- older save exists, because it configures the upcoming run.
+              mod.ui.insertBefore(result, "NEW GAME", {
+                  label = "SETUP",
+                  value = "nuzlocke_setup",
+              })
+          end
       end
 
       return result
   end)
+
+  -- Gold's title list dispatches values through MainMenu:choose(). The shared
+  -- title hook above can therefore add the row, while this tiny Gen2 adapter
+  -- owns only the new value. Every built-in value still delegates unchanged.
+  -- Keep the installer scoped in a block so this very large mod does not add
+  -- another long-lived top-level local.
+  do
+      local function installGoldTitleSetupAdapter()
+          local okVersion, GameVersion = pcall(require, "src.core.GameVersion")
+          if not okVersion or type(GameVersion) ~= "table"
+              or type(GameVersion.isGold) ~= "function" then return false end
+          local okGold, isGold = pcall(GameVersion.isGold)
+          if not okGold or isGold ~= true then return true end
+
+          local okMenu, MainMenu = pcall(require, "src.ui.gen2.MainMenu")
+          if not okMenu or type(MainMenu) ~= "table"
+              or type(MainMenu.choose) ~= "function" then return false end
+          if MainMenu.__nuzlockeTitleSetupOwner == mod then return true end
+
+          local vanillaChoose = MainMenu.choose
+          MainMenu.__nuzlockeTitleSetupOwner = mod
+          MainMenu.choose = function(self, value, ...)
+              if value == "nuzlocke_setup" then
+                  mod.exports.__beta25.selectSetupProfileScope(self.game)
+                  pendingNewGameRules = loadSetupProfileFromDisk()
+                      or makeDefaultPreGameRules()
+                  pendingRulesDirty = false
+                  mod.ui.push(self.game, "NuzlockeConfigScreen", { preGame = true })
+                  return
+              elseif value == "new" then
+                  mod.exports.__beta25.selectSetupProfileScope(self.game)
+                  if not pendingNewGameRules then
+                      pendingNewGameRules = loadSetupProfileFromDisk()
+                          or makeDefaultPreGameRules()
+                  end
+                  saveSetupProfileToDisk(pendingNewGameRules)
+                  stageNewGameProfile()
+              elseif value == "continue" then
+                  pendingNewGameRulesForNextSave = false
+                  pendingRulesDirty = false
+                  newGameRulesSnapshot = nil
+                  newGameRulesCommitPending = false
+                  newGameCommitPassesRemaining = 0
+                  clearPersistedStagedProfile()
+              end
+              return vanillaChoose(self, value, ...)
+          end
+          return true
+      end
+      pcall(installGoldTitleSetupAdapter)
+      mod.events:on("game.ready", function()
+          pcall(installGoldTitleSetupAdapter)
+      end)
+  end
+
 
   ---------------------------------------------------------------------
   -- START MENU HOOKS
@@ -5630,7 +6206,10 @@ return function(mod)
   mod.events:on("game.ready", function(game)
       local ok, BattleState = pcall(require, "src.battle.BattleState")
       local okBag, Bag = pcall(require, "src.inventory.Bag")
-      if not ok or not BattleState or not okBag or not Bag then
+      if not ok or type(BattleState) ~= "table"
+          or type(BattleState.throwBall) ~= "function"
+          or not okBag or type(Bag) ~= "table"
+          or type(Bag.add) ~= "function" then
           return
       end
 
@@ -5641,23 +6220,20 @@ return function(mod)
 
       local vanillaThrowBall = BattleState.throwBall
 
-      -- The runtime does not reliably emit battle.ended for every normal
-      -- battle in all recomp builds. Failed Encounters depends on that event,
-      -- so bridge the engine's authoritative BattleState:finish seam. The
-      -- nuzlocke game-over path already emits the same event later; the flag
-      -- prevents a duplicate emission for that case.
-      if type(BattleState.finish) == "function" and not BattleState.__nuzlockeCatchFinishPatched then
+      -- Current Gen1Recomp emits the public battle.ended event from finish().
+      -- Older builds were less consistent, so keep a private fallback for our
+      -- own bookkeeping only. Never synthesize a second public engine event:
+      -- unrelated mods may treat battle.ended as a transactional boundary.
+      if type(BattleState.finish) == "function"
+          and not BattleState.__nuzlockeCatchFinishPatched then
           BattleState.__nuzlockeCatchFinishPatched = true
           local vanillaCatchFinish = BattleState.finish
           BattleState.finish = function(self, ...)
-              if not self.__nuzlockeCatchBattleEndedEmitted then
-                  self.__nuzlockeCatchBattleEndedEmitted = true
-                  local okRuntime, Runtime = pcall(require, "src.mods.Runtime")
-                  if okRuntime and Runtime and type(Runtime.emit) == "function" then
-                      pcall(Runtime.emit, "battle.ended", { battle = self })
-                  end
+              local result = vanillaCatchFinish(self, ...)
+              if type(finalizeNuzlockeBattle) == "function" then
+                  pcall(finalizeNuzlockeBattle, self, self and self.result)
               end
-              return vanillaCatchFinish(self, ...)
+              return result
           end
       end
 
@@ -5801,201 +6377,271 @@ return function(mod)
   end)
 
   ---------------------------------------------------------------------
-  -- ITEM USE ENFORCEMENT
+  -- ITEM USE ENFORCEMENT / SHARED POLICY
   --
-  -- BagMenu funnels item effects through ItemEffects.use in current engine
-  -- builds. Keep all Nuzlocke item restrictions at that single seam so a
-  -- blocked item is neither consumed nor applied. The public battle.use_item
-  -- hook below remains only as a compatibility fallback for other builds/mods.
+  -- One pure legality decision feeds our engine gate and cooperative mods that
+  -- want to ask BEFORE mutating inventory. Presentation stays outside policy.
   ---------------------------------------------------------------------
-  local FIELD_HEALING_ITEMS = {
-      POTION = true, SUPER_POTION = true, HYPER_POTION = true,
-      MAX_POTION = true, FULL_RESTORE = true,
-      REVIVE = true, MAX_REVIVE = true,
-      ANTIDOTE = true, BURN_HEAL = true, ICE_HEAL = true,
-      AWAKENING = true, PARLYZ_HEAL = true, PARALYZE_HEAL = true,
-      FULL_HEAL = true,
-      FRESH_WATER = true, SODA_POP = true, LEMONADE = true,
-      MOOMOO_MILK = true,
+  local ItemPolicy = {
+      fieldHealing = {
+          POTION = true, SUPER_POTION = true, HYPER_POTION = true,
+          MAX_POTION = true, FULL_RESTORE = true,
+          REVIVE = true, MAX_REVIVE = true,
+          ANTIDOTE = true, BURN_HEAL = true, ICE_HEAL = true,
+          AWAKENING = true, PARLYZ_HEAL = true, PARALYZE_HEAL = true,
+          FULL_HEAL = true,
+          FRESH_WATER = true, SODA_POP = true, LEMONADE = true,
+          MOOMOO_MILK = true,
+      },
+      ppRecovery = {
+          ETHER = true, MAX_ETHER = true,
+          ELIXER = true, MAX_ELIXER = true,
+          -- Gen 1 uses PP_UP. PP_MAX is accepted for merged/later data.
+          PP_UP = true, PP_MAX = true,
+          -- Compatibility spellings retained for merged item datasets.
+          ELIXIR = true, MAX_ELIXIR = true,
+      },
+      xBattle = {
+          X_ATTACK = true, X_DEFEND = true, X_SPEED = true,
+          X_SPECIAL = true, X_ACCURACY = true,
+          DIRE_HIT = true, GUARD_SPEC = true,
+      },
+      repels = { REPEL = true, SUPER_REPEL = true, MAX_REPEL = true },
+      vanillaBalls = {
+          POKE_BALL = true, GREAT_BALL = true, ULTRA_BALL = true,
+          MASTER_BALL = true, SAFARI_BALL = true,
+      },
   }
 
-  local PP_RECOVERY_ITEMS = {
-      ETHER = true, MAX_ETHER = true,
-      ELIXER = true, MAX_ELIXER = true, -- Gen1Recomp/ROM spelling
-      ELIXIR = true, MAX_ELIXIR = true, -- compatibility with other mods
-  }
-
-  local X_BATTLE_ITEMS = {
-      X_ATTACK = true, X_DEFEND = true, X_SPEED = true,
-      X_SPECIAL = true, X_ACCURACY = true,
-      DIRE_HIT = true, GUARD_SPEC = true,
-  }
-
-  local REPEL_ITEMS = {
-      REPEL = true, SUPER_REPEL = true, MAX_REPEL = true,
-  }
-
-  local BALL_ITEMS = {
-      POKE_BALL = true, GREAT_BALL = true, ULTRA_BALL = true,
-      MASTER_BALL = true, SAFARI_BALL = true,
-  }
-
-  local function normalizeItemId(item)
+  function ItemPolicy.normalize(item)
       local value = type(item) == "table"
-          and (item.id or item.key or item.name)
+          and (item.id or item.key or item.value or item.name)
           or item
       value = tostring(value or ""):upper()
-      value = value:gsub("[%s%-]+", "_")
-      return value
+      return value:gsub("[%s%-]+", "_")
   end
 
-  local function itemRuleFailure(game, key, plain, tier2, tier3)
-      worldMechanic(game, key, plain, tier2 or plain, tier3 or tier2 or plain)
-      return "failed", { plain }
+  -- A few UI/data paths may hand the item policy a display-facing name rather
+  -- than the canonical data key.  For the two runtime-failing rule families,
+  -- accept either representation without changing the already-confirmed PP or
+  -- healing-item classification paths.
+  function ItemPolicy.matchesSet(data, itemId, set)
+      local id = ItemPolicy.normalize(itemId)
+      if set[id] then return true end
+      local record = ItemPolicy.record(data, itemId)
+      if type(record) == "table" then
+          local byName = ItemPolicy.normalize(record.name)
+          if set[byName] then return true end
+      end
+      return false
   end
 
-  local function installItemRuleGate()
-      local ok, ItemEffects = pcall(require, "src.inventory.ItemEffects")
-      if not ok or type(ItemEffects) ~= "table"
-          or type(ItemEffects.use) ~= "function" then
-          return false
+  function ItemPolicy.record(data, itemId)
+      if type(itemId) == "table"
+          and (itemId.ball ~= nil or itemId.machine ~= nil or itemId.effect ~= nil) then
+          return itemId
+      end
+      local items = data and data.items
+      if type(items) ~= "table" then return nil end
+      local id = ItemPolicy.normalize(itemId)
+      return items[id] or items[itemId]
+  end
+
+  function ItemPolicy.isBall(data, itemId, itemEffects)
+      local id = ItemPolicy.normalize(itemId)
+      if ItemPolicy.vanillaBalls[id] then return true end
+      local record = ItemPolicy.record(data, itemId)
+      if type(record) == "table" and record.ball ~= nil and record.ball ~= false then
+          return true
+      end
+      local balls = itemEffects and itemEffects.BALLS
+      return type(balls) == "table" and balls[id] ~= nil and balls[id] ~= false
+  end
+
+  function ItemPolicy.denied(code, key, plain, tier2, tier3, extra)
+      local decision = {
+          code = code, key = key, message = plain,
+          tier2 = tier2 or plain, tier3 = tier3 or tier2 or plain,
+      }
+      if type(extra) == "table" then
+          for k, v in pairs(extra) do decision[k] = v end
+      end
+      return false, decision
+  end
+
+  evaluateItemUsePolicy = function(game, data, save, itemId, target, context)
+      context = type(context) == "table" and context or {}
+      local battle = context.battle
+      local inBattle = context.inBattle
+      if inBattle == nil then inBattle = battle ~= nil end
+      save = save or (game and game.save)
+      data = data or (game and game.data)
+
+      if mod.save:get("nuzlocke_enabled", true) == false or not (game and save) then
+          return true
+      end
+      if battle and (battle.demo or battle.ghost) then return true end
+
+      local id = ItemPolicy.normalize(itemId)
+      if id == "" then return true end
+
+      -- A level cap constrains level advancement, not only EXP gain.
+      if id == "RARE_CANDY" and levelCapScope() > 0 and type(target) == "table" then
+          local cap = nextLevelCap(save)
+          local level = tonumber(target.level) or 0
+          if cap < 100 and level >= cap then
+              return ItemPolicy.denied(
+                  "level_cap", "rare_candy_cap",
+                  "The level cap blocks\nthat RARE CANDY!",
+                  "Nice try. Rare Candy\ncan't break the level cap.",
+                  "The League noticed that candy-shaped loophole.\nLevel cap says no.",
+                  { cap = cap, level = level })
+          end
       end
 
-      -- Avoid stacking wrappers if the mod is hot-reloaded.
-      if ItemEffects.__nuzlockeItemRuleGateInstalled then
+      if mod.save:get("no_pp_items", false) == true and ItemPolicy.ppRecovery[id] then
+          return ItemPolicy.denied(
+              "no_pp_items", "pp_items",
+              "PP items are banned!",
+              "No PP recovery or boosting items on this run.",
+              "The Nuzlocke says your moves earn their PP the hard way.")
+      end
+
+      if not inBattle then
+          if mod.save:get("no_repels", false) == true and ItemPolicy.matchesSet(data, itemId, ItemPolicy.repels) then
+              return ItemPolicy.denied(
+                  "no_repels", "field_repels", "Repels are banned!",
+                  "No Repels. Kanto wants you to meet the locals.",
+                  "The wild Pokemon have vetoed your Repel privileges.")
+          end
+          if mod.save:get("no_escape_rope", false) == true and id == "ESCAPE_ROPE" then
+              return ItemPolicy.denied(
+                  "no_escape_rope", "field_escape_rope", "Escape Rope is banned!",
+                  "No shortcut out. Walk it back.",
+                  "The cave has decided you are finishing this trip on foot.")
+          end
+          if mod.save:get("no_field_healing", false) == true
+              and ItemPolicy.fieldHealing[id] then
+              return ItemPolicy.denied(
+                  "no_field_healing", "field_healing", "Field healing is banned!",
+                  "Medicine waits until your rules allow it.",
+                  "No roadside medicine. Your team keeps the damage it earned.")
+          end
           return true
       end
 
-      local vanillaUse = ItemEffects.use
+      -- Catch legality is separate. Dynamic ball detection prevents custom balls
+      -- from being caught by the legacy combined No Items compatibility rule.
+      if ItemPolicy.isBall(data, itemId, context.itemEffects) then return true end
 
-      ItemEffects.use = function(data, save, itemId, target, battle, moveIndex, ow)
-          local game = battle and battle.game
-              or (ow and ow.game)
-              or currentGame
-
-          if active(game, battle) then
-              local id = normalizeItemId(itemId)
-
-              -- PP restoration is intentionally independent of HP/status
-              -- medicine and applies both in and out of battle.
-              if mod.save:get("no_pp_items", false) == true
-                  and PP_RECOVERY_ITEMS[id] then
-                  return itemRuleFailure(game, "pp_items",
-                      "PP items are banned!",
-                      "No Ether or Elixir recovery on this run.",
-                      "The Nuzlocke says your moves earn their PP the hard way.")
-              end
-
-              if not battle then
-                  if mod.save:get("no_repels", false) == true
-                      and REPEL_ITEMS[id] then
-                      return itemRuleFailure(game, "field_repels",
-                          "Repels are banned!",
-                          "No Repels. Kanto wants you to meet the locals.",
-                          "The wild Pokemon have vetoed your Repel privileges.")
-                  end
-
-                  if mod.save:get("no_escape_rope", false) == true
-                      and id == "ESCAPE_ROPE" then
-                      return itemRuleFailure(game, "field_escape_rope",
-                          "Escape Rope is banned!",
-                          "No shortcut out. Walk it back.",
-                          "The cave has decided you are finishing this trip on foot.")
-                  end
-
-                  if mod.save:get("no_field_healing", false) == true
-                      and FIELD_HEALING_ITEMS[id] then
-                      return itemRuleFailure(game, "field_healing",
-                          "Field healing is banned!",
-                          "Medicine waits until your rules allow it.",
-                          "No roadside medicine. Your team keeps the damage it earned.")
-                  end
-              else
-                  -- Poke Balls remain legal and continue through battle.catch.
-                  if not BALL_ITEMS[id] then
-                      if mod.save:get("no_healing_items", false) == true
-                          and FIELD_HEALING_ITEMS[id] then
-                          return itemRuleFailure(game, "battle_heal_items",
-                              "Healing items are\nbanned in battle!",
-                              "Nice try.\nYour Nuzlocke says no healing in battle.",
-                              "The League has seen enough potion nonsense.\nPut the medicine away.")
-                      end
-
-                      if mod.save:get("no_battle_items", false) == true
-                          and X_BATTLE_ITEMS[id] then
-                          return itemRuleFailure(game, "battle_x_items",
-                              "Battle items are\nbanned!",
-                              "No X-Item cheese!",
-                              "The League has banned the ancient art of X-Item nonsense.")
-                      end
-
-                      -- Legacy compatibility for saves from the former combined
-                      -- No Items rule.
-                      if mod.save:get("no_items", false) == true then
-                          return "failed", { "Items are banned\nduring battle!" }
-                      end
-                  end
-              end
-          end
-
-          return vanillaUse(data, save, itemId, target, battle, moveIndex, ow)
+      if mod.save:get("no_healing_items", false) == true
+          and ItemPolicy.fieldHealing[id] then
+          return ItemPolicy.denied(
+              "no_healing_items", "battle_heal_items",
+              "Healing items are\nbanned in battle!",
+              "Nice try.\nYour Nuzlocke says no healing in battle.",
+              "The League has seen enough potion nonsense.\nPut the medicine away.")
       end
-
-      ItemEffects.__nuzlockeItemRuleGateInstalled = true
+      if mod.save:get("no_battle_items", false) == true and ItemPolicy.matchesSet(data, itemId, ItemPolicy.xBattle) then
+          return ItemPolicy.denied(
+              "no_battle_items", "battle_x_items",
+              "Battle items are\nbanned!", "No X-Item cheese!",
+              "The League has banned the ancient art of X-Item nonsense.")
+      end
+      if mod.save:get("no_items", false) == true then
+          return ItemPolicy.denied(
+              "no_items", "battle_items", "Items are banned\nduring battle!")
+      end
       return true
   end
 
-  pcall(installItemRuleGate)
-  mod.events:on("game.ready", function()
-      pcall(installItemRuleGate)
-  end)
-  mod.events:on("save.loaded", function()
-      pcall(installItemRuleGate)
-  end)
+  function ItemPolicy.present(game, decision)
+      if type(decision) ~= "table" then return "failed", { "Item use is blocked!" } end
+      worldMechanic(game, decision.key or decision.code or "item_rule",
+          decision.message or "Item use is blocked!",
+          decision.tier2 or decision.message,
+          decision.tier3 or decision.tier2 or decision.message)
+      return "failed", { decision.message or "Item use is blocked!" }
+  end
+
+  if mod.exports.nuzlocke_compat then
+      mod.exports.nuzlocke_compat.canUseItem = function(game, itemId, context)
+          context = type(context) == "table" and context or {}
+          local allowed, decision = evaluateItemUsePolicy(
+              game, context.data or (game and game.data),
+              context.save or (game and game.save), itemId, context.target, context)
+          return allowed, decision and decision.code or nil, decision
+      end
+      mod.exports.nuzlocke_compat.canPurchase = function(game, context)
+          context = type(context) == "table" and context or {}
+          if mod.save:get("nuzlocke_enabled", true) == false
+              or not (game and game.save) then return true end
+          local kind = tostring(context.kind or ""):lower()
+          if (kind == "item_shop" or kind == "shop_item")
+              and mod.save:get("no_buying", false) == true then
+              return false, "no_buying"
+          end
+          return true
+      end
+      mod.exports.nuzlocke_compat.canSell = function(game, context)
+          context = type(context) == "table" and context or {}
+          if mod.save:get("nuzlocke_enabled", true) == false
+              or not (game and game.save) then return true end
+          local kind = tostring(context.kind or ""):lower()
+          if (kind == "item_shop" or kind == "shop_item")
+              and mod.save:get("no_selling", false) == true then
+              return false, "no_selling"
+          end
+          return true
+      end
+  end
+
+  function ItemPolicy.install()
+      local ok, ItemEffects = pcall(require, "src.inventory.ItemEffects")
+      if not ok or type(ItemEffects) ~= "table" or type(ItemEffects.use) ~= "function" then
+          return false
+      end
+
+      -- Runtime testing can load successive Beta.25 diagnostics into the same
+      -- Lua VM.  The old boolean sentinel could leave an older closure active
+      -- and silently ignore a newer policy.  Rebind exactly once per build.
+      if ItemEffects.__nuzlockeItemRuleGateOwner == "25D4" then return true end
+
+      local previousUse = ItemEffects.use
+      ItemEffects.use = function(data, save, itemId, target, battle, moveIndex, ow)
+          local game = battle and battle.game or (ow and ow.game) or currentGame
+          local allowed, decision = evaluateItemUsePolicy(
+              game, data, save, itemId, target,
+              { battle = battle, inBattle = battle ~= nil, overworld = ow,
+                moveIndex = moveIndex, itemEffects = ItemEffects })
+          if not allowed then return ItemPolicy.present(game, decision) end
+          return previousUse(data, save, itemId, target, battle, moveIndex, ow)
+      end
+      ItemEffects.__nuzlockeItemRuleGateInstalled = true
+      ItemEffects.__nuzlockeItemRuleGateOwner = "25D4"
+      return true
+  end
+
+  pcall(ItemPolicy.install)
+  mod.events:on("game.ready", function() pcall(ItemPolicy.install) end)
+  mod.events:on("save.loaded", function() pcall(ItemPolicy.install) end)
 
   ---------------------------------------------------------------------
   -- BATTLE ITEM FALLBACK HOOK
   ---------------------------------------------------------------------
   mod.hooks:wrap("battle.use_item", function(next, battle, item)
-      if not active(battle and battle.game, battle) then
-          return next(battle, item)
-      end
-
-      local id = normalizeItemId(item)
       local game = battle and battle.game or currentGame
-
-      if PP_RECOVERY_ITEMS[id]
-          and mod.save:get("no_pp_items", false) == true then
-          worldMechanic(game, "pp_items",
-              "PP items are banned!",
-              "No Ether or Elixir recovery on this run.",
-              "The Nuzlocke says your moves earn their PP the hard way.")
-          return false, "PP items are banned!"
+      if not active(game, battle) then return next(battle, item) end
+      local okEffects, ItemEffects = pcall(require, "src.inventory.ItemEffects")
+      local allowed, decision = evaluateItemUsePolicy(
+          game, game and game.data, game and game.save, item,
+          type(item) == "table" and item.target or nil,
+          { battle = battle, inBattle = true,
+            itemEffects = okEffects and ItemEffects or nil })
+      if not allowed then
+          ItemPolicy.present(game, decision)
+          return false, decision and decision.message or "Item use is blocked!"
       end
-
-      if FIELD_HEALING_ITEMS[id]
-          and (mod.save:get("no_healing_items", false) == true
-              or mod.save:get("no_items", false) == true) then
-          worldMechanic(game, "battle_heal_items",
-              "Healing items are\nbanned in battle!",
-              "Nice try.\nYour Nuzlocke says no healing in battle.",
-              "The League has seen enough potion nonsense.\nPut the medicine away.")
-          return false, "Healing items are\nbanned in battle!"
-      end
-
-      if X_BATTLE_ITEMS[id]
-          and mod.save:get("no_battle_items", false) == true then
-          worldMechanic(game, "battle_x_items",
-              "Battle items are\nbanned!",
-              "No X-Item cheese!",
-              "The League has banned the ancient art of X-Item nonsense.")
-          return false, "Battle items are\nbanned!"
-      end
-
-      if mod.save:get("no_items", false) == true and not BALL_ITEMS[id] then
-          return false, "Items are banned\nduring battle!"
-      end
-
       return next(battle, item)
   end)
 
@@ -6112,46 +6758,50 @@ return function(mod)
   ---------------------------------------------------------------------
   -- VERSION DETECTION
   --
-  -- Detects Red, Blue, or Yellow. Falls back to "RED" on failure.
+  -- Detects RBY and GSC-family version ids exposed by the live engine.
+  -- Falls back to RED only when the engine exposes no recognizable version.
   ---------------------------------------------------------------------
   getGameVersion = function()
+      local candidates = {}
       local ok, GameVersion = pcall(require, "src.core.GameVersion")
       if ok and GameVersion then
-          local v
           if type(GameVersion.get) == "function" then
               local okGet, detected = pcall(GameVersion.get)
-              if okGet then v = detected end
+              if okGet then candidates[#candidates+1] = detected end
           end
-          if v == nil and type(GameVersion.version) == "string" then
-              v = GameVersion.version
-          end
-          if v == nil then v = tostring(GameVersion) end
-
-          if v then
-              local upper = tostring(v):upper()
-              if upper:find("YELLOW", 1, true)
-                  or upper:find("YLW", 1, true) then
-                  return "YELLOW"
-              end
-              if upper:find("BLUE", 1, true)
-                  or upper:find("BLU", 1, true) then
-                  return "BLUE"
-              end
-          end
+          candidates[#candidates+1] = GameVersion.version
       end
-
       if currentGame then
-          local ver = currentGame.version
-              or (currentGame.data and currentGame.data.version)
-          if ver then
-              local upper = tostring(ver):upper()
-              if upper:find("YELLOW", 1, true) then return "YELLOW" end
-              if upper:find("BLUE", 1, true) then return "BLUE" end
-          end
+          candidates[#candidates+1] = currentGame.version
+          candidates[#candidates+1] = currentGame.gameVersion
+          candidates[#candidates+1] = currentGame.data and currentGame.data.version
+          candidates[#candidates+1] = currentGame.data and currentGame.data.gameVersion
       end
-
+      for _, v in ipairs(candidates) do
+          local upper = tostring(v or ""):upper()
+          if upper:find("CRYSTAL",1,true) or upper:find("CRY",1,true) then return "CRYSTAL" end
+          if upper:find("SILVER",1,true) or upper:find("SLV",1,true) then return "SILVER" end
+          if upper:find("GOLD",1,true) or upper == "G" then return "GOLD" end
+          if upper:find("YELLOW",1,true) or upper:find("YLW",1,true) then return "YELLOW" end
+          if upper:find("BLUE",1,true) or upper:find("BLU",1,true) then return "BLUE" end
+          if upper:find("RED",1,true) then return "RED" end
+      end
       return "RED"
   end
+
+  local function getGameProfile()
+      local version = getGameVersion()
+      return VersionCompat.profiles[version] or {family="UNKNOWN",region="UNKNOWN",status="unknown"}
+  end
+
+  ---------------------------------------------------------------------
+  -- GOLD PRE-NEW-GAME SETUP
+  --
+  -- Gold Setup is handled at the title menu above through the native
+  -- {label,value} row shape and MainMenu:choose() dispatch. Previous
+  -- post-NEW-GAME intro insertion experiments are intentionally removed.
+  ---------------------------------------------------------------------
+
 
   ---------------------------------------------------------------------
   -- GIFT POKEMON TABLE  (version-tagged)
@@ -6222,6 +6872,74 @@ return function(mod)
           end
       end
       return lookup
+  end
+
+
+  -- Gifts and in-game trades are transactions, not battles. Any rule that
+  -- rejects one must do so BEFORE the engine removes/gives Pokemon or sets the
+  -- NPC's completed-trade/gift state. Post-acquisition deletion can permanently
+  -- destroy the player's offered Pokemon or burn a one-time gift.
+  local function specialAreaUnavailable(area)
+      area = routeKey(area) or area
+      if not area or area == "UNKNOWN" or area == "__LEGACY__" then
+          return false
+      end
+      if mod.save:get("encounter_limit", false) ~= true then
+          return false
+      end
+      if caughtAreas()[area] ~= nil then
+          return true
+      end
+      local state = getEncounterState and getEncounterState(area) or nil
+      return state ~= nil
+          and (state.status == "FAILED" or state.status == "CAUGHT")
+  end
+
+  local function currentSpecialArea(game, species, kind)
+      species = tostring(species or ""):upper()
+      local lookup = kind == "trade" and buildTradeLookup() or buildGiftLookup()
+      local known = lookup[species]
+      if known then return routeKey(known) or known end
+      local current = areaKey(game, nil)
+      return routeKey(current) or current or "UNKNOWN"
+  end
+
+  local function partyHasUsableSlotForSolo(save)
+      local count = 0
+      for _, mon in ipairs(save and save.party or {}) do
+          if type(mon) == "table" and mon.nuzlockeDead ~= true then
+              count = count + 1
+          end
+      end
+      return count < 1
+  end
+
+  local function specialAcquisitionDenied(game, species, area, kind)
+      if not active(game, nil) then return nil end
+      species = tostring(species or ""):upper()
+
+      if kind == "gift" and mod.save:get("allow_gifts", false) ~= true then
+          return "disabled"
+      end
+      if kind == "trade" and mod.save:get("allow_trades", false) ~= true then
+          return "disabled"
+      end
+      if Identity.isLegendarySpecies(game, species)
+          and mod.save:get("ban_legendaries", false) == true then
+          return "legendary"
+      end
+      if Identity.isMythicalSpecies(game, species)
+          and mod.save:get("ban_mythicals", false) == true then
+          return "mythical"
+      end
+      if specialAreaUnavailable(area) then
+          return "area"
+      end
+      if kind == "gift" and mod.save:get("solo_active", false) == true
+          and not partyHasUsableSlotForSolo(game and game.save) then
+          return "solo"
+      end
+      return nil
   end
 
   ---------------------------------------------------------------------
@@ -6305,13 +7023,33 @@ return function(mod)
   -- REGISTER GIFT / TRADE CATCH IN ITS PROPER AREA
   ---------------------------------------------------------------------
   local function registerSpecialCatch(species, area, encounterType, mon)
-      if not species or not area then return end
+      if not species or not area then return false end
+      area = routeKey(area) or area
       registerArea(area)
       markVisited(area)
 
       local log = trackerLog()
       log[area] = log[area] or {}
       local monId = mon and Identity.ensurePokemonIdentity(mon, currentSave, "NORMAL") or nil
+
+      -- A current/future engine path may report the same acquisition through
+      -- both the script command wrapper and pokemon.received. Persistent ID is
+      -- authoritative; fingerprint is the pre-ID compatibility fallback.
+      for _, existing in ipairs(log[area]) do
+          if type(existing) == "table" then
+              if monId and existing.pokemonId
+                  and tostring(existing.pokemonId) == tostring(monId) then
+                  if mon then mon.nuzlockeTrackerRegistered = true end
+                  return true
+              end
+              if not monId and mon and existing.fingerprint
+                  and existing.fingerprint == Identity.fingerprint(mon) then
+                  if mon then mon.nuzlockeTrackerRegistered = true end
+                  return true
+              end
+          end
+      end
+
       table.insert(log[area], {
           species       = species,
           pokemonId     = monId,
@@ -6342,6 +7080,7 @@ return function(mod)
           status        = "ALIVE",
       })
       mod.save:set("nuzlocke_history", history)
+      return true
   end
 
   ---------------------------------------------------------------------
@@ -6356,9 +7095,9 @@ return function(mod)
   -- Priority:
   --   1. Starter        → always PALLET_TOWN, bypasses town_catches.
   --   2. Gift (allowed) → area from GIFT_LOCATIONS or current map.
-  --   3. Gift (blocked) → mon removed from party.
+  --   3. Gift (blocked) → native transaction is rejected before mutation.
   --   4. Trade (allowed)→ area from TRADE_DATA or current map.
-  --   5. Trade (blocked)→ mon removed from party.
+  --   5. Trade (blocked)→ native transaction is rejected before exchange.
   ---------------------------------------------------------------------
   local function wonderTradeProviderContext(game, ev)
       local provider = activeCompatProvider("wonder_trade", game, nil)
@@ -6495,16 +7234,12 @@ return function(mod)
       return true
   end
 
-  -- Public adapter for Wonder Trade mods that prefer an explicit integration
-  -- call over emitting pokemon.received. It is intentionally data-driven and
-  -- does not depend on the other mod's name.
+  -- Wonderlocke is intentionally dormant. Keep the public adapter so Wonder
+  -- Trade mods can probe the compatibility surface safely, but never mutate a
+  -- Pokemon or transaction until the feature is completed and re-enabled.
   if mod.exports.nuzlocke_compat then
       mod.exports.nuzlocke_compat.handleWonderTrade = function(game, mon, area, providerId)
-          local species = tostring(mon and mon.species or ""):upper()
-          if species == "" then return false end
-          if mod.save:get("wonderlocke", false) ~= true then return false end
-          local provider = providerId and activeCompatProvider("wonder_trade", game, nil) or activeCompatProvider("wonder_trade", game, nil)
-          return registerWonderTradeCatch(game, { wonderTradeArea = area }, mon, species, area, provider)
+          return false
       end
   end
 
@@ -6547,90 +7282,48 @@ return function(mod)
       local giftLookup  = buildGiftLookup()
       local tradeLookup = buildTradeLookup()
 
-      -- Wonder Trade is deliberately its own acquisition type. It does not
-      -- consume the ordinary In-Game Trades setting. When Wonderlocke is ON,
-      -- the outgoing Pokemon's encounter area is the source area for the
-      -- incoming Pokemon. A compatible provider may supply that area through
-      -- its get_context() export; event fields are accepted as a fallback.
-      if isWonderTradeEvent(ev, source) then
-          local provider, context = wonderTradeProviderContext(game, ev)
-          if mod.save:get("wonderlocke", false) ~= true then
-              -- Wonder Trade is a distinct acquisition mechanic. If a Nuzlocke
-              -- is active and the player has not opted into Wonderlocke, do not
-              -- let the trade become an untracked bypass. A provider may still
-              -- perform its own rollback/transaction cleanup after this event.
-              worldMechanic(game, "wonder_trade_blocked",
-                  "WONDER TRADE is not enabled by your rules.",
-                  "Mystery trade? Not on this run.",
-                  "The Wonder Trade machine is ready...\nBut the Nuzlocke rules say NO.")
-              if mon and game and game.save and game.save.party then
-                  for i = #game.save.party, 1, -1 do
-                      if game.save.party[i] == mon then table.remove(game.save.party, i); break end
-                  end
-              end
-              return
-          end
-
-          local origin = context.area or ev.wonderTradeArea or ev.originArea
-              or ev.fromArea or (mon and mon.nuzlockeWonderTradeOrigin)
-              or (mon and mon.catchLocation)
-          if not registerWonderTradeCatch(game, ev, mon, species, origin, provider) then
-              -- Never invent a route. Keep the Pokemon recoverable instead of
-              -- corrupting the encounter log when a provider omitted origin data.
-              if mon then
-                  mon.nuzlockePendingWonderTrade = true
-                  mon.nuzlockeWonderTradeProvider = provider and provider.id or nil
-              end
-              worldMechanic(game, "wonder_trade_missing_origin",
-                  "WONDER TRADE NEEDS AN ORIGIN.\nThe trade was not assigned a route.",
-                  "Mystery trade, mystery route.\nWe'll recover it instead of guessing.",
-                  "The Wonder Trade provider did not tell the Nuzlocke where the outgoing catch came from.")
-          end
+      -- Wonderlocke is WIP. Wonder Trade transactions belong entirely to the
+      -- provider mod for now: do not block them, remove the received Pokemon,
+      -- consume an encounter slot, or write Wonderlocke provenance.
+      if WONDERLOCKE_WIP and isWonderTradeEvent(ev, source) then
           return
       end
 
-      local isGift  = (source == "gift" or source == "fossil"
-          or source == "prize" or giftLookup[species] ~= nil)
-      local isTrade = (source == "trade" or tradeLookup[species] ~= nil)
-
       -- 2-3. Gift
       if isGift and not isTrade then
-          if not mod.save:get("allow_gifts", false) then
-              if mon and game and game.save and game.save.party then
-                  for i = #game.save.party, 1, -1 do
-                      if game.save.party[i] == mon then
-                          table.remove(game.save.party, i); break
-                      end
-                  end
-              end
-              worldMechanic(game, "gift_denied:" .. tostring(species),
-                  "GIFT POKéMON are disabled by your rules.",
-                  "Free Pokemon? Nice try.\nYour Nuzlocke says no gifts.",
-                  "NPC: Here! Take this Pokemon!\n...Wait. Your challenge doesn't allow gifts.\nYou probably shouldn't have asked.")
+          local giftArea = giftLookup[species] or loc
+          if mon and mon.nuzlockeTrackerRegistered == true then return end
+          local denied = specialAcquisitionDenied(game, species, giftArea, "gift")
+          if denied then
+              -- Never delete a Pokemon here. pokemon.received is post-transaction
+              -- in some engine/mod paths, so rollback would be unsafe. Native
+              -- give_pokemon is rejected before mutation by the command wrapper.
+              if mon then mon.nuzlockeInvalidAcquisition = denied end
+              worldMechanic(game, "gift_post_denied:" .. tostring(species),
+                  "This gift conflicts with your Nuzlocke rules.",
+                  "Gift received through an external path.\nReview your rules before using it.",
+                  "A mod bypassed the normal gift transaction gate.\nThe Pokemon was preserved instead of deleting data.")
               return
           end
-          local giftArea = giftLookup[species] or loc
           registerSpecialCatch(species, giftArea, "gift", mon)
           return
       end
 
       -- 4-5. Trade
       if isTrade then
-          if not mod.save:get("allow_trades", false) then
-              if mon and game and game.save and game.save.party then
-                  for i = #game.save.party, 1, -1 do
-                      if game.save.party[i] == mon then
-                          table.remove(game.save.party, i); break
-                      end
-                  end
-              end
-              worldMechanic(game, "trade_denied:" .. tostring(species),
-                  "IN-GAME TRADES are disabled by your rules.",
-                  "Trade? Not on this run.\nKeep your own team.",
-                  "The trade almost happened...\nThen the Nuzlocke referee cleared his throat.")
+          local tradeArea = tradeLookup[species] or loc
+          if mon and mon.nuzlockeTrackerRegistered == true then return end
+          local denied = specialAcquisitionDenied(game, species, tradeArea, "trade")
+          if denied then
+              -- Same safety rule as gifts: never attempt a destructive rollback
+              -- after another mod/engine has already completed the exchange.
+              if mon then mon.nuzlockeInvalidAcquisition = denied end
+              worldMechanic(game, "trade_post_denied:" .. tostring(species),
+                  "This trade conflicts with your Nuzlocke rules.",
+                  "Trade completed through an external path.\nThe Pokemon was preserved instead of risking data loss.",
+                  "A mod bypassed the normal trade gate.\nNo destructive rollback was attempted.")
               return
           end
-          local tradeArea = tradeLookup[species] or loc
           registerSpecialCatch(species, tradeArea, "trade", mon)
       end
   end)
@@ -6840,74 +7533,93 @@ return function(mod)
       end
   end)
 
-  -- League progression is recorded whenever the Nuzlocke is active, even if
-  -- the player temporarily chooses a shorter cap scope. That way changing
-  -- GYMS -> E4 -> CHAMP later does not erase victories that already happened.
-  -- This is independent of trainer provenance logging, so other trainer mods
-  -- can safely coexist with it.
-  mod.events:on("battle.ended", function(payload)
-      if not payload then return end
-      local battle = payload.battle or payload
-      if not battle or battle.kind ~= "trainer" then return end
-      if payload.result ~= "win" and battle.result ~= "win" then return end
+  -- One private, idempotent battle finalizer owns every Nuzlocke task that
+  -- depends on battle completion. The genuine engine battle.ended event calls
+  -- it, and the BattleState.finish wrapper above is only a private fallback for
+  -- older builds. External mods never see a fabricated duplicate event.
+  local finalizedNuzlockeBattles = setmetatable({}, { __mode = "k" })
+
+  local function compactTrainerIdentity(value)
+      return tostring(value or ""):upper():gsub("[^A-Z0-9]", "")
+  end
+
+  local function recordLeagueProgression(battle, result)
+      if not battle or battle.kind ~= "trainer" or result ~= "win" then return end
+      local game = battle.game or currentGame
+      local save = game and game.save
+      if not save then return end
+
       local trainer = battle.trainer
       local trainerId = trainer and trainer.id
-      local trainerName = tostring((trainer and trainer.name) or battle.trainerName or battle.opponentName or ""):upper()
-      local trainerKey = trainerName .. " " .. tostring(trainerId or ""):upper()
+      local trainerName = tostring((trainer and trainer.name)
+          or battle.trainerName or battle.opponentName or ""):upper()
+      local nameKey = compactTrainerIdentity(trainerName)
+      local idKey = compactTrainerIdentity(trainerId)
 
-      -- Record Gym Leader victories independently of badge inventory. This
-      -- prevents a later change from NONE -> E4 from manufacturing a League
-      -- cap before the Gym progression has actually reached the League.
-      local gymProgressTable = gymProgress(currentGame and currentGame.save)
+      local ver = getGameVersion and getGameVersion() or "RED"
+      local profile = VersionCompat.profiles[ver]
+      if profile and profile.family == "GSC" then
+          local key = nameKey .. idKey
+          local progress = gscProgress(save)
+          for _, stage in ipairs(VersionCompat.gscStages) do
+              local stageKey = compactTrainerIdentity(stage.name)
+              if stageKey ~= "" and key:find(stageKey, 1, true) then
+                  progress[stage.name] = true
+                  mod.save:set("nuzlocke_gsc_defeated", progress)
+                  return
+              end
+          end
+          return
+      end
+
+      -- Gym wins are persistent progression evidence, independent of badge
+      -- inventory. Normalize punctuation/underscores so RED/BLUE/YELLOW and
+      -- trainer-overhaul record shapes all match the same leader names.
+      local gymProgressTable = gymProgress(save)
       for _, gymLeader in ipairs(LEVEL_CAP_GYM_LEADERS) do
-          if trainerName:find(gymLeader, 1, true)
-              or tostring(trainerId or ""):upper():find(gymLeader:gsub(" ", ""), 1, true) then
+          local leaderKey = compactTrainerIdentity(gymLeader)
+          if (leaderKey ~= "" and nameKey:find(leaderKey, 1, true))
+              or (leaderKey ~= "" and idKey:find(leaderKey, 1, true)) then
               gymProgressTable[gymLeader] = true
               mod.save:set(GYM_PROGRESS_KEY, gymProgressTable)
               break
           end
       end
 
-      if type(trainerId) == "string" then
-          for _, entry in ipairs(ELITE_FOUR_CAPS) do
-              if trainerId == entry.id then
-                  local defeated = eliteFourDefeated()
-                  defeated[entry.id] = true
-                  mod.save:set("nuzlocke_e4_defeated", defeated)
-                  return
-              end
+      for _, entry in ipairs(ELITE_FOUR_CAPS) do
+          local entryIdKey = compactTrainerIdentity(entry.id)
+          local entryNameKey = compactTrainerIdentity(entry.name)
+          if (entryIdKey ~= "" and idKey == entryIdKey)
+              or (entryNameKey ~= "" and nameKey == entryNameKey) then
+              local defeated = eliteFourDefeated()
+              defeated[entry.id] = true
+              mod.save:set("nuzlocke_e4_defeated", defeated)
+              return
           end
       end
-      -- Vanilla final-rival detection is intentionally conservative: only
-      -- count a Rival/Blue battle as Champion progress after all four E4
-      -- members are defeated and all eight badges are present. This avoids
-      -- confusing earlier Rival battles with the Champion.
-      if currentBadgeCount(currentGame and currentGame.save) >= 8
-          and not (nextEliteFourCapInfo())
-          and (trainerKey:find("RIVAL", 1, true) or trainerKey:find("BLUE", 1, true) or trainerKey:find("CHAMPION", 1, true)) then
+
+      -- Randomizers may move badges away from Gym Leaders. Live Champion
+      -- progression therefore keys off recorded Gym victories + the E4, never
+      -- current badge inventory. Badge count remains only a one-time legacy
+      -- seed when no explicit gym-progress record exists.
+      local trainerKey = nameKey .. idKey
+      if currentGymProgressCount(save) >= 8
+          and not nextEliteFourCapInfo()
+          and (trainerKey:find("RIVAL", 1, true)
+              or trainerKey:find("BLUE", 1, true)
+              or trainerKey:find("CHAMPION", 1, true)) then
           mod.save:set("nuzlocke_champion_defeated", true)
       end
-  end)
+  end
 
-  mod.events:on("battle.ended", function(payload)
-      -- Do not rely on battle.started state surviving the battle.  The engine's
-      -- authoritative finish seam emits battle.ended with the actual BattleState,
-      -- so resolve the failed encounter directly from that battle.  This also
-      -- works when a battle is ended by RUN, KO, or another teardown path.
+  local function finalizeFailedEncounter(battle)
       local pending = activeWildEncounter
       activeWildEncounter = nil
 
-      local battle = payload and (payload.battle or payload)
-      local game = currentGame
-      if not battle or not game or not game.save then
-          return
-      end
-      if pending and pending.battle and battle ~= pending.battle then
-          pending = nil
-      end
-      if isTrainerBattleForNuzlocke(battle) then
-          return
-      end
+      local game = (battle and battle.game) or currentGame
+      if not battle or not game or not game.save then return end
+      if pending and pending.battle and battle ~= pending.battle then pending = nil end
+      if isTrainerBattleForNuzlocke(battle) then return end
       if mod.save:get("nuzlocke_enabled", true) ~= true
           or mod.save:get("encounter_limit", false) ~= true
           or mod.save:get("failed_encounter", true) ~= true then
@@ -6916,14 +7628,10 @@ return function(mod)
 
       local key = areaKey(game, battle)
       local species = battle.enemy and battle.enemy.mon and battle.enemy.mon.species
-      if not key or type(species) ~= "string" or species == "" then
-          return
-      end
+      if not key or type(species) ~= "string" or species == "" then return end
 
       local shiny = enemyIsShiny(battle)
-      if shiny and mod.save:get("shiny_clause", false) == true then
-          return
-      end
+      if shiny and mod.save:get("shiny_clause", false) == true then return end
 
       local town = isTownArea(key, routeName(key))
       local overworld = battle.overworldEncounter == true
@@ -6931,24 +7639,13 @@ return function(mod)
           or battle.isOverworld == true
           or battle.encounterType == "overworld"
           or battle.source == "overworld"
-      if overworld and mod.save:get("overworld_encounters", false) ~= true then
-          return
-      end
-      if town and mod.save:get("town_catches", false) ~= true then
-          return
-      end
-      if caughtAreas()[key] ~= nil then
-          return
-      end
+      if overworld and mod.save:get("overworld_encounters", false) ~= true then return end
+      if town and mod.save:get("town_catches", false) ~= true then return end
+      if caughtAreas()[key] ~= nil then return end
 
       local state = getEncounterState(key)
-      if state and (state.status == "FAILED" or state.status == "CAUGHT") then
-          return
-      end
-
-      if isDuplicateSpecies(game, species) then
-          return
-      end
+      if state and (state.status == "FAILED" or state.status == "CAUGHT") then return end
+      if isDuplicateSpecies(game, species) then return end
 
       markEncounterFailed(key, species, overworld and "overworld"
           or (town and "town" or "wild"))
@@ -6956,11 +7653,31 @@ return function(mod)
           "ENCOUNTER FAILED.\nThat was your one shot in this area.",
           "Oof. There goes your encounter.\nThe Nuzlocke gods are keeping score.",
           "The route won't give you another chance.\nKanto has a long memory.")
+  end
+
+  finalizeNuzlockeBattle = function(battle, result)
+      if type(battle) ~= "table" then return false end
+      if finalizedNuzlockeBattles[battle] then return false end
+      finalizedNuzlockeBattles[battle] = true
+
+      local finalResult = result or battle.result or "run"
+      recordLeagueProgression(battle, finalResult)
+      finalizeFailedEncounter(battle)
+      return true
+  end
+
+  mod.events:on("battle.ended", function(payload)
+      local battle = payload and (payload.battle or payload)
+      local result = payload and payload.result or (battle and battle.result)
+      if type(finalizeNuzlockeBattle) == "function" then
+          finalizeNuzlockeBattle(battle, result)
+      end
   end)
 
   enemyIsShiny = function(battle)
-      return battle and battle.enemy and battle.enemy.mon
-          and Identity.isShiny(battle.enemy.mon)
+      if not (battle and battle.enemy) then return false end
+      local mon = battle.enemy.mon or battle.enemy
+      return Identity.isShiny(mon)
   end
 
   catchDeniedReason = function(game, battle, species)
@@ -7236,7 +7953,12 @@ return function(mod)
       local okSave, SaveData = pcall(require, "src.core.SaveData")
       local okVersion, GameVersion = pcall(require, "src.core.GameVersion")
 
-      if not ok or not BattleState then return end
+      if not ok or type(BattleState) ~= "table"
+          or type(BattleState.onFaint) ~= "function"
+          or type(BattleState.playerMonFainted) ~= "function"
+          or type(BattleState.finish) ~= "function" then
+          return
+      end
       if BattleState.__nuzlockeFinal25FaintPatched then return end
       BattleState.__nuzlockeFinal25FaintPatched = true
 
@@ -7245,7 +7967,8 @@ return function(mod)
       -- Damage.compute returns { crit = bool }, so the death record can
       -- report a real critical hit instead of guessing.
       -------------------------------------------------------------------
-      if not BattleState.__nuzlockeDamagePatched then
+      if not BattleState.__nuzlockeDamagePatched
+          and type(BattleState.computeDamage) == "function" then
           BattleState.__nuzlockeDamagePatched = true
           local vanillaComputeDamage = BattleState.computeDamage
           BattleState.computeDamage = function(self, user, target, move, opts)
@@ -7269,7 +7992,9 @@ return function(mod)
       -- previous damaging move.
       -------------------------------------------------------------------
       local okStatus, StatusModule = pcall(require, "src.battle.Status")
-      if okStatus and StatusModule and not StatusModule.__nuzlockeDeathStatusPatched then
+      if okStatus and type(StatusModule) == "table"
+          and type(StatusModule.residual) == "function"
+          and not StatusModule.__nuzlockeDeathStatusPatched then
           StatusModule.__nuzlockeDeathStatusPatched = true
           local vanillaResidual = StatusModule.residual
           StatusModule.residual = function(battler, opponent, battle, ...)
@@ -7443,7 +8168,9 @@ return function(mod)
       local vanillaPlayerFainted = BattleState.playerMonFainted
       BattleState.playerMonFainted = function(self)
           if self.nuzlockeGameOver then
-              self.result = "nuzlocke_game_over"
+              -- Keep the public battle result inside the engine's standard
+              -- result vocabulary. The separate flag owns Nuzlocke teardown.
+              self.result = "lose"
               self.afterQueue = "finish"
               -- Try every known message API in priority order.
               local msg = "All of your\nPOKeMON are dead...\nYour run is over."
@@ -7463,9 +8190,11 @@ return function(mod)
           return vanillaPlayerFainted(self)
       end
 
-      -- BattleState.finish may already be wrapped above for reliable
-      -- battle.ended emission. Capture that wrapper, not the engine original,
-      -- so game-over handling composes with encounter-finalization behavior.
+      -- The Nuzlocke run-over path replaces vanilla finish() because it deletes
+      -- the run and goes to credits/title. That means THIS path legitimately
+      -- owns the one public battle.ended event the engine would otherwise emit.
+      -- Use the standard result "lose" so unrelated consumers do not need to
+      -- understand a Nuzlocke-only result string.
       local vanillaFinish = BattleState.finish
       BattleState.finish = function(self)
           if not self.nuzlockeGameOver then
@@ -7473,15 +8202,23 @@ return function(mod)
           end
 
           self.nuzlockeGameOver = nil
+          self.result = "lose"
+
+          if type(finalizeNuzlockeBattle) == "function" then
+              pcall(finalizeNuzlockeBattle, self, "lose")
+          end
 
           if self.game and self.game.stack then
               self.game.stack:pop()
           end
 
-          if okRuntime and Runtime then
-              Runtime.emit("battle.ended", {
+          if okRuntime and Runtime and type(Runtime.emit) == "function"
+              and not self.__nuzlockePublicBattleEndedEmitted then
+              self.__nuzlockePublicBattleEndedEmitted = true
+              pcall(Runtime.emit, "battle.ended", {
                   battle = self,
-                  result = "nuzlocke_game_over"
+                  result = "lose",
+                  nuzlockeGameOver = true,
               })
           end
 
@@ -7622,7 +8359,7 @@ return function(mod)
   ---------------------------------------------------------------------
   local function installNuzlockeFieldCommandPatches()
       local okCommands, Commands = pcall(require, "src.script.Commands")
-      if not okCommands or not Commands then
+      if not okCommands or type(Commands) ~= "table" then
           return false
       end
 
@@ -7631,6 +8368,9 @@ return function(mod)
       end
 
       local originalHeal = Commands.heal_party
+      local originalFade = Commands.fade
+      local originalTrade = Commands.trade
+      local originalGivePokemon = Commands.give_pokemon
       if type(originalHeal) ~= "function" then
           return false
       end
@@ -7677,17 +8417,150 @@ return function(mod)
           end
       end
 
+      local function acquisitionDeniedMessage(kind, reason, area)
+          local areaName = routeName(area or "UNKNOWN")
+          if reason == "disabled" then
+              return kind == "trade"
+                  and "IN-GAME TRADES are disabled\nby your Nuzlocke rules."
+                  or "GIFT POKéMON are disabled\nby your Nuzlocke rules."
+          elseif reason == "area" then
+              return "Encounter already used!\n" .. tostring(areaName)
+          elseif reason == "solo" then
+              return "SOLO ONLY is active.\nYour party already has a Pokemon."
+          elseif reason == "legendary" then
+              return "Legendary Pokemon are banned\nby your Nuzlocke rules."
+          elseif reason == "mythical" then
+              return "Mythical Pokemon are banned\nby your Nuzlocke rules."
+          end
+          return "This Pokemon is blocked\nby your Nuzlocke rules."
+      end
+
+      -- Native in-game trade gate. The engine's Commands.trade removes the
+      -- selected outgoing Pokemon and creates the incoming Pokemon in one
+      -- transaction. Reject before calling it; never try to reconstruct the
+      -- outgoing Pokemon afterward.
+      local function nuzlockeTrade(ctx, tradeIndex, doneFlag)
+          if type(originalTrade) ~= "function" then return end
+
+          local game = ctx and ctx.game
+          local trade = game and game.data and game.data.field
+              and game.data.field.trades
+              and game.data.field.trades[tradeIndex]
+          if not trade or not active(game, nil) then
+              return originalTrade(ctx, tradeIndex, doneFlag)
+          end
+
+          local receivedSpecies = tostring(trade.get or ""):upper()
+          local area = currentSpecialArea(game, receivedSpecies, "trade")
+          local denied = specialAcquisitionDenied(
+              game, receivedSpecies, area, "trade")
+
+          if denied then
+              showRuleMessage(ctx,
+                  acquisitionDeniedMessage("trade", denied, area))
+              return
+          end
+
+          -- Snapshot object identities before the transaction. Commands.trade
+          -- creates a fresh Pokemon table for the received mon.
+          local before = {}
+          for _, mon in ipairs(ctx.save and ctx.save.party or {}) do
+              before[mon] = true
+          end
+
+          local result = originalTrade(ctx, tradeIndex, doneFlag)
+
+          local received
+          for _, mon in ipairs(ctx.save and ctx.save.party or {}) do
+              if not before[mon]
+                  and tostring(mon and mon.species or ""):upper()
+                      == receivedSpecies then
+                  received = mon
+                  break
+              end
+          end
+
+          if received then
+              registerSpecialCatch(receivedSpecies, area, "trade", received)
+          end
+          return result
+      end
+
+      -- Native scripted gift gate. give_pokemon mutates party/boxes and many
+      -- giver scripts set one-time flags afterward, so reject before entering
+      -- the vanilla command. Starters are deliberately exempt.
+      local function nuzlockeGivePokemon(ctx, species, level, skipNickname)
+          if type(originalGivePokemon) ~= "function" then return end
+          local game = ctx and ctx.game
+          if not active(game, nil) then
+              return originalGivePokemon(ctx, species, level, skipNickname)
+          end
+
+          local sp = tostring(species or ""):upper()
+          local loc = areaKey(game, nil)
+          local starter = (loc == "PALLET_TOWN"
+              and (isStarterSpecies(sp)
+                  or (getGameVersion() == "YELLOW" and sp == "PIKACHU")))
+
+          if not starter then
+              local area = currentSpecialArea(game, sp, "gift")
+              local denied = specialAcquisitionDenied(game, sp, area, "gift")
+              if denied then
+                  -- Match give_pokemon's failure contract so scripts that check
+                  -- carry/lastCheck do not burn their one-time completion flag.
+                  ctx.lastCheck = false
+                  showRuleMessage(ctx,
+                      acquisitionDeniedMessage("gift", denied, area))
+                  return
+              end
+          end
+
+          local before = {}
+          for _, mon in ipairs(ctx.save and ctx.save.party or {}) do before[mon] = true end
+          for _, box in ipairs(ctx.save and ctx.save.boxes or {}) do
+              for _, mon in ipairs(box or {}) do before[mon] = true end
+          end
+
+          local result = originalGivePokemon(ctx, species, level, skipNickname)
+
+          if not starter and ctx.lastCheck == true then
+              local received
+              for _, mon in ipairs(ctx.save and ctx.save.party or {}) do
+                  if not before[mon] and tostring(mon and mon.species or ""):upper() == sp then
+                      received = mon; break
+                  end
+              end
+              if not received then
+                  for _, box in ipairs(ctx.save and ctx.save.boxes or {}) do
+                      for _, mon in ipairs(box or {}) do
+                          if not before[mon]
+                              and tostring(mon and mon.species or ""):upper() == sp then
+                              received = mon; break
+                          end
+                      end
+                      if received then break end
+                  end
+              end
+              if received then
+                  local area = currentSpecialArea(game, sp, "gift")
+                  registerSpecialCatch(sp, area, "gift", received)
+              end
+          end
+          return result
+      end
+
   ---------------------------------------------------------------------
   -- AUTHORITATIVE SCRIPT-COMMAND HEAL GATE
   --
   -- The recomp's ScriptRunner resolves every script row through the live
-  -- Runtime "script.command" hook.  This is more reliable than only replacing
-  -- Commands.heal_party because map scripts can otherwise retain a cached
-  -- function reference.  We use the map id/label to distinguish Pokémon
-  -- Centers from Mom's house, since both ultimately use heal_party.
+  -- Runtime "script.command" hook. Mom's R/B/Y house script uses
+  -- heal_party directly. Pokemon Centers use a separate overworld nurse path
+  -- and are gated below; the Center test here remains only as a compatibility
+  -- fallback for builds that route healing through the script command table.
   ---------------------------------------------------------------------
   local function nuzlockeMapTag(ctx)
-      local ow = ctx and ctx.overworld
+      local ow = (ctx and ctx.overworld)
+          or (currentGame and currentGame.overworld)
       local map = ow and ow.map
       local def = map and map.def
       local parts = {
@@ -7761,26 +8634,57 @@ return function(mod)
   installNuzlockeScriptHealGate()
 
       local function blockedHeal(ctx)
-          -- heal_party is also used by Mom, so the Center rule must only
-          -- fire while the script is actually running in a Pokemon Center.
+          -- Mom's R/B/Y script uses heal_party directly. Keep this command-level
+          -- gate as the authoritative fallback even if hook ordering changes.
+          if mod.save:get("no_mom_heal", false) == true
+              and isMomsHouseMap(ctx) then
+              showRuleMessage(ctx, worldTier(ctx and ctx.game) >= 2
+                  and "Mom: Nice try, sweetheart.\nThe Nuzlocke says I can't heal you.\nI believe in you!"
+                  or "Mom: I know you need\nrest, sweetheart, but\nour Nuzlocke rules say\nI can't heal your\nPokemon right now.\nYou'll be okay!")
+              return "end"
+          end
+
+          -- Pokemon Center healing is not implemented through heal_party in
+          -- current Gen1Recomp, but retain this fallback for compatible builds.
           if mod.save:get("no_poke_center", false) == true
               and isPokemonCenterMap(ctx) then
               showRuleMessage(ctx,
                   "Nurse Joy: I'm sorry,\nbut your Nuzlocke\nrules don't allow\nPokemon Center\nhealing right now.")
-              return
+              return "end"
           end
           return originalHeal(ctx)
       end
 
       Commands.heal_party = blockedHeal
 
-      -- Force the resolver to return the wrapped command too.  This is the
+      -- Mom fades to white immediately before heal_party. Mirror the command
+      -- gate at the fade verb too so the refusal remains on the room screen
+      -- even if the public script hook is unavailable or reordered.
+      local function blockedFade(ctx, ...)
+          if mod.save:get("no_mom_heal", false) == true
+              and isMomsHouseMap(ctx) then
+              return
+          end
+          if type(originalFade) == "function" then
+              return originalFade(ctx, ...)
+          end
+      end
+      if type(originalFade) == "function" then Commands.fade = blockedFade end
+
+      -- Force the resolver to return the wrapped commands too. This is the
       -- important part for map scripts that resolve command names at runtime.
       if type(Commands.resolve) == "function" then
           local originalResolve = Commands.resolve
           Commands.resolve = function(data, name)
               if name == "heal_party" then
                   return blockedHeal, Commands.meta and Commands.meta[name]
+              elseif name == "fade" and type(originalFade) == "function" then
+                  return blockedFade, Commands.meta and Commands.meta[name]
+              elseif name == "trade" and type(originalTrade) == "function" then
+                  return nuzlockeTrade, Commands.meta and Commands.meta[name]
+              elseif name == "give_pokemon"
+                  and type(originalGivePokemon) == "function" then
+                  return nuzlockeGivePokemon, Commands.meta and Commands.meta[name]
               end
               return originalResolve(data, name)
           end
@@ -7837,6 +8741,99 @@ return function(mod)
   end)
 
   ---------------------------------------------------------------------
+  -- R/B/Y POKEMON CENTER GATE
+  --
+  -- Current Gen1Recomp dispatches a nurse directly from OverworldState:talkTo
+  -- after resolving the TX_SCRIPT text entry. Gate that exact transaction
+  -- before nurseHeal starts. nurseHeal is also wrapped as a narrow fallback.
+  ---------------------------------------------------------------------
+  local function installNuzlockeCenterGate()
+      local okVersion, GameVersion = pcall(require, "src.core.GameVersion")
+      if okVersion and type(GameVersion) == "table"
+          and type(GameVersion.isGold) == "function" then
+          local okGold, gold = pcall(GameVersion.isGold)
+          if okGold and gold == true then return true end
+      end
+
+      local okOverworld, OverworldState =
+          pcall(require, "src.world.OverworldController")
+      if not okOverworld or type(OverworldState) ~= "table"
+          or type(OverworldState.talkTo) ~= "function"
+          or type(OverworldState.nurseHeal) ~= "function" then
+          return false
+      end
+      if OverworldState.__nuzlockeCenterGateOwner == mod then return true end
+
+      local vanillaTalkTo = OverworldState.talkTo
+      local vanillaNurseHeal = OverworldState.nurseHeal
+      OverworldState.__nuzlockeCenterGateOwner = mod
+
+      local function liveGame()
+          local game = mod.game
+          if type(game) == "table" and game.stack and game.data then return game end
+          if type(currentGame) == "table" and currentGame.stack and currentGame.data then
+              return currentGame
+          end
+          return nil
+      end
+
+      local function denyCenter(game, self, npc, onDone)
+          if npc and type(npc.facePlayer) == "function" and self and self.player then
+              pcall(npc.facePlayer, npc, self.player)
+          end
+          local okText, TextBox = pcall(require, "src.render.TextBox")
+          if game and game.stack and okText and TextBox
+              and type(TextBox.new) == "function" then
+              local msg = worldTier(game) >= 2
+                  and "Nurse Joy: Sorry!\nYour Nuzlocke says no healing here.\nTake care of that team!"
+                  or "Nurse Joy: I'm sorry,\nbut your Nuzlocke\nrules don't allow\nPokemon Center\nhealing right now."
+              game.stack:push(TextBox.new(game, msg, onDone))
+          elseif onDone then
+              onDone()
+          end
+      end
+
+      OverworldState.talkTo = function(self, npc, ...)
+          if mod.save:get("no_poke_center", false) == true
+              and npc and type(npc.def) == "table" then
+              local game = liveGame()
+              local data = game and game.data
+              local map = self and self.map
+              local def = map and map.def
+              local entry
+              if data and def and type(data.textEntry) == "function" then
+                  local okEntry, resolved = pcall(data.textEntry, data, def.label, npc.def.text)
+                  if okEntry then entry = resolved end
+              end
+              if type(entry) == "table" and entry.nurse then
+                  npc.frozen = true
+                  denyCenter(game, self, npc, function() npc.frozen = false end)
+                  return
+              end
+          end
+          return vanillaTalkTo(self, npc, ...)
+      end
+
+      OverworldState.nurseHeal = function(self, onDone, npc, ...)
+          if mod.save:get("no_poke_center", false) == true then
+              denyCenter(liveGame(), self, npc, onDone)
+              return
+          end
+          return vanillaNurseHeal(self, onDone, npc, ...)
+      end
+      return true
+  end
+
+  pcall(installNuzlockeCenterGate)
+  mod.events:on("game.ready", function()
+      pcall(installNuzlockeCenterGate)
+  end)
+  mod.events:on("save.loaded", function()
+      pcall(installNuzlockeCenterGate)
+  end)
+
+
+  ---------------------------------------------------------------------
   -- SHOP BUY / SELL GATE
   --
   -- Keep the normal Mart menu and only replace the selected action. This is
@@ -7878,8 +8875,9 @@ return function(mod)
               if label == "BUY" and type(item.onSelect) == "function" then
                   local vanillaBuy = item.onSelect
                   item.onSelect = function(...)
-                      if active(game, nil)
-                          and mod.save:get("no_buying", false) == true then
+                      local allowed = mod.exports.nuzlocke_compat.canPurchase(
+                          game, { kind = "item_shop" })
+                      if allowed == false then
                           deny(game, "BUY")
                           return
                       end
@@ -7888,8 +8886,9 @@ return function(mod)
               elseif label == "SELL" and type(item.onSelect) == "function" then
                   local vanillaSell = item.onSelect
                   item.onSelect = function(...)
-                      if active(game, nil)
-                          and mod.save:get("no_selling", false) == true then
+                      local allowed = mod.exports.nuzlocke_compat.canSell(
+                          game, { kind = "item_shop" })
+                      if allowed == false then
                           deny(game, "SELL")
                           return
                       end
@@ -7911,5 +8910,578 @@ return function(mod)
   mod.events:on("save.loaded", function()
       pcall(installShopRuleGate)
   end)
+
+
+  ---------------------------------------------------------------------
+  -- GOLD CORE-RULE ADAPTERS
+  --
+  -- Gold has a separate battle UI, script VM, naming screen and mart UI.
+  -- Keep the established R/B/Y paths above untouched and bridge the same
+  -- Nuzlocke policy into the live Gen 2 modules here.
+  ---------------------------------------------------------------------
+  do
+      local G2 = {}
+
+      function G2.isGold()
+          return getGameVersion() == "GOLD"
+      end
+
+      function G2.catchMessage(game, reason)
+          if reason == "area" then
+              return worldTier(game) >= 2 and "Nice try.\nYou already used this area's encounter."
+                  or "This area already has a captured POKEMON!"
+          elseif reason == "dupes" then
+              return worldTier(game) >= 2 and "Seriously? Another one?\nDupes Clause says NO."
+                  or "You already have this POKEMON family!"
+          elseif reason == "overworld" then
+              return "Overworld catches are turned OFF."
+          elseif reason == "town" then
+              return "Town catches are turned OFF."
+          elseif reason == "legendary" then
+              return "Legendary catches are turned OFF."
+          elseif reason == "mythical" then
+              return "Mythical catches are turned OFF."
+          elseif reason == "solo" then
+              return "Solo Only: only one Pokemon allowed!"
+          end
+      end
+
+      function G2.installCaptureGate()
+          if not G2.isGold() then return false end
+          local ok, BS = pcall(require, "src.ui.gen2.BattleState")
+          if not ok or type(BS) ~= "table" or type(BS.useItem) ~= "function" then return false end
+          if BS.__nuzlockeBeta22CaptureGate then return true end
+          BS.__nuzlockeBeta22CaptureGate = true
+          local vanilla = BS.useItem
+          BS.useItem = function(self, itemId)
+              local data = self and self.game and self.game.data or {}
+              local def = data.items and data.items[itemId]
+              if def and def.pocket == "BALL" and self and self.battle
+                  and self.battle.wild and not self.tutorial then
+                  local enemy = self.battle.enemy
+                  local species = enemy and enemy.species
+                  local okReason, reason = pcall(catchDeniedReason,
+                      self.game, self.battle, species)
+                  if okReason and reason then
+                      self.queue = {}
+                      self.message = G2.catchMessage(self.game, reason)
+                          or "That catch is not allowed by your Nuzlocke rules."
+                      self.messageTimer = 48
+                      self.phase = "resolving"
+                      return
+                  end
+              end
+              return vanilla(self, itemId)
+          end
+          return true
+      end
+
+      function G2.noteDamage(ev)
+          if not G2.isGold() or not ev or not ev.battle then return end
+          if ev.target == ev.battle.player then
+              ev.battle.nuzlockeG2LastDamage = {
+                  move = ev.moveId or (ev.move and ev.move.id),
+                  attacker = ev.user,
+                  damage = ev.damage,
+                  critical = ev.crit == true,
+              }
+          end
+      end
+
+      function G2.recordDeath(game, battle, mon)
+          if not (game and battle and mon) or mon.nuzlockeDead then return end
+          local key = areaKey(game, battle)
+          local enemy = battle.enemy
+          local enemySpecies = enemy and (enemy.nickname or enemy.name or enemy.species) or "BATTLE"
+          local damage = battle.nuzlockeG2LastDamage
+          local cause = tostring(mon.nickname or mon.species or "Pokemon")
+              .. " died in battle against " .. tostring(enemySpecies) .. "."
+          if damage and damage.move then
+              cause = tostring(mon.nickname or mon.species or "Pokemon")
+                  .. " died to " .. tostring(enemySpecies) .. " after "
+                  .. (damage.critical and "a critical " or "") .. tostring(damage.move) .. "."
+          elseif mon.status then
+              cause = tostring(mon.nickname or mon.species or "Pokemon")
+                  .. " died in battle while affected by " .. tostring(mon.status) .. "."
+          end
+
+          mon.nuzlockeDead = true
+          mon.deathLocation = key
+          mon.deathCause = cause
+          mon.deathCauseText = cause
+          mon.deathEncounterType = battle.trainer and "trainer" or "wild"
+          mon.deathOpponentSpecies = enemySpecies
+          mon.deathMove = damage and damage.move or nil
+          mon.deathCritical = damage and damage.critical == true or false
+
+          local history = mod.save:get("nuzlocke_history", {})
+          if type(history) ~= "table" then history = {} end
+          table.insert(history, {
+              name = mon.nickname or mon.species or "???",
+              species = mon.species,
+              pokemonId = Identity.ensurePokemonIdentity(mon, currentSave,
+                  mon.nuzlockeOrigin or "NORMAL"),
+              catchLocation = mon.catchLocation,
+              encounterType = mon.encounterType,
+              status = "LOST",
+              deathLocation = key,
+              deathCause = cause,
+              deathOpponentSpecies = enemySpecies,
+              deathMove = mon.deathMove,
+              deathCritical = mon.deathCritical,
+          })
+          mod.save:set("nuzlocke_history", history)
+          mod.save:set("nuzlocke_losses",
+              (tonumber(mod.save:get("nuzlocke_losses", 0)) or 0) + 1)
+          mod.save:set("last_loss", {
+              name = mon.nickname or mon.species or "???",
+              species = mon.species,
+              pokemonId = Identity.pokemonIdentity(mon),
+              location = key,
+              cause = cause,
+          })
+
+          worldMechanic(game,
+              "death:g2:" .. tostring(mon.nickname or mon.species) .. ":" .. tostring(key),
+              tostring(mon.nickname or mon.species or "Pokemon") .. " has fallen.\nThe Nuzlocke remembers.")
+
+          local party = game.save and game.save.party
+          if type(party) == "table" then
+              for i = #party, 1, -1 do
+                  if party[i] == mon then
+                      table.remove(party, i)
+                      break
+                  end
+              end
+          end
+      end
+
+      function G2.onFaint(ev)
+          if not G2.isGold() or not ev or not ev.battle or not ev.battler then return end
+          local battle = ev.battle
+          if battle.player ~= ev.battler then return end
+          local game = currentGame or mod.game
+          if not active(game, battle) then return end
+          if mod.save:get("permadeath", true) then
+              G2.recordDeath(game, battle, ev.battler)
+          end
+          if mod.save:get("whiteout_clause", false)
+              and not hasHealthyParty(game) then
+              battle.nuzlockeGameOver = true
+          end
+      end
+
+      function G2.installNicknameGate()
+          if not G2.isGold() then return false end
+          local okBS, BS = pcall(require, "src.ui.gen2.BattleState")
+          local okNS, NS = pcall(require, "src.ui.gen2.NamingScreen")
+          if okBS and type(BS) == "table" and type(BS.answerNickname) == "function"
+              and not BS.__nuzlockeBeta22ForceNickname then
+              BS.__nuzlockeBeta22ForceNickname = true
+              local vanillaAnswer = BS.answerNickname
+              BS.answerNickname = function(self, yes)
+                  if active(self and self.game, self and self.battle)
+                      and mod.save:get("nickname_rule", false) then
+                      yes = true
+                  end
+                  return vanillaAnswer(self, yes)
+              end
+          end
+          if okNS and type(NS) == "table" and type(NS.accept) == "function"
+              and not NS.__nuzlockeBeta22NonEmptyNickname then
+              NS.__nuzlockeBeta22NonEmptyNickname = true
+              local vanillaAccept = NS.accept
+              NS.accept = function(self)
+                  if G2.isGold() and self and self.kind == NS.TYPES.nickname
+                      and active(self.game, nil)
+                      and mod.save:get("nickname_rule", false)
+                      and tostring(self.text or "") == "" then
+                      return
+                  end
+                  return vanillaAccept(self)
+              end
+          end
+          return true
+      end
+
+      function G2.installMartGate()
+          if not G2.isGold() then return false end
+          local ok, Mart = pcall(require, "src.ui.gen2.MartMenu")
+          if not ok or type(Mart) ~= "table" then return false end
+          if Mart.__nuzlockeBeta22MartGate then return true end
+          Mart.__nuzlockeBeta22MartGate = true
+
+          if type(Mart.offerToBuy) == "function" then
+              local vanillaBuy = Mart.offerToBuy
+              Mart.offerToBuy = function(self, ...)
+                  local allowed = mod.exports.nuzlocke_compat.canPurchase(
+                      self and self.game, { kind = "item_shop", generation = 2 })
+                  if allowed == false then
+                      if self and type(self.say) == "function" then
+                          self:say("Buying is disabled by your Nuzlocke rules.")
+                      end
+                      return
+                  end
+                  return vanillaBuy(self, ...)
+              end
+          end
+          if type(Mart.offerToSell) == "function" then
+              local vanillaSell = Mart.offerToSell
+              Mart.offerToSell = function(self, ...)
+                  local allowed = mod.exports.nuzlocke_compat.canSell(
+                      self and self.game, { kind = "item_shop", generation = 2 })
+                  if allowed == false then
+                      if self and type(self.say) == "function" then
+                          self:say("Selling is disabled by your Nuzlocke rules.")
+                      end
+                      return
+                  end
+                  return vanillaSell(self, ...)
+              end
+          end
+          return true
+      end
+
+      function G2.findNewPartyMon(before, party)
+          for _, mon in ipairs(party or {}) do
+              if not before[mon] then return mon end
+          end
+      end
+
+      function G2.installGiftTracking()
+          if G2._giftHook then return true end
+          G2._giftHook = true
+          mod.hooks:wrap("script.command", function(next, ctx, name, args, cmd)
+              if not (ctx and ctx.generation == 2 and G2.isGold() and name == "givepoke") then
+                  return next(ctx, name, args, cmd)
+              end
+              local game = currentGame or mod.game
+              local before = {}
+              for _, mon in ipairs(game and game.save and game.save.party or {}) do before[mon] = true end
+              local beforeCount = #(game and game.save and game.save.party or {})
+              local result = next(ctx, name, args, cmd)
+              local party = game and game.save and game.save.party or {}
+              local mon = G2.findNewPartyMon(before, party)
+              if not mon then return result end
+              local species = mon.species or (cmd and cmd.species) or (args and args[1])
+              local upper = tostring(species or ""):upper()
+              if beforeCount == 0 and (upper == "CHIKORITA" or upper == "CYNDAQUIL" or upper == "TOTODILE") then
+                  registerStarterCatch(species, mon)
+              else
+                  local area = areaKey(game, nil) or (ctx and (ctx.mapId or ctx.map)) or "UNKNOWN"
+                  registerSpecialCatch(species, area, "gift", mon)
+              end
+              return result
+          end)
+          return true
+      end
+
+      -- Gold's starter family. The actual acquisition hook above deliberately
+      -- identifies the first party member instead of trusting Elm's Lab map id.
+      STARTERS_BY_VERSION.GOLD = {
+          CHIKORITA = true, CYNDAQUIL = true, TOTODILE = true,
+      }
+
+      -- Keep the starter slot region-correct. R/B/Y retain PALLET_TOWN exactly.
+      local beta21RegisterStarterCatch = registerStarterCatch
+      registerStarterCatch = function(species, mon)
+          if not G2.isGold() then return beta21RegisterStarterCatch(species, mon) end
+          if not species then return end
+          species = tostring(species):upper()
+          local area = "NEW_BARK_TOWN"
+          registerArea(area, "New Bark Town")
+          markVisited(area)
+          if caughtAreas()[area] then
+              if mon then
+                  mon.catchLocation = area
+                  mon.encounterType = "starter"
+                  mon.nuzlockeTrackerRegistered = true
+              end
+              return
+          end
+          registerSpecialCatch(species, area, "starter", mon)
+      end
+
+      -- Gold's tracker is discovery-driven. Do not preload the Gen 1 Kanto
+      -- checklist into a Johto run; show only areas the Gold save has actually
+      -- visited or registered through encounters/gifts.
+      local beta21DisplayRoutes = getDisplayRoutes
+      getDisplayRoutes = function(game)
+          if not G2.isGold() then return beta21DisplayRoutes(game) end
+          syncCurrentArea(game)
+          local seen = visitedAreas()
+          local caught = caughtAreas()
+          local log = trackerLog()
+          local list = {}
+          for _, r in ipairs(ALL_ROUTES) do
+              if (seen[r.id] or caught[r.id] ~= nil or (type(log[r.id]) == "table" and #log[r.id] > 0))
+                  and areaAllowedByConfig(r) then
+                  list[#list + 1] = r
+              end
+          end
+          table.sort(list, function(a, b)
+              return tostring(a.name or a.id) < tostring(b.name or b.id)
+          end)
+          return list
+      end
+
+
+      -----------------------------------------------------------------
+      -- GOLD TRAINER CARD STATUS PAGE
+      --
+      -- Preserve Gold's native three-page card and expose the Nuzlocke status
+      -- page behind SELECT. A/left/right remain owned by the native card.
+      -----------------------------------------------------------------
+      function G2.ruleNames()
+          local names = {}
+          local lockeType = math.max(0, math.min(3,
+              math.floor(tonumber(mod.save:get("locke_type", 0)) or 0)))
+          if lockeType > 0 then
+              names[#names + 1] = "Locke " .. (LockePreset.names[lockeType] or "CUSTOM")
+          end
+
+          local function truthy(value)
+              if value == true then return true end
+              if type(value) == "number" then return value ~= 0 end
+              if type(value) == "string" then
+                  local v = value:lower()
+                  return v == "true" or v == "on" or v == "yes" or tonumber(v) == 1
+              end
+              return false
+          end
+
+          for _, cat in ipairs(ruleCategories) do
+              for _, rule in ipairs(cat.rules) do
+                  local value = getConfigValue(rule.key, false)
+                  local label
+                  if rule.key == "world_building_tier" then
+                      local tier = tonumber(value) or 0
+                      if tier > 0 then
+                          label = "World " .. ({ [1]="TIER 1", [2]="TIER 2", [3]="TIER 3" })[tier]
+                      end
+                  elseif rule.key == "level_cap_scope" then
+                      local rawScope = mod.save:get("level_cap_scope", nil)
+                      local scope = rawScope == nil and legacyLevelCapScope()
+                          or (tonumber(rawScope) or 0)
+                      if scope > 0 then
+                          label = "Level Caps " .. ({ [1]="GYMS", [2]="E4", [3]="CHAMP", [4]="POST" })[scope]
+                      end
+                  elseif rule.key == "dupes_mode" then
+                      local mode = tonumber(value) or 0
+                      if mode == 1 then label = "Dupes SPEC"
+                      elseif mode == 2 then label = "Dupes FAM" end
+                  elseif rule.numeric then
+                      if (tonumber(value) or 0) > 0 then label = rule.name end
+                  elseif truthy(value) then
+                      label = rule.name
+                  end
+                  if label then names[#names + 1] = label end
+              end
+          end
+          return names
+      end
+
+      function G2.installTrainerCard()
+          if not G2.isGold() then return false end
+          local okCard, TrainerCard = pcall(require, "src.ui.gen2.TrainerCard")
+          local okChrome, Chrome = pcall(require, "src.ui.gen2.Chrome")
+          if not okCard or not okChrome or type(TrainerCard) ~= "table"
+              or type(TrainerCard.new) ~= "function"
+              or type(TrainerCard.update) ~= "function"
+              or type(TrainerCard.drawPanel) ~= "function" then
+              return false
+          end
+          if TrainerCard.__nuzlockeGoldStatusInstalled then return true end
+          TrainerCard.__nuzlockeGoldStatusInstalled = true
+
+          local vanillaNew = TrainerCard.new
+          local vanillaUpdate = TrainerCard.update
+          local vanillaDrawPanel = TrainerCard.drawPanel
+
+          TrainerCard.new = function(game, opts)
+              local self = vanillaNew(game, opts)
+              self.nuzlockeStatusPage = false
+              self.nuzlockeRuleScroll = 0
+              return self
+          end
+
+          TrainerCard.update = function(self, dt)
+              local input = self and self.game and self.game.input
+              if input and input:wasPressed("select") then
+                  self.nuzlockeStatusPage = not self.nuzlockeStatusPage
+                  self.nuzlockeRuleScroll = 0
+                  return
+              end
+              if self and self.nuzlockeStatusPage then
+                  local names = G2.ruleNames()
+                  local visible = 6
+                  local maxScroll = math.max(0, #names - visible)
+                  if input and input:wasPressed("down") then
+                      self.nuzlockeRuleScroll = math.min(maxScroll,
+                          (self.nuzlockeRuleScroll or 0) + 1)
+                  elseif input and input:wasPressed("up") then
+                      self.nuzlockeRuleScroll = math.max(0,
+                          (self.nuzlockeRuleScroll or 0) - 1)
+                  elseif input and (input:wasPressed("b") or input:wasPressed("start")) then
+                      return vanillaUpdate(self, dt)
+                  end
+                  return
+              end
+              return vanillaUpdate(self, dt)
+          end
+
+          TrainerCard.drawPanel = function(self)
+              if not (self and self.nuzlockeStatusPage) then
+                  return vanillaDrawPanel(self)
+              end
+              Chrome.clear()
+              Chrome.box(0, 0, 20, 18)
+              Chrome.print("NUZLOCKE STATUS", 2, 1)
+              local profile = getGameProfile()
+              Chrome.print((profile and profile.region) or "JOHTO", 2, 3)
+
+              local names = G2.ruleNames()
+              local visible = 6
+              local scroll = math.max(0, math.min(
+                  self.nuzlockeRuleScroll or 0, math.max(0, #names - visible)))
+              if #names == 0 then
+                  Chrome.print("No rules active", 2, 6)
+              else
+                  for row = 1, visible do
+                      local name = names[scroll + row]
+                      if not name then break end
+                      local label = tostring(name)
+                      if #label > 16 then label = label:sub(1, 16) end
+                      Chrome.print(label, 2, 4 + row * 2)
+                  end
+              end
+              if scroll > 0 then Chrome.print("^", 18, 5) end
+              if scroll + visible < #names then Chrome.print("v", 18, 15) end
+              Chrome.print("SEL:CARD", 2, 16)
+              Chrome.print("B:EXIT", 12, 16)
+          end
+          return true
+      end
+
+      -----------------------------------------------------------------
+      -- GEN 2 BREEDING / EGG PROVENANCE
+      --
+      -- These events record where an egg was created and hatched without
+      -- inventing a new Egg Clause or consuming an encounter slot by itself.
+      -----------------------------------------------------------------
+      function G2.onEggCreated(ev)
+          if not G2.isGold() or not ev or not ev.egg then return end
+          local game = currentGame or mod.game
+          local area = areaKey(game, nil) or "UNKNOWN"
+          registerArea(area)
+          markVisited(area)
+
+          ev.egg.nuzlockeOrigin = "EGG"
+          ev.egg.eggCreatedLocation = area
+          ev.egg.eggCompatibility = ev.compatibility
+
+          local records = mod.save:get("g2_egg_provenance", {})
+          if type(records) ~= "table" then records = {} end
+          records[#records + 1] = {
+              status = "CREATED",
+              area = area,
+              mother = ev.mother and ev.mother.species or nil,
+              father = ev.father and ev.father.species or nil,
+              compatibility = ev.compatibility,
+              stepsToEgg = ev.stepsToEgg,
+          }
+          mod.save:set("g2_egg_provenance", records)
+      end
+
+      function G2.onEggHatched(ev)
+          if not G2.isGold() or not ev or not ev.mon then return end
+          local game = currentGame or mod.game
+          local area = areaKey(game, nil) or "UNKNOWN"
+          registerArea(area)
+          markVisited(area)
+
+          local mon = ev.mon
+          mon.nuzlockeOrigin = "EGG"
+          mon.encounterType = "egg"
+          mon.eggHatchLocation = area
+          if ev.egg and ev.egg.eggCreatedLocation then
+              mon.eggCreatedLocation = ev.egg.eggCreatedLocation
+          end
+          Identity.ensurePokemonIdentity(mon, game and game.save, "EGG")
+          Identity.setPokemonOrigin(mon, "EGG")
+          Identity.baselineAdd(mon, "EGG")
+
+          local records = mod.save:get("g2_egg_provenance", {})
+          if type(records) ~= "table" then records = {} end
+          records[#records + 1] = {
+              status = "HATCHED",
+              species = ev.species or mon.species,
+              nickname = ev.nickname or mon.nickname,
+              area = area,
+              createdArea = mon.eggCreatedLocation,
+              pokemonId = Identity.pokemonIdentity(mon),
+          }
+          mod.save:set("g2_egg_provenance", records)
+      end
+
+      -----------------------------------------------------------------
+      -- GEN 2 ROAMER PROVENANCE
+      --
+      -- A roaming encounter is still judged by the normal catch policy at the
+      -- map where the Ball is thrown. These events preserve the roaming
+      -- identity and map history so tracker/debug data does not treat each move
+      -- as an unrelated static encounter.
+      -----------------------------------------------------------------
+      function G2.onRoamerMoved(ev)
+          if not G2.isGold() or not ev then return end
+          local state = mod.save:get("g2_roamers", {})
+          if type(state) ~= "table" then state = {} end
+          local key = tostring(ev.index or ev.slot or ev.species or "?")
+          state[key] = state[key] or {}
+          state[key].species = ev.species or state[key].species
+          state[key].map = ev.to
+          state[key].previous = ev.from
+          state[key].reason = ev.reason
+          mod.save:set("g2_roamers", state)
+      end
+
+      function G2.onRoamerEncountered(ev)
+          if not G2.isGold() or not ev then return end
+          local mapId = ev.mapId
+          if mapId then
+              registerArea(mapId)
+              markVisited(mapId)
+          end
+          local state = mod.save:get("g2_roamers", {})
+          if type(state) ~= "table" then state = {} end
+          local key = tostring(ev.index or ev.slot or ev.species or "?")
+          state[key] = state[key] or {}
+          state[key].species = ev.species or state[key].species
+          state[key].level = ev.level or state[key].level
+          state[key].lastEncounter = mapId
+          state[key].encounters = (tonumber(state[key].encounters) or 0) + 1
+          mod.save:set("g2_roamers", state)
+      end
+
+      mod.events:on("battle.damage_dealt", G2.noteDamage)
+      mod.events:on("battle.fainted", G2.onFaint)
+      mod.events:on("breeding.egg_created", G2.onEggCreated)
+      mod.events:on("egg.hatched", G2.onEggHatched)
+      mod.events:on("roamer.moved", G2.onRoamerMoved)
+      mod.events:on("roamer.encountered", G2.onRoamerEncountered)
+
+      function G2.installAll()
+          if not G2.isGold() then return end
+          pcall(G2.installCaptureGate)
+          pcall(G2.installNicknameGate)
+          pcall(G2.installMartGate)
+          pcall(G2.installGiftTracking)
+          pcall(G2.installTrainerCard)
+      end
+
+      pcall(G2.installAll)
+      mod.events:on("game.ready", function() pcall(G2.installAll) end)
+      mod.events:on("save.loaded", function() pcall(G2.installAll) end)
+  end
 
 end
