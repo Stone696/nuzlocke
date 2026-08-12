@@ -1,112 +1,74 @@
 # Changelog
 
-## 2.0.0-beta.25 — 25D4-RBY2 hotfix
+## 2.0.0-beta.26 — Canonical baseline
 
-- **Runtime confirmation:** Blue fresh title now shows **SETUP** and successfully transitions through Oak's intro into the player's bedroom.
-- **Runtime confirmation:** Yellow fresh title now shows **SETUP** and successfully transitions through Oak's intro into the player's bedroom.
-- **Runtime reconfirmation:** Gold still shows **GOLD BETA SETUP** and successfully boots into the player's bedroom.
-- **Existing-save smoke confirmation:** Red loads with the Nuzlocke menus present and appears to be functioning normally in current testing.
-- Restored the R/B/Y title **SETUP** injection to the historically proven menu behavior used by earlier stable builds, removing the later callback-shape dependency that could suppress SETUP on Blue/Yellow.
-- Retained the protected Start-menu pattern where the vanilla menu is built first and Nuzlocke **RULES/TRACKER** entries are appended afterward.
-- Added/retained forward declarations for `getDisplayRoutes` and `getEncounterState` so earlier recovery/rule closures capture the intended locals instead of resolving nonexistent globals.
-- Fixed the reproducible R/B/Y post-intro white screen by preventing the optional Tier 3 Oak World Building TextBox from being pushed directly during `intro.oak_speech.finished`.
-- The normal New Game staged-profile commit at `intro.oak_speech.finished` remains intact; only the unsafe cosmetic screen push was removed from that transition.
-- No battle, capture, Gym Guide, shop, healing, item-rule, level-cap, save-schema, or Gold gameplay enforcement behavior was changed for the RBY2 white-screen fix.
-- Save schema remains **4**.
-- This remains **beta.25**; RBY2 is a runtime hotfix/diagnostic revision, not beta.26.
+The 26B10 development revision is promoted to the canonical **beta.26** baseline. No gameplay behavior was intentionally changed during this promotion; this is a versioning/documentation consolidation so future work can proceed as **beta.26.1, beta.26.2, ...** instead of lettered builds.
 
-### RBY2 startup matrix
+### Runtime evidence promoted with the baseline
 
-| Test | Result |
-| --- | --- |
-| Blue fresh title → SETUP | **PASS** |
-| Blue Oak intro → bedroom | **PASS** |
-| Yellow fresh title → SETUP | **PASS** |
-| Yellow Oak intro → bedroom | **PASS** |
-| Gold title → GOLD BETA SETUP | **PASS** |
-| Gold New Game → bedroom | **PASS** |
-| Red existing save → Nuzlocke menus | **SMOKE PASS** |
-| Red fresh New Game → bedroom | **RETEST RECOMMENDED** |
+- Blue NEW GAME SETUP: PASS.
+- Blue fresh Oak intro -> bedroom: PASS.
+- Yellow NEW GAME SETUP/startup path: PASS from the published/startup line and current beta.26 testing.
+- Gold GOLD BETA SETUP visibility/presentation: PASS; gameplay options remain individually test-required.
+- Yellow starting Money: PASS.
+- Yellow starting Rare Candies: PASS.
+- Yellow Trainer Card two-view design with Start Money/Balls/Candy inside NUZ STATUS: PASS.
+- Yellow forced starter nickname: PASS.
+- Yellow pre-Ball Soft Start with Shiny Clause ON: PASS; route not consumed.
+- Yellow pre-Ball Soft Start with Shiny Clause OFF: PASS; route not consumed.
+- Yellow PokéCenter healing ON/OFF: PASS.
+- Blue Pokédex handoff -> route ledger activation -> configured starting Balls delivered to the home PC: PASS.
+- Blue first legitimate post-activation encounter logging/capture behavior: PASS in the beta.26 development line.
+- Earlier beta.25 runtime passes for Gym Guide Rare Candy, No PP Items, No Escape, healing restrictions, Nickname Rule, No PokéCenter, No Repels and No X Items remain protected.
 
-## 2.0.0-beta.25 — 25D4
+### Included beta.26 work
 
-- **25D4 runtime confirmation:** No Repels passes with Repel, Super Repel, and Max Repel blocked when enabled and normal use restored when disabled.
-- **25D4 runtime confirmation:** No X Items passes in battle.
-- Gym Guide Rare Candy quantity selection is runtime-PASS; only a small centering/alignment cleanup remains.
-- Hardened No Repels and No X Items recognition to accept both item data keys and item display names.
-- The shared `ItemEffects.use` gate rebinds once per diagnostic build instead of trusting a permanent boolean sentinel.
-- No Escape, No Healing Items, No Field Heal, No PP Items, No PokéCenter, No Buying, No Selling, Nickname Rule, Gold Setup, and the Gym Guide selector remain protected runtime-PASS behavior.
-- Gen1 level-cap logic remained unchanged pending clean E4/Champion/Postgame retesting.
-- Gold pre-New-Game SETUP remained runtime-confirmed with the smaller **GOLD BETA** rule surface.
-- Gold and R/B/Y retained separate persisted Setup profiles.
-- Preserved the working Gym Guide registration/dialogue and 1/10/25/50/99 selector UI using the blocking `push_screen` lifecycle.
-- Fixed No PP Items to include PP Up-style boosters alongside Ether/Elixer-family recovery.
-- Strengthened No Mom Heal at Mom's scripted heal/fade path.
-- Left No Buying / No Selling unchanged after runtime confirmation.
-- Fixed `pokemon.received` gift/trade classification.
-- Fixed failed-encounter state access for gifts/trades through the intended `getEncounterState` closure.
-- Fixed Whiteout teardown to preserve the engine's normal wrapped `BattleState.finish` cleanup chain.
-- Narrowed the Red/Blue Route 24 Charmander migration cleanup.
-- Fixed Recover Catches to read the actual flat rule keys.
-- Fixed post-catch Overworld/Town fallback handling.
-- Corrected affected lifecycle consumers to unwrap `game.ready` as `{ game = liveGame }`.
-- Retained shared in-game Start Menu RULES/TRACKER integration and isolated Gold adapters.
-- Preserved the R/B/Y two-row Trainer Card rule display.
-- Save schema remained **4**.
+- Preserves the published 25D4-RBY2 startup/menu white-screen hotfix.
+- Soft Start / first-Ball encounter activation work.
+- Deferred configured starting Poké Balls at the Pokédex handoff.
+- Route-ledger activation feedback at the same boundary.
+- Gold-specific reduced BETA SETUP surface and beta-aware descriptions.
+- Mandatory scripted starter/gift naming when Nickname Rule is ON.
+- R/B/Y starter canonicalization work toward Pallet Town.
+- Immutable New Game start-resource snapshot shown inside NUZ STATUS.
+- Two-page Trainer Card design only; no separate RUN START page.
+- Rival T3 timing improvement so trainer reveal occurs before the added flavor line.
 
-## 2.0.0-beta.24
+### Known issues carried into beta.26
 
-- Attempted Gold automatic New Game Setup through the shared intro build hook. Runtime testing showed that implementation still remained vanilla; beta.25 moved Gold Setup to the pre-New-Game title menu.
-- R/B/Y title-screen SETUP remained unchanged.
-- Save schema remained 4.
+- No Buying / No Selling do not currently enforce on the Gen1Recomp 0.1.79 test environment.
+- No Mom Heal still allows vanilla rest dialogue before the Nuzlocke refusal.
+- Opening Oak/rival text can repeat, duplicate or have poor spacing.
+- Viridian Mart first-entry Shop Clerk text has a spacing/line-break problem.
+- Rival T3 timing still needs final placement before the opponent Pokémon is sent out.
+- Pre-Pokédex starter Catch Info location still needs explicit confirmation; post-Pokédex Pallet Town is confirmed in Yellow.
+- General world-building/battle textbox wrapping/paging needs a dedicated cleanup pass.
+- Gold gameplay adapters remain conservative and individually test-required.
 
-## 2.0.0-beta.23
+---
 
-- Added experimental Gold Trainer Card status integration.
-- Added Gen 2 Egg/Day Care provenance and roaming Pokémon provenance.
-- Generation-gated the R/B/Y Gym Guide integration.
-- Save schema remained 4.
+## Internal beta.26 development history
 
-## 2.0.0-beta.22
+The following lettered revisions are retained only as historical development notes. They are no longer the active versioning scheme.
 
-- Added experimental Gold generation-native capture, permadeath, nickname, mart, starter/gift, and area-tracking adapters.
-- Added Gen 1 + Gold manifest targeting.
-- Save schema remained 4.
+### 26B10
+- Restored Gold-mode state in the shared setup screen.
+- Added Gold beta-aware header/descriptions and reduced setup surface.
+- Forced scripted starter/gift nickname entry when Nickname Rule is ON.
+- Moved R/B/Y starter handling toward immediate Pallet Town canonicalization.
+- Queued rival/Gym T3 flavor behind the vanilla trainer reveal.
 
-## 2.0.0-beta.21
+### 26B9
+- Removed the separate RUN START Trainer Card page.
+- Moved immutable starting Money/Balls/Candies into the existing NUZ STATUS list.
 
-- Added GSC family/version-profile architecture and experimental Gold targeting groundwork.
-- Added built-in GSC progression through Red plus provider-driven Expanded Postgame architecture.
-- Expanded the R/B/Y Trainer Card rule window to two visible rows.
+### 26B8
+- Continued Soft Start boundary/starter cleanup.
+- Added immutable starting-resource snapshot fields.
+- Shortened encounter-used denial text.
 
-## 2.0.0-beta.20
+### 26B7
+- Added additional Soft Start state cleanup and failed-encounter tracker work.
 
-- Compatibility hardening and regression pass built directly from beta.19.
-- Preserved schema 4 while strengthening item/purchase/capture policy exports, provider surfaces, level-cap enforcement, persistent identity/recovery, Trainer Card/Catch Info, and Gym Guide Rare Candy behavior.
-
-## Reconstructed earlier history from surviving Lua snapshots
-
-### 2.0.0-beta.16
-
-- Fixed the Setup-menu helper scoping/order crash.
-- Gym Guide Rare Candy behavior remained on the beta.8 direct-row architecture.
-
-### 2.0.0-beta.15
-
-- Gen1Recomp 0.1.77 compatibility pass.
-- Save schema advanced to 3 and unfinished Wonderlocke behavior remained disabled/dormant.
-
-### 2.0.0-beta.14
-
-- Added the future-safe save-schema/migration framework.
-- Continued tracker/recovery hardening and kept Wonderlocke non-active.
-
-### Present by 2.0.0-beta.8
-
-- Added experimental Wonderlocke/provider work and additional rule/profile infrastructure.
-- Established the Gym Guide direct-row composition architecture that remains protected in beta.25.
-
-### 2.0.0-beta.4
-
-- Added World Building tiers and associated flavor/mechanic messaging.
-- Added level-cap-aware Gym Guide feedback before the Rare Candy selector.
+### 26B6
+- Initialization-safe Soft Start implementation; Blue and Gold SETUP visibility passed.

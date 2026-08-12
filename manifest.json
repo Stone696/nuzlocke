@@ -1,7 +1,7 @@
 {
   "id": "nuzlocke",
   "name": "Nuzlocke",
-  "version": "1.0.4",
+  "version": "2.0.0-beta.26",
   "api": 2,
   "entry": "main.lua",
   "profile": "content",
@@ -14,7 +14,7 @@
   "dependencies": [],
   "optional_dependencies": [],
   "conflicts": [],
-  "description": "R/B/Y startup diagnostic from beta.25 25D4-RBY1: preserves restored menus and suppresses the cosmetic Oak TextBox at the intro-to-house transition.",
+  "description": "Canonical beta.26 baseline promoted from the runtime-tested 26B10 line: Soft Start/Pokedex Ball activation, Gold beta-aware setup, mandatory scripted starter naming, Pallet Town starter canonicalization, and two-page Trainer Card status.",
   "github": "bryanthaboi/nuzlocke",
   "games": [
     "gen1",
