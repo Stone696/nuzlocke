@@ -10,7 +10,7 @@
 -- IMPORTANT: beta.25 is built only from beta.24. Older behavior is ported
 -- only as targeted fixes after comparison; no older branch is restored wholesale.
 return function(mod)
-  mod.exports.__beta25 = { build = "25D4", setupProfileScope = "gen1" }
+  mod.exports.__beta25 = { build = "25D4-RBY2", setupProfileScope = "gen1" }
   local Stats = require("src.pokemon.Stats")
   local Growth = require("src.pokemon.Growth")
   local Data = require("src.core.Data")
@@ -21,6 +21,8 @@ return function(mod)
   local currentSave
   local refreshGymGuideVisibility
   local getGameVersion
+  local getDisplayRoutes
+  local getEncounterState
   local LEGENDARIES, MYTHICALS
   local finalizeNuzlockeBattle
   local evaluateItemUsePolicy
@@ -3500,13 +3502,19 @@ return function(mod)
       return worldMessage(game, tier1, tier2, tier3)
   end
 
-  mod.events:on("intro.oak_speech.finished", function()
-      local ver = getGameVersion and getGameVersion() or "RED"
-      if (ver == "RED" or ver == "BLUE" or ver == "YELLOW") and worldTier(currentGame) >= 3 then
-          worldOnce(currentGame, "oak_intro",
-              "Professor Oak has a feeling this run will be interesting.\nYour Nuzlocke will remember the result.")
-      end
-  end)
+  ---------------------------------------------------------------------
+  -- R/B/Y INTRO TRANSITION SAFETY (25D4-RBY2)
+  --
+  -- Do not push a TextBox from intro.oak_speech.finished. On the current
+  -- Gen1Recomp lifecycle this event sits directly on the fade/handoff into
+  -- the player's house. The beta.25 game.ready payload fix makes currentGame
+  -- a live Game here, which means the old cosmetic worldOnce() call can now
+  -- actually push a screen during that transition. Older builds often held
+  -- the game.ready event wrapper instead, leaving this cosmetic path inert.
+  --
+  -- The setup-profile commit listener above remains unchanged. Only this
+  -- optional T3 Oak flavor line is suppressed for the diagnostic build.
+  ---------------------------------------------------------------------
 
 
   ---------------------------------------------------------------------
@@ -4500,7 +4508,7 @@ return function(mod)
                   if locked then
                       Font.draw("[LK]", 116, 10)
                   else
-                      Font.draw("D3", 136, 10)
+                      Font.draw("R1", 136, 10)
                   end
               end
 
@@ -4772,7 +4780,7 @@ return function(mod)
       return true
   end
 
-  local function getDisplayRoutes(game)
+  getDisplayRoutes = function(game)
       syncCurrentArea(game)
       local list = {}
 
@@ -5978,8 +5986,12 @@ return function(mod)
           result = items
       end
 
+      local goldMode = mod.exports.__beta25.runtimeIsGold(game)
+
       for _, item in ipairs(result) do
           -- NEW GAME: stage the pending rules for the upcoming save.
+          -- This is the established R/B/Y callback path used by beta.20 and
+          -- earlier. Gold uses its native value-dispatch adapter below.
           if item and item.label == "NEW GAME" and type(item.onSelect) == "function" then
               local originalNewGame = item.onSelect
               item.onSelect = function()
@@ -5988,10 +6000,6 @@ return function(mod)
                       pendingNewGameRules = loadSetupProfileFromDisk()
                           or makeDefaultPreGameRules()
                   end
-                  -- Save exactly what the player has configured.  The visible
-                  -- SAVE SETUP control is still useful for reusing a profile
-                  -- later; this automatic write also makes NEW GAME reliable
-                  -- if the player forgets to press it.
                   saveSetupProfileToDisk(pendingNewGameRules)
                   stageNewGameProfile()
                   originalNewGame()
@@ -6014,10 +6022,9 @@ return function(mod)
           end
       end
 
-      -- Use the engine's FINAL title-menu result as the source of truth.
-      -- If CONTINUE exists, the engine has already resolved a valid save for
-      -- this version/slot (including portable mode and save-slot routing).
-      -- This is more reliable than independently re-checking a filename here.
+      -- Beta.20's R/B/Y rule: trust the FINAL vanilla menu only for whether
+      -- CONTINUE exists, then insert SETUP before NEW GAME. Do not require a
+      -- particular NEW GAME row shape before inserting the R/B/Y entry.
       local hasContinue = false
       for _, item in ipairs(result) do
           if item and item.label == "CONTINUE" then
@@ -6026,38 +6033,32 @@ return function(mod)
           end
       end
 
-      -- SETUP is strictly pre-new-game. R/B/Y rows use {label,onSelect};
-      -- Gold rows use {label,value}. Support each native row shape rather than
-      -- trying to force the Gen 1 callback form onto Gold.
-      local newGameRow
-      for _, item in ipairs(result) do
-          if item and item.label == "NEW GAME" then
-              newGameRow = item
-              break
-          end
-      end
-      if newGameRow then
-          if type(newGameRow.onSelect) == "function" then
-              -- Preserve the established R/B/Y behavior: SETUP is shown only
-              -- before the first save exists.
-              if not hasContinue then
-                  mod.ui.insertBefore(result, "NEW GAME", {
-                      label = "SETUP",
-                      onSelect = function()
-                          mod.exports.__beta25.selectSetupProfileScope(game)
-                          if not pendingNewGameRules or not pendingRulesDirty then
-                              pendingNewGameRules = loadSetupProfileFromDisk()
-                                  or makeDefaultPreGameRules()
-                              pendingRulesDirty = false
-                          end
-                          mod.ui.push(game, "NuzlockeConfigScreen", { preGame = true })
+      if not goldMode then
+          if not hasContinue then
+              mod.ui.insertBefore(result, "NEW GAME", {
+                  label = "SETUP",
+                  onSelect = function()
+                      mod.exports.__beta25.selectSetupProfileScope(game)
+                      if not pendingNewGameRules or not pendingRulesDirty then
+                          pendingNewGameRules = loadSetupProfileFromDisk()
+                              or makeDefaultPreGameRules()
+                          pendingRulesDirty = false
                       end
-                  })
+                      mod.ui.push(game, "NuzlockeConfigScreen", { preGame = true })
+                  end
+              })
+          end
+      else
+          -- Preserve beta.25's dedicated Gold row/value path. This diagnostic
+          -- build is aimed at R/B/Y and does not replace the Gold adapter.
+          local newGameRow
+          for _, item in ipairs(result) do
+              if item and item.label == "NEW GAME" then
+                  newGameRow = item
+                  break
               end
-          elseif newGameRow.value == "new" then
-              -- Gold can offer CONTINUE and NEW GAME at the same time. SETUP
-              -- belongs immediately before NEW GAME regardless of whether an
-              -- older save exists, because it configures the upcoming run.
+          end
+          if newGameRow and newGameRow.value == "new" then
               mod.ui.insertBefore(result, "NEW GAME", {
                   label = "SETUP",
                   value = "nuzlocke_setup",
@@ -7419,7 +7420,7 @@ return function(mod)
       return states
   end
 
-  local function getEncounterState(key)
+  getEncounterState = function(key)
       if not key then return nil end
       return encounterStates()[key]
   end

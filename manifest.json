@@ -1,7 +1,7 @@
 {
   "id": "nuzlocke",
   "name": "Nuzlocke",
-  "version": "2.0.0-beta.25",
+  "version": "1.0.4",
   "api": 2,
   "entry": "main.lua",
   "profile": "content",
@@ -14,7 +14,7 @@
   "dependencies": [],
   "optional_dependencies": [],
   "conflicts": [],
-  "description": "A configurable Nuzlocke for Gen1Recomp with regression-hardened Red/Blue/Yellow support and conservative experimental Gold compatibility adapters.",
+  "description": "R/B/Y startup diagnostic from beta.25 25D4-RBY1: preserves restored menus and suppresses the cosmetic Oak TextBox at the intro-to-house transition.",
   "github": "bryanthaboi/nuzlocke",
   "games": [
     "gen1",
