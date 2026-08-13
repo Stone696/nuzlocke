@@ -1,0 +1,31 @@
+-- Human-facing metadata for Gen1Recomp's mod manager and tooling.
+return {
+  summary = "Configurable Nuzlocke rules, tracking, status, and challenge options for R/B/Y and Gold.",
+  author = "bryanthaboi (updated by Stone696)",
+  contact = "https://github.com/Stone696/nuzlocke",
+  tags = { "ruleset", "hardcore", "quality-of-life", "ui" },
+  differences = {
+    changed = {
+      "Nuzlocke rules can be configured and enforced in-game",
+      "encounter eligibility, deaths, level caps, item use, shops, and healing can be restricted",
+    },
+    added = {
+      "Nuzlocke Setup and active-save Rules screens",
+      "Encounter Tracker, Catch Info, and Nuzlocke run-status screens",
+      "presets, area splits, starter randomization, challenge restrictions, and compatibility APIs",
+    },
+    known = {
+      "Gold remains beta and some Gold rule paths still need dedicated runtime verification",
+      "Nuzlocke-owned screens are not yet fully themed by every UI replacement",
+      "lost-encounter presentation and Pokemon-death presentation still need a backward-compatible separation pass",
+      "beta.29.0.2 scripted gift/nickname, Gold PC-gift, and static-provenance fixes still need targeted runtime confirmation",
+      "Gen1Recomp 0.1.83 is source-audited in beta.29.1.0 but still needs the release-candidate gameplay runtime pass",
+      "Gen1Recomp may show a redundant update notice for beta-tagged releases because its current updater compares only the x.y.z portion",
+    },
+  },
+  credits = {
+    { who = "bryanthaboi", for_ = "original Nuzlocke mod and project baseline" },
+    { who = "Stone696", for_ = "updater of bryanthaboi's original Nuzlocke mod" },
+  },
+  compat = { engine = ">=0.1.81 <0.1.84", modApi = 2 },
+}

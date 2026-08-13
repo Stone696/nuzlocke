@@ -1,12 +1,12 @@
 {
   "id": "nuzlocke",
   "name": "Nuzlocke",
-  "version": "2.0.0-beta.27.16",
+  "version": "2.0.0-beta.29.1.0",
   "api": 2,
   "entry": "main.lua",
   "profile": "content",
-  "category": "GAMEPLAY",
-  "game_version": ">=0.1.78 <2.0.0",
+  "category": "BALANCE",
+  "game_version": ">=0.1.81 <0.1.84",
   "priority": 100,
   "permissions": [
     "engine_internals"
@@ -14,11 +14,12 @@
   "dependencies": [],
   "optional_dependencies": [],
   "conflicts": [],
-  "description": "Final beta.27 release candidate for configurable Nuzlocke enforcement across R/B/Y and Gold. Includes save-aware Setup, encounter splits, BST/glitch/static/Game Corner rules, Gold nickname enforcement, rival forgiveness, live mod-compatible boss caps, tracker/status integration, and compatibility API v22.",
-  "github": "bryanthaboi/nuzlocke",
+  "description": "Configurable Nuzlocke enforcement, encounter tracking, challenge rules, run status, and quality-of-life options for Red, Blue, Yellow, and beta Gold support.",
+  "github": "Stone696/nuzlocke",
   "games": [
-    "gen1",
+    "red",
+    "blue",
+    "yellow",
     "gold"
-  ],
-  "gen2compat": true
+  ]
 }
