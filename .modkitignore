@@ -1,0 +1,8 @@
+tests/
+.github/
+.luarc.json
+.gitignore
+docs/TESTING.md
+docs/screenshots/README.md
+
+docs/development/
