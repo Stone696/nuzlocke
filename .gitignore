@@ -1,0 +1,9 @@
+# Generated/local files
+*.zip
+*.log
+.DS_Store
+Thumbs.db
+
+# Local runtime/test output
+STATIC_CHECKS.txt
+CHECKSUMS.sha256
