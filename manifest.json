@@ -1,7 +1,7 @@
 {
   "id": "nuzlocke",
   "name": "Nuzlocke",
-  "version": "2.0.0-beta.27",
+  "version": "2.0.0-beta.27.16",
   "api": 2,
   "entry": "main.lua",
   "profile": "content",
@@ -14,7 +14,7 @@
   "dependencies": [],
   "optional_dependencies": [],
   "conflicts": [],
-  "description": "beta.27 promoted directly from beta.26.6 as the new public baseline. Carries the tested beta.26-line R/B/Y startup, Soft Start, tracker/rules/catch behavior, Yellow Mart and Mom-heal enforcement, plus Gold startup/menu/tracker/catch-info support; Gold forced nicknames, Gold NUZ STATUS access, ordinary Gold gift denial, and Gold Whiteout remain open/test-required.",
+  "description": "Final beta.27 release candidate for configurable Nuzlocke enforcement across R/B/Y and Gold. Includes save-aware Setup, encounter splits, BST/glitch/static/Game Corner rules, Gold nickname enforcement, rival forgiveness, live mod-compatible boss caps, tracker/status integration, and compatibility API v22.",
   "github": "bryanthaboi/nuzlocke",
   "games": [
     "gen1",

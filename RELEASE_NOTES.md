@@ -1,41 +1,22 @@
-# Nuzlocke 2.0.0-beta.27 Release Notes
+# 2.0.0-beta.27.16 release notes
 
-beta.27 is promoted **directly from beta.26.6** and is the new canonical public baseline.
+beta.27.16 is the final release candidate for the complete beta.27 feature line. It is built directly from beta.27.15 and preserves save schema 4, manifest API 2, and compatibility API v22.
 
-The promotion intentionally changes only release/version metadata. Gameplay logic is unchanged from the beta.26.6 test build.
+This pass reviewed five reported release blockers against both the mod and the audited Gold engine:
 
-## Newly recorded runtime evidence
+- Kept R/B/Y's `GAME_CORNER_PRIZE_ROOM` and Gold's `CELADON_GAME_CORNER_PRIZE_ROOM` as distinct, correct engine IDs and centralized all Game Corner IDs to prevent accidental cross-generation substitution.
+- Fixed Gold Game Corner wrappers so `Specials.HANDLERS` and `Specials.ALL` are captured, wrapped, and restored independently. Missing registry entries remain missing across installation and reload.
+- Restored Gold Nickname Rule installation and configuration visibility. Supported catches cannot decline the prompt, empty/all-space names cannot exit, and scripted gifts—including the Johto starter—block on Gold's native naming screen before the story VM resumes.
+- Confirmed native Gold `loadwildmon` encounters already use `battle.wild`; additionally broadened the Ball gate to accept explicit static/fixed provenance from other mods that construct fixed battles outside the native `opts.wild` path.
+- Clarified Ball Use Ban tier 4 as `STANDARD`: it bans Poke, Great, Ultra, and Master Balls while leaving specialty/custom Balls eligible. `ALL` remains the distinct every-Ball ban. Persisted numeric values and mechanics are unchanged, and denial guidance now accurately describes the remaining scope.
 
-- Gold fresh startup and New Game -> house: PASS.
-- Gold in-game RULES: PASS.
-- Gold in-game TRACKER: PASS.
-- Gold Catch Info: PASS.
-- Gold Cyndaquil starter acquisition: PASS.
-- Yellow beta.26.6 RULES/TRACKER: PASS.
-- Yellow beta.26.6 catch behavior / encounter tracking: PASS.
-- Yellow beta.26.2 1st Catch toggle after an area's first encounter: PASS.
+The package includes the full mod source, manifest, documentation, compatibility notes, checksums, and repeatable release tests. The final automated gate passes, but Gold rules labeled TEST REQUIRED should still receive the disposable-save manual pass in `TESTING.md` before a stable/non-beta tag.
 
-## Known Gold limitations at release
+## Upgrade notes
 
-- Forced Nicknames currently FAIL on Gold; starter acquisition did not open a nickname prompt.
-- Gold's native Trainer Card already has two sides, so the R/B/Y NUZ STATUS back-side design does not appear. A Gold-native access design is required.
-- Ordinary Gold gift denial is still runtime-test-required.
-- Gold Whiteout run termination is still runtime-test-required.
-
-## Other open validation
-
-- Gen 1 Whiteout teardown/save deletion.
-- fallback/external gift/trade classification.
-- failed-result marquee and progression-aware T3 TV.
-- battle-text wrapping/paging.
-- Yellow battle-lag A/B profiling.
-
-## Development lineage
-
-beta.27 is now the protected baseline. Future builds must be created only from the immediately previous numeric revision:
-
-- beta.27.1 from beta.27
-- beta.27.2 from beta.27.1
-- and so on.
-
-README.md and CHANGELOG.md remain separate and retain the protected documentation style unless explicitly changed by the user.
+- Save schema remains 4; no destructive migration is introduced.
+- Tier 4 Ball Use Ban saves remain value `4`; only its displayed name changes from `MASTER` to `STANDARD`.
+- Fully quit and relaunch Gen1Recomp after replacing an older build so module-level wrappers cannot survive from the previous session.
+- Back up important saves before validating Whiteout or Permadeath.
+- Setup appears only when the final title menu has no detected save/CONTINUE entry.
+- Route, Mt. Moon, and Safari split modes default OFF and can be changed without deleting tracker history.
