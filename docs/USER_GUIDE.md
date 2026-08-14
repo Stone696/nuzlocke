@@ -1,6 +1,6 @@
 # Nuzlocke 2.0 User Guide
 
-This is the complete player guide for Nuzlocke `2.0.0-beta.29.1.0` on Pokémon Gen1Recomp.
+This is the complete player guide for Nuzlocke `2.0.0-beta.29.2.7` on Pokémon Gen1Recomp.
 
 The mod is focused first on **Red, Blue, and Yellow**. **Gold is supported as a beta target** with a deliberately smaller rule surface and additional TEST REQUIRED paths. Silver and Crystal are not currently declared targets.
 
@@ -49,7 +49,7 @@ The current rule UI uses:
 
 For current boolean/multi-state rules, Up/Down is navigation rather than value-changing input.
 
-Collapsible category headers are supported. A later UI pass is planned to use native directional glyphs consistently for expanded and collapsed states.
+Collapsible category headers use Gen1Recomp's native theme-aware directional glyphs: the sideways cursor glyph indicates a collapsed section and the native more/down glyph indicates an expanded section.
 
 ## 4. Presets
 
@@ -71,7 +71,7 @@ Presets are starting configurations. The visible rules remain the authoritative 
 | **Save Setup** | Saves the next-new-game setup profile. R/B/Y and Gold profiles are stored separately so configuring one does not replace the other. |
 | **Save Rules** | Saves the current active-save rule configuration. |
 | **Recover Catches** | R/B/Y recovery flow for older-save Pokémon whose encounter location could not be recovered automatically. |
-| **Money** | R/B/Y new-game starting money, 0–9999. |
+| **Money** | R/B/Y new-game starting money, 0–9999. Default is **3000**; an explicit **0000** is valid. |
 | **Poke Balls** | R/B/Y new-game starting Poké Balls, placed in the room PC. |
 | **Rare Candy** | R/B/Y new-game starting Rare Candies, placed in the room PC. |
 | **Gym Guide Rare Candy** | R/B/Y Gym Guides keep their normal dialogue and can offer repeatable Rare Candy batches when enabled. This is separate from the starting Rare Candy setup value. |
@@ -125,7 +125,7 @@ The intended player-facing meaning is:
 - **LOST** — an eligible encounter opportunity that was not caught, such as a fled or defeated encounter.
 - **DEATH** — an owned Pokémon that fainted under Permadeath.
 
-This beta still has a known backward-compatibility/presentation problem because historical/current death bookkeeping can overlap older `LOST` storage/display semantics. A dedicated migration/presentation pass is planned. Until that work lands, do not interpret every legacy `LOST` value as a pure failed-encounter count.
+beta.29.2.0 separates these meanings. Failed encounter opportunities remain `FAILED` area states and are shown as **LOST ENC.**; new owned-Pokémon death history rows use `DEAD`. On load, older `LOST` history rows are migrated to `DEAD` only when death evidence is present. The legacy `nuzlocke_losses` counter is retained internally so older saves remain compatible.
 
 ## 7. Clauses
 
@@ -138,9 +138,15 @@ This beta still has a known backward-compatibility/presentation problem because 
 
 ## 8. Encounter-area splits — R/B/Y
 
-### Route Splits
+### Common Route Splits
 
-Optional cardinal splitting for Routes 1 through 25. The underlying physical map remains recorded even when the projected encounter-area label changes.
+R/B/Y now offer three route splits independently instead of dividing every numbered route:
+
+- **Route 2 Split** — North and South can count separately because Viridian Forest physically separates the two sections and normal progression reaches them at different stages.
+- **Route 10 Split** — North and South can count separately because Rock Tunnel sits between the two route sections.
+- **Route 20 Split** — West and East can count separately because Seafoam Islands divide the route into opposite-side sections during normal progression.
+
+Each toggle defaults OFF. All other numbered routes remain one encounter area. Physical provenance is still retained internally so older CARDINAL-mode saves can be collapsed safely without deleting tracker history or granting new legal encounters.
 
 ### Mt Moon Splits
 
@@ -255,7 +261,7 @@ beta.28.20 specifically hardened Whiteout/Permadeath against trainer systems tha
 | **Skip Catch Demo** | Gold-only setup option that skips the Route 29 catching demonstration while preserving progression. |
 | **Catch Info** | Enables the supported owned-Pokémon Catch Info surface. |
 | **Area Guide** | Enables the expanded Encounter Tracker area view. |
-| **B-Button Run** | Hold B while normally walking to move faster. Bike, surf, scripted movement, and menus remain separate. |
+| **Running Shoes** | Hold B while normally walking to move faster. Bike, surf, scripted movement, and menus remain separate. |
 
 ## 16. Existing saves and migrations
 
@@ -309,10 +315,10 @@ A known runtime failure overrides static success. A materially changed code path
 
 ## 20. Known beta limitations
 
-- beta.29.1.0 carries the beta.29.0.2 reviewed fixes for scripted gift history naming, Gold PC-routed gift tracking, and stale scripted-static provenance unchanged. Those paths remain runtime-test required until confirmed in game.
+- **Current release blocker:** a reported R/B/Y Gym Leader case (Misty) left a Pokémon usable after it fainted even though Permadeath worked in an ordinary battle; the Pokémon could then be healed at a Pokémon Center. Treat Gym Leader/special-trainer post-battle Permadeath reconciliation as unverified until the current candidate is fixed and runtime-retested.
+- beta.29.2.0 carries the beta.29.0.2 reviewed fixes for scripted gift history naming, Gold PC-routed gift tracking, and stale scripted-static provenance unchanged. Those paths remain runtime-test required until confirmed in game.
 - Gold still has TEST REQUIRED rule paths.
 - Nuzlocke-owned Setup/Rules/Tracker/NUZ STATUS/Catch Info screens are not yet fully composed/themed by every UI replacement.
-- Lost-encounter and Pokémon-death presentation still need a backward-compatible separation pass.
 - Authentic runtime screenshots are not yet bundled into this candidate.
 - Gen1Recomp 0.1.83 is source-audited and allowed by this candidate, but the exact 0.1.83 gameplay runtime pass is still required before release approval.
 - For an **unpublished local test build**, do not use the Mod Manager Update action: it installs the latest published repository release, which can replace a newer local candidate with an older public build. Current Gen1Recomp beta-tag comparison may also display a redundant `v2.0.0 available` notice.
@@ -372,3 +378,16 @@ Include as much of the following as possible:
 - Built for **Gen1Recomp** and its native mod platform.
 
 Pokémon and related names are trademarks of Nintendo / Creatures Inc. / GAME FREAK inc. This fan-made mod contains no ROM.
+
+## Lock-In rules
+
+### Gym Lock-In
+
+When enabled, entering a supported Gym commits the run to that Gym until its Leader is defeated. Ordinary exits are rejected before the destination transition runs. Already-cleared Gyms remain open, and unknown/unrecognized Gym maps fail open rather than risking a softlock. The rule is available in Setup and NUZ RULES.
+
+### Dungeon Lock-In
+
+Dungeon Lock-In deliberately targets known **multi-exit** dungeon families rather than every cave/interior. The exterior entrance used to enter is sealed behind the player; reaching a different legitimate exterior exit clears the lock. Escape Rope is also rejected while the lock is active. A save loaded inside a dungeon without reliable entry-side state fails open. This conservative design avoids turning dead-end locations into permanent traps.
+
+Lock-In feedback follows the World Building tier when enabled. With World Building OFF, a plain rule-enforcement explanation is still shown.
+

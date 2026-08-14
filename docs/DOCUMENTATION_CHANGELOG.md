@@ -1,6 +1,80 @@
+## 2.0.0-beta.29.2.7 — runtime-driven startup and cap compatibility
+- Documented pre-battle composed-party cap preview, R/B starter-presentation correction, lock-in section move, and current Yellow runtime evidence.
+- Added focused regression targets for Stronger Trainers cap display and protected Yellow menu glyph/QoL behavior.
+
 # Documentation Changelog
 
 This file records public-document changes separately from gameplay/code changes. `CHANGELOG.md` remains the authoritative product/version history. Documentation entries explain what changed and the reason/goal so future releases do not silently rewrite the public record.
+
+## 2.0.0-beta.29.2.5 — startup/UI and compatibility documentation
+
+### Public docs
+
+- Renamed B-button running to **Running Shoes** and documented its Quality-of-Life placement.
+- Documented the R/B starter preview correction, Yellow randomized-starter post-lab presentation handling, lowered Trainer Card prompt, Maximum BST digit editor, and final-composed trainer-cap observation.
+- Promoted new Blue/Yellow runtime PASS evidence while leaving repeated opening-sequence dialogue as an unresolved regression target.
+- Kept the right-arrow/down-arrow collapse-glyph contract explicit for Setup and in-game Rules.
+
+### Internal docs
+
+- Added beta.29.2.5 lineage, Stronger Trainers compatibility rationale, protected Yellow First Rival Mercy evidence, and focused startup/dialogue regression tests.
+
+## 2.0.0-beta.29.2.4 — common route-split documentation
+
+### Public docs
+
+- Replaced blanket Route 1–25 split wording with the independently selectable Route 2, Route 10, and Route 20 rules.
+- Added the geography/progression rationale for each common split and documented legacy CARDINAL-save migration behavior.
+- Updated the compatibility API description to retain `routes = 0` while exposing `route_2`, `route_10`, and `route_20`.
+- Preserved Mt. Moon/Safari split documentation and all beta.29.2.3 numeric-hardening notes.
+
+### Internal docs
+
+- Added beta.29.2.4 lineage, migration safety, regression obligations, and protected encounter-history behavior.
+
+## 2.0.0-beta.29.2.3 — numeric-boundary and review documentation
+
+### Public docs
+
+- Advanced current candidate references to beta.29.2.3.
+- Documented finite-number Setup/profile hardening as a defensive corrupted/external-input safeguard, not a change to normal gameplay arithmetic.
+- Preserved the beta.29.2.2 lock-in and trainer-cap runtime obligations.
+
+### Internal docs
+
+- Added durable conclusions for the latest investigated RAM, serialization, reload, RNG, Safari, turbo, logging, shadowing, and faint-transition edge cases.
+- Recorded why no production change was made for rejected or unconfirmed reports, what protected behavior discouraged speculative changes, and what evidence would justify reconsideration.
+- Added finite-number corruption regression coverage and retained persistent-history idempotence/static-tooling follow-ups.
+
+## 2.0.0-beta.29.2.2 — lock-in and compatibility documentation
+
+### Public docs
+
+- Documented **Gym Lock-In** and **Dungeon Lock-In**, including Setup/NUZ RULES availability, already-cleared Gym behavior, conservative multi-exit dungeon coverage, and older-save fail-open handling.
+- Documented Dungeon Lock-In protection against Escape Rope plus Dig, Teleport, and Fly when those field moves would otherwise provide an escape path.
+- Clarified that Level Cap Scope **POST** is the current postgame/additional-content provider scope rather than restoring the retired separate toggle.
+- Documented broader nested trainer-roster ace discovery as compatibility hardening that still requires runtime validation against modified trainer content.
+- Updated install guidance for the known launcher behavior that can offer an older published build for this multi-part beta tag line; manual installation of the newest package remains recommended.
+- Updated current candidate identity, feature-confidence notes, runtime matrix, and validation counts for beta.29.2.2.
+
+### Internal docs
+
+- Recorded the immediate-parent lineage and protected beta.29.2.1 paths.
+- Added durable rationale for confirmed fixes and for reviewed speculative issues that did not justify production changes.
+- Added targeted lock-in, trainer-cap, Permadeath, and updater regression obligations without attributing them to ephemeral discussion history.
+- Retained the documentation-provenance isolation rule: project records preserve durable facts, evidence, decisions, and uncertainty without embedding ephemeral source references.
+
+## 2.0.0-beta.29.1.1 — starting-money hotfix documentation
+
+### Public docs
+
+**Changed**
+- Advanced current-version references to beta.29.1.1.
+- Documented the corrected R/B/Y $3,000 default while preserving an explicitly selected $0.
+- Downgraded current-version Starting Money confidence to TEST REQUIRED pending runtime confirmation of the hotfix.
+
+**Reason / goal**
+- Keep player-facing defaults and confidence claims aligned with the runtime-confirmed beta.29.1.0 regression and the narrow beta.29.1.1 fix.
 
 ## 2.0.0-beta.29.1.0 — Gen1Recomp 0.1.83 release-readiness documentation
 
@@ -130,7 +204,7 @@ This file records public-document changes separately from gameplay/code changes.
 - Standardized public credit wording to bryanthaboi as original author and Stone696 only as updater.
 - Removed feature-level/tester attribution language from public documentation.
 - Renamed the internal contribution/backlog audit to an attribution-neutral backlog/runtime audit.
-- Removed platform-specific conversation references from internal development records.
+- Removed platform-specific provenance references from internal development records.
 - Tightened compatibility-document wording so it stays focused on interoperability evidence.
 - Updated the structural release gate to enforce the narrower public credit wording.
 

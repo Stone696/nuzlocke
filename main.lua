@@ -1,6 +1,6 @@
--- Nuzlocke Rules 2.0.0-beta.29.1.0 - Gen1Recomp 0.1.83 compatibility hardening
--- Built directly from beta.29.0.2 with no intended gameplay behavior change.
--- Numeric lineage: beta.27 -> beta.27.1 -> beta.27.2 -> beta.27.3 -> beta.27.4 -> beta.27.5 -> beta.27.6 -> beta.27.7 -> beta.27.8 -> beta.27.9 -> beta.27.10 -> beta.27.11 -> beta.27.12 -> beta.27.13 -> beta.27.14 -> beta.27.15 -> beta.27.16 -> beta.28 -> beta.28.1 -> beta.28.2 -> beta.28.3 -> beta.28.4 -> beta.28.5 -> beta.28.6 -> beta.28.7 -> beta.28.8 -> beta.28.9 -> beta.28.10 -> beta.28.11 -> beta.28.12 -> beta.28.13 -> beta.28.14 -> beta.28.15 -> beta.28.16 -> beta.28.17 -> beta.28.18 -> beta.28.19 -> beta.28.20 -> beta.29.0.0 -> beta.29.0.1 -> beta.29.0.2 -> beta.29.1.0.
+-- Nuzlocke Rules 2.0.0-beta.29.2.7 - runtime-driven startup, cap-compatibility, and menu cleanup
+-- Built directly from beta.29.2.6. Preserves all 29.2.6 behavior while fixing pre-battle trainer-cap composition, R/B starter presentation, and lock-in menu placement.
+-- Numeric lineage: beta.27 -> beta.27.1 -> beta.27.2 -> beta.27.3 -> beta.27.4 -> beta.27.5 -> beta.27.6 -> beta.27.7 -> beta.27.8 -> beta.27.9 -> beta.27.10 -> beta.27.11 -> beta.27.12 -> beta.27.13 -> beta.27.14 -> beta.27.15 -> beta.27.16 -> beta.28 -> beta.28.1 -> beta.28.2 -> beta.28.3 -> beta.28.4 -> beta.28.5 -> beta.28.6 -> beta.28.7 -> beta.28.8 -> beta.28.9 -> beta.28.10 -> beta.28.11 -> beta.28.12 -> beta.28.13 -> beta.28.14 -> beta.28.15 -> beta.28.16 -> beta.28.17 -> beta.28.18 -> beta.28.19 -> beta.28.20 -> beta.29.0.0 -> beta.29.0.1 -> beta.29.0.2 -> beta.29.1.0 -> beta.29.1.1 -> beta.29.2.0 -> beta.29.2.1 -> beta.29.2.2 -> beta.29.2.3 -> beta.29.2.4 -> beta.29.2.5 -> beta.29.2.6 -> beta.29.2.7.
 --
 -- Lineage:
 -- * beta.26 is promoted directly from the runtime-tested 26B10 development revision
@@ -18,10 +18,10 @@
 -- * UI follow-up: use native directional glyphs for collapsible headers and
 --   add explicit UI-composition support for Setup Rules, in-game Rules,
 --   Encounter Tracker Map/Log, R/B/Y Nuz Status, and Catch Info.
--- * Data/UI follow-up: distinguish missed/lost encounters from Pokemon deaths
---   without corrupting historical save data that used older LOST bookkeeping.
+-- * beta.29.2.0 separates missed/lost encounters from Pokemon deaths while
+--   conservatively migrating legacy death history that used LOST bookkeeping.
 return function(mod)
-  mod.exports.__beta26 = { build = "beta.29.1.0", setupProfileScope = "gen1" }
+  mod.exports.__beta26 = { build = "beta.29.2.7", setupProfileScope = "gen1" }
   mod.exports.__beta25 = mod.exports.__beta26
 
   -- beta.27.4: Gen1Recomp's embedded Save Editor creates its own ModLoader
@@ -51,7 +51,7 @@ return function(mod)
   -- missing entries safely fall back through the engine's Strings module.
   mod.exports.nuzlocke_translation = {
       api = 1,
-      build = "beta.29.1.0",
+      build = "beta.29.2.7",
       get = function(source, ...)
           return Strings(source, ...)
       end,
@@ -329,6 +329,20 @@ return function(mod)
               starter_randomization = "compose",
           },
           relationships = {},
+          -- Audited local adapters for mods that do not currently publish
+          -- nuzlocke_compat metadata themselves. These are intentionally
+          -- descriptive: they do not seize ownership of the other mod.
+          adapters = {
+              indigo_conference = {
+                  tested = "1.0.2",
+                  game = "GOLD",
+                  trainer_party = "compose",
+                  battle_finish = "compose",
+                  healing = "compose_survivors",
+                  battle_classification = "observe",
+                  note = "IPC owns its Colosseum staging/CANLOSE flow; Nuzlocke retains death/rule ownership.",
+              },
+          },
           discovered = {},
       },
   }
@@ -659,9 +673,14 @@ return function(mod)
               mapId, safari, x, y, width, height)
       end,
       getEncounterSplitModes = function()
+          -- `routes` is retained as a compatibility field but the old blanket
+          -- Route 1-25 cardinal mode is retired. The three named route flags
+          -- are now independently selectable.
           return {
-              routes = math.max(0, math.min(1,
-                  math.floor(tonumber(mod.save:get("route_splits", 0)) or 0))),
+              routes = 0,
+              route_2 = mod.exports.__beta26.routeSplitActive("route_2_split") and 1 or 0,
+              route_10 = mod.exports.__beta26.routeSplitActive("route_10_split") and 1 or 0,
+              route_20 = mod.exports.__beta26.routeSplitActive("route_20_split") and 1 or 0,
               mt_moon = math.max(0, math.min(1,
                   math.floor(tonumber(mod.save:get("mt_moon_splits", 0)) or 0))),
               safari = math.max(0, math.min(1,
@@ -817,10 +836,10 @@ return function(mod)
       { id = "CERULEAN_CAVE",    name = Strings.source("Cerulean Cave")  },
   }
 
-  -- CARDINAL mode divides every numbered Kanto route along its natural
-  -- long axis. The direction is physical provenance: it is determined from
-  -- the player's cell and map dimensions at the time of the encounter, then
-  -- kept even while the rule is OFF so projection remains reversible.
+  -- Physical cardinal provenance is retained for every numbered Kanto route
+  -- so older saves created under the retired blanket Route Splits rule can be
+  -- collapsed deterministically without losing tracker rows. New gameplay only
+  -- exposes Route 2, Route 10, and Route 20 as independently selectable splits.
   mod.exports.__beta26.routeCardinalAxes = {
       ROUTE_1 = "NS",  ROUTE_2 = "NS",  ROUTE_3 = "EW",
       ROUTE_4 = "EW",  ROUTE_5 = "NS",  ROUTE_6 = "NS",
@@ -1286,12 +1305,31 @@ return function(mod)
           members[parent .. "_WEST"] = true
           members[parent .. "_EAST"] = true
       end
-      mod.exports.__beta26.encounterSplitAreas["route_"
-          .. parent:match("ROUTE_(%d+)")] = {
+      local routeNumber = parent:match("ROUTE_(%d+)")
+      local selector = ({
+          ["2"] = "route_2_split",
+          ["10"] = "route_10_split",
+          ["20"] = "route_20_split",
+      })[routeNumber]
+      mod.exports.__beta26.encounterSplitAreas["route_" .. routeNumber] = {
           parent = parent,
           members = members,
-          selector = "route_splits",
+          -- nil means legacy-only physical provenance: those routes always
+          -- project back to the parent in current rules.
+          selector = selector,
       }
+  end
+
+  -- New route selectors are booleans. Before the one-time save migration
+  -- runs, a missing selector inherits the retired blanket route_splits value
+  -- so early listeners/providers cannot briefly see an old CARDINAL save as OFF.
+  mod.exports.__beta26.routeSplitActive = function(selector)
+      local raw = mod.save:get(selector, nil)
+      if raw ~= nil then return raw == true or tonumber(raw) == 1 end
+      if mod.save:get("route_split_rules_migrated", false) ~= true then
+          return tonumber(mod.save:get("route_splits", 0)) == 1
+      end
+      return false
   end
 
   mod.exports.__beta26.splitFamilyFor = function(key)
@@ -1328,10 +1366,10 @@ return function(mod)
           key, x, y, width, height)
 
       local routeFamily = mod.exports.__beta26.splitFamilyFor(key)
-      if routeFamily and routeFamily.selector == "route_splits" then
-          local mode = math.max(0, math.min(1,
-              math.floor(tonumber(mod.save:get("route_splits", 0)) or 0)))
-          return mode == 1 and key or routeFamily.parent
+      if routeFamily and routeFamily.parent:match("^ROUTE_%d+$") then
+          local selector = routeFamily.selector
+          return selector and mod.exports.__beta26.routeSplitActive(selector)
+              and key or routeFamily.parent
       end
 
       local moon = mod.exports.__beta26.encounterSplitAreas.mt_moon
@@ -2984,6 +3022,25 @@ return function(mod)
           mod.save:set("nuzlocke_losses", 0)
       end
 
+      -- beta.29.2.0: legacy nuzlocke_history used status="LOST" for owned
+      -- Pokemon deaths. Encounter opportunities have always lived in
+      -- encounter_states as status="FAILED". Migrate only rows that carry
+      -- death evidence so older saves gain unambiguous DEAD semantics without
+      -- rewriting unrelated or partially recovered history.
+      local oldHistory = mod.save:get("nuzlocke_history")
+      if type(oldHistory) == "table" then
+          local historyChanged = false
+          for _, row in ipairs(oldHistory) do
+              if type(row) == "table" and row.status == "LOST"
+                  and (row.deathLocation ~= nil or row.deathCause ~= nil
+                      or row.deathOpponentSpecies ~= nil) then
+                  row.status = "DEAD"
+                  historyChanged = true
+              end
+          end
+          if historyChanged then mod.save:set("nuzlocke_history", oldHistory) end
+      end
+
       -------------------------------------------------------------------
       -- 2. Discover every map definition exposed by the current build.
       -------------------------------------------------------------------
@@ -3462,7 +3519,9 @@ return function(mod)
       {
           title = Strings.source("- AREA SPLITS -"),
           rules = {
-              { key = "route_splits", name = Strings.source("Route Splits"), numeric = true, digits = 1, min = 0, max = 1, desc = Strings.source("Choose numbered-route encounter areas. OFF = each route shares one encounter. CARDINAL = every Route 1-25 is divided North/South or West/East along its natural axis. Tracker rows, counts, Catch Info, and legality update immediately.") },
+              { key = "route_2_split", name = Strings.source("Route 2 Split"), desc = Strings.source("Treat Route 2 North and South as separate encounter areas. Viridian Forest physically separates the two sections and they are normally reached at different stages of Kanto progression. OFF keeps all of Route 2 as one encounter area.") },
+              { key = "route_10_split", name = Strings.source("Route 10 Split"), desc = Strings.source("Treat Route 10 North and South as separate encounter areas. Rock Tunnel sits between the two sections, making this one of Kanto's most common progression-based route splits. OFF keeps all of Route 10 as one encounter area.") },
+              { key = "route_20_split", name = Strings.source("Route 20 Split"), desc = Strings.source("Treat Route 20 West and East as separate encounter areas. Seafoam Islands divide the route into opposite-side sections during normal progression. OFF keeps all of Route 20 as one encounter area.") },
               { key = "mt_moon_splits", name = Strings.source("Mt Moon Splits"), numeric = true, digits = 1, min = 0, max = 1, desc = Strings.source("Choose Mt. Moon encounter areas. OFF = the whole dungeon shares one encounter. COMMON = 1F, B1F, and B2F each receive an encounter. Tracker rows, counts, and catch legality update immediately when changed.") },
               { key = "safari_zone_splits", name = Strings.source("Safari Splits"), numeric = true, digits = 1, min = 0, max = 1, desc = Strings.source("Choose Safari Zone encounter areas. OFF = the whole Safari Zone shares one encounter. COMMON = Center, East, North, and West each receive an encounter. Tracker rows, counts, and catch legality update immediately when changed.") },
           }
@@ -3527,12 +3586,14 @@ return function(mod)
               { key = "no_mom_heal",      name = Strings.source("No Mom Heal"), desc = Strings.source("Mom cannot heal your party when you visit home. She will remind you of your rules instead.") },
               { key = "whiteout_clause",  name = Strings.source("Whiteout"), desc = Strings.source("If every Pokemon in the party faints, the run ends and the save is deleted permanently. This works independently of Permadeath.") },
               { key = "solo_active",      name = Strings.source("Solo Only"), desc = Strings.source("Only one Pokemon in the active party slot. Enforced at catch time; does not block PC swaps.") },
+              { key = "gym_lock_in", name = Strings.source("Gym Lock-In"), desc = Strings.source("Once you enter a supported Gym, ordinary exits are blocked until that Gym Leader is defeated. Already-cleared Gyms stay open. The rule can be changed during the run and uses tiered World Building rejection text without changing Gym story progression.") },
+              { key = "dungeon_lock_in", name = Strings.source("Dungeon Lock-In"), desc = Strings.source("Once you enter a supported multi-exit dungeon, the entrance you used is sealed behind you. Reach a different legitimate exit to leave. Escape Rope use is also blocked while the dungeon lock is active. Conservative dungeon coverage avoids single-exit softlocks.") },
           }
       },
       {
           title = Strings.source("- WORLD -"),
           rules = {
-              { key = "world_building_tier", name = Strings.source("World Building"), numeric = true, digits = 1, min = 0, max = 3, desc = Strings.source("Adds optional Nuzlocke flavor throughout Kanto. TIER 1 = core rule feedback, TIER 2 = extra snark, TIER 3 = NPC and story flavor. OFF disables all Nuzlocke world-building dialogue. RECOMMENDED: TIER 3. This is cosmetic and can be changed at any time.") },
+              { key = "world_building_tier", name = Strings.source("World Building"), numeric = true, digits = 1, min = 0, max = 3, desc = Strings.source("Adds optional Nuzlocke flavor throughout Kanto. TIER 1 = core rule feedback, TIER 2 = extra snark, TIER 3 = NPC and story flavor. OFF disables optional flavor, while rule-enforcement rejections still show a plain explanation. RECOMMENDED: TIER 3. This is cosmetic and can be changed at any time.") },
           }
       },
       {
@@ -3540,6 +3601,7 @@ return function(mod)
           rules = {
               { key = "automatic_default_names", name = Strings.source("Default Names"), setupOnly = true, desc = Strings.source("Skip only the new-game player and Rival naming menus and choose each game's first canonical preset. R/B/Y keep Oak's confirmation dialogue. Gold uses GOLD for the player and keeps ??? until the later police report assigns SILVER. Pokemon nickname prompts are unaffected. NEW GAME only.") },
               { key = "skip_catch_tutorial", name = Strings.source("Skip Catch Demo"), setupOnly = true, goldOnly = true, desc = Strings.source("GOLD NEW GAME only: skip the Dude's Route 29 demonstration battle while preserving his approach, dialogue, map reload, scene completion, and learned-to-catch event. Ordinary wild battles and every later story path remain unchanged.") },
+              { key = "automatic_running_shoes", name = Strings.source("Running Shoes"), desc = Strings.source("Hold B while walking to run at twice normal walking speed in R/B/Y and Gold. Bicycling, surfing, scripted movement, and menus keep their normal behavior. OFF preserves vanilla movement.") },
           }
       },
       {
@@ -3547,7 +3609,6 @@ return function(mod)
           rules = {
               { key = "catch_info", name = Strings.source("Catch Info"), desc = Strings.source("Show CATCH INFO in the party menu for Pokemon you own.") },
               { key = "area_guide_enabled", name = Strings.source("Area Guide"), desc = Strings.source("Show the second Encounter Tracker page with all catchable areas. Turn OFF to restrict the tracker to your catches only.") },
-              { key = "automatic_running_shoes", name = Strings.source("B-Button Run"), desc = Strings.source("Hold B while walking to run at twice normal walking speed in R/B/Y and Gold. Bicycling, surfing, scripted movement, and menus keep their normal behavior. OFF preserves vanilla movement.") },
           }
       },
   }
@@ -3664,13 +3725,16 @@ return function(mod)
 
       -- Agreed defaults for a new Nuzlocke run. The player can change these
       -- in NUZLOCKE SETUP before starting the NEW GAME.
-      local startingMoney = 0
+      -- beta.29.2.0: keep the NEW GAME seam aligned with the Setup default.
+      -- A missing staged value falls back to $3000; an explicit player-selected
+      -- $0 remains valid because tonumber(0) is 0 rather than nil.
+      local startingMoney = 3000
       local startingBalls = 0
       local startingCandies = 0
       local profile = newGameRulesSnapshot or pendingNewGameRules
       if profile then
           startingMoney = math.max(0, math.min(9999,
-              math.floor(tonumber(profile.starting_money) or 0)))
+              math.floor(tonumber(profile.starting_money) or 3000)))
           startingBalls = math.max(0, math.min(99,
               math.floor(tonumber(profile.starting_pokeballs) or 0)))
 
@@ -3797,6 +3861,8 @@ return function(mod)
           no_mom_heal = true,
           whiteout_clause = true,
           solo_active = true,
+          gym_lock_in = true,
+          dungeon_lock_in = true,
       },
       presets = {
           [1] = {
@@ -3825,6 +3891,8 @@ return function(mod)
               no_mom_heal = false,
               whiteout_clause = false,
               solo_active = false,
+              gym_lock_in = false,
+              dungeon_lock_in = false,
           },
           [2] = {
               nuzlocke_enabled = true,
@@ -3852,6 +3920,8 @@ return function(mod)
               no_mom_heal = false,
               whiteout_clause = false,
               solo_active = false,
+              gym_lock_in = true,
+              dungeon_lock_in = true,
           },
           [3] = {
               nuzlocke_enabled = true,
@@ -3879,6 +3949,8 @@ return function(mod)
               no_mom_heal = false,
               whiteout_clause = true,
               solo_active = true,
+              gym_lock_in = false,
+              dungeon_lock_in = false,
           },
       },
       applying = false,
@@ -3920,9 +3992,12 @@ return function(mod)
           or key == "trainer_start_stat_exp" then
           return 0
       end
-      if key == "route_splits" or key == "mt_moon_splits"
-          or key == "safari_zone_splits" then
+      if key == "mt_moon_splits" or key == "safari_zone_splits" then
           return 0
+      end
+      if key == "route_2_split" or key == "route_10_split"
+          or key == "route_20_split" then
+          return false
       end
       if key == "area_guide_enabled" then
           return true
@@ -3949,10 +4024,24 @@ return function(mod)
           or key == "automatic_default_names"
           or key == "skip_catch_tutorial"
           or key == "random_starter"
+          or key == "gym_lock_in" or key == "dungeon_lock_in"
           or key == "infinite_rare_candies" or key == "wonderlocke" then
           return false
       end
       return false
+  end
+
+  -- Numeric setup/profile values can be supplied by old saves or external
+  -- editing tools. Keep NaN/Inf from surviving normalization and later
+  -- becoming invalid persisted Lua-source values. This boundary guard is
+  -- intentionally narrow; ordinary gameplay math remains unchanged.
+  mod.exports.__beta26.finiteNumber = function(value, fallback)
+      local number = tonumber(value)
+      if number == nil or number ~= number
+          or number == math.huge or number == -math.huge then
+          return fallback
+      end
+      return number
   end
 
   local function normalizeRuleValue(rule, value)
@@ -3965,11 +4054,12 @@ return function(mod)
               value = value and 2 or 0
           end
 
-          local fallback = tonumber(defaultRuleValue(rule.key))
-              or tonumber(rule.min) or 0
-          local number = math.floor(tonumber(value) or fallback)
-          local minValue = tonumber(rule.min)
-          local maxValue = tonumber(rule.max)
+          local fallback = mod.exports.__beta26.finiteNumber(
+              defaultRuleValue(rule.key), nil)
+              or mod.exports.__beta26.finiteNumber(rule.min, 0)
+          local number = math.floor(mod.exports.__beta26.finiteNumber(value, fallback))
+          local minValue = mod.exports.__beta26.finiteNumber(rule.min, nil)
+          local maxValue = mod.exports.__beta26.finiteNumber(rule.max, nil)
           if minValue then number = math.max(minValue, number) end
           if maxValue then number = math.min(maxValue, number) end
           return number
@@ -4007,6 +4097,14 @@ return function(mod)
               local raw = mod.save:get(rule.key, nil)
               if rule.key == "level_cap_scope" and raw == nil then
                   raw = legacyLevelCapScope()
+              elseif raw == nil and (rule.key == "route_2_split"
+                  or rule.key == "route_10_split"
+                  or rule.key == "route_20_split") then
+                  -- Old setup/save data had one blanket Route Splits flag.
+                  -- Preserve its intent for the three routes that remain
+                  -- independently supported; every other old split collapses
+                  -- safely to its parent during encounter reprojection.
+                  raw = mod.save:get("route_splits", 0) == 1
               end
               if raw == nil then raw = defaultRuleValue(rule.key) end
               values[rule.key] = normalizeRuleValue(rule, raw)
@@ -4014,8 +4112,9 @@ return function(mod)
       end
 
       values.locke_type = math.max(0, math.min(3,
-          math.floor(tonumber(mod.save:get("locke_type",
-              defaultRuleValue("locke_type"))) or 0)))
+          math.floor(mod.exports.__beta26.finiteNumber(
+              mod.save:get("locke_type", defaultRuleValue("locke_type")),
+              defaultRuleValue("locke_type")))))
       values.area_guide_enabled = loadAreaGuideState()
       values.rules_locked =
           mod.save:get("rules_locked", defaultRuleValue("rules_locked")) == true
@@ -4047,13 +4146,18 @@ return function(mod)
       for _, cat in ipairs(ruleCategories) do
           for _, rule in ipairs(cat.rules) do
               local v = source and source[rule.key]
+              if v == nil and source and (rule.key == "route_2_split"
+                  or rule.key == "route_10_split"
+                  or rule.key == "route_20_split") then
+                  v = tonumber(source.route_splits) == 1
+              end
               if v == nil then v = defaultRuleValue(rule.key) end
               copy[rule.key] = normalizeRuleValue(rule, v)
           end
       end
       copy.locke_type = math.max(0, math.min(3,
-          math.floor(tonumber(source and source.locke_type)
-              or defaultRuleValue("locke_type"))))
+          math.floor(mod.exports.__beta26.finiteNumber(
+              source and source.locke_type, defaultRuleValue("locke_type")))))
       if source and source.area_guide_enabled ~= nil then
           copy.area_guide_enabled = source.area_guide_enabled == true
       else
@@ -4063,15 +4167,16 @@ return function(mod)
       copy.infinite_rare_candies = source and source.infinite_rare_candies == true
           or defaultRuleValue("infinite_rare_candies")
       copy.starting_money = math.max(0, math.min(9999,
-          math.floor(tonumber(source and source.starting_money)
-              or defaultRuleValue("starting_money"))))
+          math.floor(mod.exports.__beta26.finiteNumber(
+              source and source.starting_money, defaultRuleValue("starting_money")))))
       copy.starting_pokeballs = math.max(0, math.min(99,
-          math.floor(tonumber(source and source.starting_pokeballs)
-              or defaultRuleValue("starting_pokeballs"))))
+          math.floor(mod.exports.__beta26.finiteNumber(
+              source and source.starting_pokeballs, defaultRuleValue("starting_pokeballs")))))
       local rawCandies = source and source.starting_rare_candies
       if type(rawCandies) == "boolean" then rawCandies = rawCandies and 99 or 0 end
       copy.starting_rare_candies = math.max(0, math.min(99,
-          math.floor(tonumber(rawCandies) or defaultRuleValue("starting_rare_candies"))))
+          math.floor(mod.exports.__beta26.finiteNumber(
+              rawCandies, defaultRuleValue("starting_rare_candies")))))
       copy.hardcore_mode = (tonumber(copy.level_cap_scope) or 0) > 0
       copy.elite_four_caps = (tonumber(copy.level_cap_scope) or 0) >= 2
       return copy
@@ -4081,6 +4186,7 @@ return function(mod)
       if type(v) == "boolean" then
           return v and "true" or "false"
       elseif type(v) == "number" then
+          if mod.exports.__beta26.finiteNumber(v, nil) == nil then return "nil" end
           return tostring(v)
       elseif type(v) == "string" then
           return string.format("%q", v)
@@ -4655,7 +4761,7 @@ return function(mod)
 
   mod.exports.starter_randomizer = {
       api = 1,
-      build = "beta.29.1.0",
+      build = "beta.29.2.7",
       select = mod.exports.__beta26.selectRandomStarter,
   }
   mod.exports.nuzlocke_compat.selectRandomStarter =
@@ -4688,6 +4794,87 @@ return function(mod)
   -- actually grant; the earlier ball/Dex preview still describes the player's
   -- chosen vanilla ball and therefore keeps the intended choice semantics.
   mod.hooks:wrap("script.command", function(next, ctx, name, args, cmd)
+      -- R/B starter Dex preview: keep the selected ball/story branch vanilla,
+      -- but show the same persisted randomized species that will actually be
+      -- granted a few rows later. This fixes a Charmander/Squirtle/Bulbasaur
+      -- portrait mismatch without rerolling or changing Rival counter-picks.
+      if ctx and ctx.generation ~= 2 and name == "ask"
+          and type(args) == "table" and ctx.save
+          and #(ctx.save.party or {}) == 0
+          and mod.save:get("random_starter", false) == true then
+          local textId = tostring(args[1] or "")
+          local original = textId:find("Charmander", 1, true) and "CHARMANDER"
+              or textId:find("Squirtle", 1, true) and "SQUIRTLE"
+              or textId:find("Bulbasaur", 1, true) and "BULBASAUR" or nil
+          if original then
+              local choice = mod.exports.__beta26.selectRandomStarter(
+                  ctx.game or currentGame or mod.game, original)
+              local rewritten = {}
+              for i, value in ipairs(args) do rewritten[i] = value end
+              rewritten[1] = "So! You want " .. choice .. "?"
+              return next(ctx, name, rewritten, cmd)
+          end
+      end
+
+      if ctx and ctx.generation ~= 2 and name == "push_screen"
+          and type(args) == "table" and args[1] == "DexEntryMenu"
+          and type(args[2]) == "table" and ctx.save
+          and #(ctx.save.party or {}) == 0
+          and mod.save:get("random_starter", false) == true then
+          local original = tostring(args[2].species or ""):upper()
+          if original == "BULBASAUR" or original == "CHARMANDER"
+              or original == "SQUIRTLE" then
+              local rewritten, opts = {}, {}
+              for i, value in ipairs(args) do rewritten[i] = value end
+              for key, value in pairs(args[2]) do opts[key] = value end
+              opts.species = mod.exports.__beta26.selectRandomStarter(
+                  ctx.game or currentGame or mod.game, original)
+              rewritten[2] = opts
+              return next(ctx, name, rewritten, cmd)
+          end
+      end
+
+      -- Yellow's native post-lab-battle sequence assumes the starter is
+      -- Pikachu: it spawns the Pikachu follower, plays Pikachu's cry, and
+      -- prints two Pikachu-specific lines. When Random Starter chose anything
+      -- else, suppress only that presentation. Battle-result/story flags and
+      -- Rival progression have already been committed and remain untouched.
+      if ctx and ctx.generation ~= 2 and getGameVersion() == "YELLOW"
+          and mod.save:get("random_starter", false) == true then
+          local choice = tostring(mod.save:get(
+              "__nuzlocke_random_starter_choice", "") or ""):upper()
+          local mapId = tostring((ctx.overworld and ctx.overworld.map
+              and ctx.overworld.map.id) or ctx.mapId or ""):upper()
+          if choice ~= "" and choice ~= "PIKACHU"
+              and (mapId == "OAKS_LAB" or mapId:find("OAK", 1, true)) then
+              if name == "spawn_pikachu_follower" then return nil end
+              if name == "play_cry" and type(args) == "table"
+                  and tostring(args[1] or ""):upper() == "PIKACHU" then
+                  return nil
+              end
+              if name == "show_text" and type(args) == "table" then
+                  local textId = tostring(args[1] or "")
+                  if textId == "_OaksLabPikachuDislikesPokeballsText1" then
+                      local rewritten = {}
+                      for i, value in ipairs(args) do rewritten[i] = value end
+                      rewritten[1] = choice .. " looks ready to travel with you!"
+                      return next(ctx, name, rewritten, cmd)
+                  elseif textId == "_OaksLabPikachuDislikesPokeballsText2" then
+                      return nil
+                  end
+              end
+          end
+      end
+
+      if ctx and ctx.generation ~= 2 and name == "show_text"
+          and type(args) == "table"
+          and tostring(args[1] or "") == "_OaksLabRivalMyPokemonLooksStrongerText" then
+          local rewritten = {}
+          for i, value in ipairs(args) do rewritten[i] = value end
+          rewritten[1] = "My Pokemon's ready.\nMeet me outside!"
+          return next(ctx, name, rewritten, cmd)
+      end
+
       if ctx and ctx.generation ~= 2 and name == "show_text"
           and type(args) == "table" and type(args[2]) == "table"
           and (args[1] == "_OaksLabReceivedMonText"
@@ -4921,16 +5108,34 @@ return function(mod)
 
   mod.exports.__beta26.partyAceLevel = function(party)
       if type(party) ~= "table" then return nil end
-      local ace
-      for _, mon in pairs(party) do
-          if type(mon) == "table" then
-              local level = tonumber(mon.level or mon.lvl)
-              if level and level > 0 and level <= 100
-                  and (not ace or level > ace) then
-                  ace = level
+      -- Trainer-content mods do not all preserve the vanilla immediate-array
+      -- party shape. Walk only a small, cycle-safe party subtree so wrappers
+      -- such as { team = {...} }, { pokemon = {...} }, or nested roster rows
+      -- still contribute their live levels without treating arbitrary trainer
+      -- metadata as Pokemon.
+      local ace, seen = nil, {}
+      local function scan(node, depth)
+          if type(node) ~= "table" or seen[node] or depth > 4 then return end
+          seen[node] = true
+          local level = tonumber(node.level or node.lvl)
+          local monLike = node.species ~= nil or node.moves ~= nil
+              or node.dvs ~= nil or node.statExp ~= nil
+          if monLike and level and level > 0 and level <= 100
+              and (not ace or level > ace) then
+              ace = level
+          end
+          for key, child in pairs(node) do
+              if type(child) == "table" then
+                  local k = tostring(key):lower()
+                  if type(key) == "number" or k == "party" or k == "team"
+                      or k == "pokemon" or k == "mons" or k == "roster"
+                      or k == "members" then
+                      scan(child, depth + 1)
+                  end
               end
           end
       end
+      scan(party, 0)
       return ace
   end
 
@@ -4939,17 +5144,76 @@ return function(mod)
           .. "#" .. tostring(partyIndex or 1)
   end
 
+  mod.exports.__beta26.runtimeComposedTrainerAce = function(game, classId, partyIndex, party)
+      -- Some trainer-balance mods compute their final roster only inside the
+      -- public trainer.party composition hook.  UI level-cap surfaces need the
+      -- next boss ace before that battle starts, so when such a mod is active
+      -- preview the same semantic hook with the same vanilla party payload.
+      -- The call is protected and falls back to merged data on any failure.
+      local status = game and game.modStatus
+      local hasRuntimeTrainerMod = false
+      local function scanStatus(node, depth)
+          if hasRuntimeTrainerMod or type(node) ~= "table" or depth > 3 then return end
+          local id = tostring(node.id or node.modId or node.name or ""):lower()
+          if id == "stronger_trainers" or id == "stronger trainers" then
+              local state = tostring(node.state or ""):lower()
+              if state ~= "disabled" and state ~= "errored" and state ~= "blocked" then
+                  hasRuntimeTrainerMod = true
+                  return
+              end
+          end
+          for _, child in pairs(node) do
+              if type(child) == "table" then scanStatus(child, depth + 1) end
+          end
+      end
+      scanStatus(status, 0)
+      if not hasRuntimeTrainerMod then return nil end
+      local ok, Runtime = pcall(require, "src.mods.Runtime")
+      if not ok or not Runtime or type(Runtime.call) ~= "function"
+          or not Runtime.wantsHook or not Runtime.wantsHook("trainer.party") then
+          return nil
+      end
+      local success, resolved = pcall(function()
+          return Runtime.call("trainer.party", function(_, _, base)
+              return base
+          end, classId, partyIndex or 1, party)
+      end)
+      if not success then return nil end
+      return mod.exports.__beta26.partyAceLevel(resolved)
+  end
+
   mod.exports.__beta26.liveTrainerAce = function(game, classId, partyIndex)
       local observed = mod.exports.__beta26.levelCapBosses.observed
       local key = mod.exports.__beta26.trainerPartyKey(classId, partyIndex)
       if tonumber(observed[key]) then return tonumber(observed[key]), "HOOK" end
 
-      local trainers = game and game.data and game.data.trainers
-      local trainer = type(trainers) == "table" and trainers[classId] or nil
-      local parties = type(trainer) == "table"
-          and (trainer.parties or trainer.rosters) or nil
-      local party = type(parties) == "table" and parties[partyIndex or 1]
-          or (type(trainer) == "table" and trainer.party or nil)
+      local data = game and game.data
+      -- RBY and Gold expose different canonical trainer registries.  Gold
+      -- content mods patch gen2Trainers.classes; RBY uses data.trainers.
+      -- Inspect the composed Gold registry first when present, then retain
+      -- the historical RBY path unchanged.
+      local g2 = data and data.gen2Trainers
+      local classes = type(g2) == "table" and g2.classes or nil
+      local trainer
+      if type(classes) == "table" then
+          local cls = classes[classId]
+          local rows = type(cls) == "table" and cls.trainers or nil
+          trainer = type(rows) == "table" and rows[partyIndex or 1] or nil
+      end
+      if trainer == nil then
+          local trainers = data and data.trainers
+          trainer = type(trainers) == "table" and trainers[classId] or nil
+          local parties = type(trainer) == "table"
+              and (trainer.parties or trainer.rosters) or nil
+          if type(parties) == "table" then
+              trainer = parties[partyIndex or 1]
+          end
+      end
+      local party = type(trainer) == "table"
+          and (trainer.party or trainer.roster or trainer.team) or nil
+      local preview = mod.exports.__beta26.runtimeComposedTrainerAce(
+          game, classId, partyIndex or 1, party)
+      if preview then return preview, "HOOK_PREVIEW" end
       local ace = mod.exports.__beta26.partyAceLevel(party)
       if ace then return ace, "MERGED_DATA" end
       return nil
@@ -5044,7 +5308,7 @@ return function(mod)
               mod.exports.__beta26.trainerPartyKey(classId, partyIndex)] = ace
       end
       return resolved
-  end)
+  end, 100000)
 
   mod.events:on("battle.started", function(ev)
       local battle = ev and (ev.battle or ev)
@@ -5346,6 +5610,178 @@ return function(mod)
       mod.save:set("nuzlocke_gsc_defeated", progress)
       return progress
   end
+
+  ---------------------------------------------------------------------
+  -- GYM / DUNGEON LOCK-INS (beta.29.2.2)
+  --
+  -- Gym exits are gated at the engine's public warp.destination seam. The
+  -- source map is read from the live overworld and a blocked door is rerouted
+  -- one cell back into the same map, so story flags and destination scripts
+  -- never run. Dungeons intentionally cover only known multi-exit families:
+  -- the entrance used to enter is sealed, while a different legitimate exit
+  -- releases the lock. This conservative rule avoids trapping the player in
+  -- dead-end/single-exit locations.
+  ---------------------------------------------------------------------
+  mod.exports.__beta26.gymLeaderForMap = function(mapId, game)
+      local id = tostring(mapId or ""):upper():gsub("[^A-Z0-9]", "")
+      local gold = mod.exports.__beta26.runtimeIsGold(game)
+      local rby = {
+          PEWTERGYM="BROCK", CERULEANGYM="MISTY", VERMILIONGYM="LT SURGE",
+          CELADONGYM="ERIKA", FUCHSIAGYM="KOGA", SAFFRONGYM="SABRINA",
+          CINNABARGYM="BLAINE", VIRIDIANGYM="GIOVANNI",
+      }
+      if not gold then return rby[id] end
+      local gsc = {
+          VIOLETGYM="FALKNER", AZALEAGYM="BUGSY", GOLDENRODGYM="WHITNEY",
+          ECRUTEAKGYM="MORTY", CIANWOODGYM="CHUCK", OLIVINEGYM="JASMINE",
+          MAHOGANYGYM="PRYCE", BLACKTHORNGYM="CLAIR",
+          VERMILIONGYM="LT SURGE", SAFFRONGYM="SABRINA", CERULEANGYM="MISTY",
+          CELADONGYM="ERIKA", FUCHSIAGYM="JANINE", PEWTERGYM="BROCK",
+          CINNABARGYM="BLAINE", VIRIDIANGYM="BLUE",
+      }
+      return gsc[id]
+  end
+
+  mod.exports.__beta26.gymLockCleared = function(game, mapId)
+      local save = game and game.save or currentSave
+      local leader = mod.exports.__beta26.gymLeaderForMap(mapId, game)
+      if not (save and leader) then return true end -- unknown Gym: fail open
+      if mod.exports.__beta26.runtimeIsGold(game) then
+          return gscProgress(save)[leader] == true
+      end
+      return gymProgress(save)[leader] == true
+  end
+
+  mod.exports.__beta26.dungeonFamily = function(mapId)
+      local id = tostring(mapId or ""):upper():gsub("[^A-Z0-9]", "")
+      local families = {
+          { "MTMOON", "MT_MOON" }, { "ROCKTUNNEL", "ROCK_TUNNEL" },
+          { "SEAFOAMISLAND", "SEAFOAM_ISLANDS" }, { "VICTORYROAD", "VICTORY_ROAD" },
+          { "DIGLETTSCAVE", "DIGLETTS_CAVE" }, { "UNIONCAVE", "UNION_CAVE" },
+          { "ILEXFOREST", "ILEX_FOREST" }, { "ICEPATH", "ICE_PATH" },
+          { "DARKCAVE", "DARK_CAVE" }, { "WHIRLISLAND", "WHIRL_ISLANDS" },
+          { "MTMORTAR", "MT_MORTAR" }, { "TOHJOFALLS", "TOHJO_FALLS" },
+      }
+      for _, row in ipairs(families) do
+          if id:find("^" .. row[1]) then return row[2] end
+      end
+      return nil
+  end
+
+  mod.exports.__beta26.dungeonLockActive = function(game)
+      if mod.save:get("nuzlocke_enabled", true) ~= true
+          or mod.save:get("dungeon_lock_in", false) ~= true then return false end
+      local source = game and game.overworld and game.overworld.map
+          and game.overworld.map.id
+          or game and game.save and game.save.player and game.save.player.map
+      local family = mod.exports.__beta26.dungeonFamily(source)
+      local state = mod.save:get("nuzlocke_dungeon_lock_state", nil)
+      return family ~= nil and type(state) == "table" and state.family == family
+  end
+
+  mod.exports.__beta26.lockInRejection = function(game, kind)
+      local tier = worldTier(game)
+      local text
+      if kind == "gym" then
+          if tier >= 3 then text = "The Gym doors are staying shut. Beat the Leader, then you can leave."
+          elseif tier == 2 then text = "No backing out now. Defeat the Gym Leader first."
+          else text = "Gym Lock-In: defeat the Gym Leader before leaving." end
+      else
+          if tier >= 3 then text = "That entrance is behind you now. The dungeon wants you to find another way out."
+          elseif tier == 2 then text = "No retreat through the front door. Find another exit."
+          else text = "Dungeon Lock-In: the entrance is sealed. Find another exit." end
+      end
+      mod.exports.__beta26.pushWorldText(game, text)
+  end
+
+  mod.exports.__beta26.lockInBounce = function(game, sourceMap)
+      local ow = game and game.overworld
+      local player = ow and ow.player
+      local map = ow and ow.map
+      local x = tonumber(player and player.cellX) or tonumber(game and game.save
+          and game.save.player and game.save.player.x) or 0
+      local y = tonumber(player and player.cellY) or tonumber(game and game.save
+          and game.save.player and game.save.player.y) or 0
+      local facing = tostring(player and player.facing or game and game.save
+          and game.save.player and game.save.player.facing or "down")
+      local dx, dy = 0, 0
+      if facing == "up" then dy = 1 elseif facing == "down" then dy = -1
+      elseif facing == "left" then dx = 1 elseif facing == "right" then dx = -1 end
+      local bx, by = x + dx, y + dy
+      if map and type(map.inBounds) == "function" and not map:inBounds(bx, by) then
+          bx, by = x, y
+      end
+      return sourceMap, bx, by
+  end
+
+  mod.hooks:wrap("warp.destination", function(next, destMap, x, y, ctx)
+      local game = currentGame
+      if not (game and game.save) or mod.save:get("nuzlocke_enabled", true) ~= true then
+          return next(destMap, x, y, ctx)
+      end
+      local sourceMap = game.overworld and game.overworld.map and game.overworld.map.id
+          or game.save.player and game.save.player.map
+      if not sourceMap then return next(destMap, x, y, ctx) end
+      sourceMap, destMap = tostring(sourceMap):upper(), tostring(destMap or ""):upper()
+
+      if mod.save:get("gym_lock_in", false) == true then
+          local leader = mod.exports.__beta26.gymLeaderForMap(sourceMap, game)
+          if leader and destMap ~= sourceMap
+              and not mod.exports.__beta26.gymLockCleared(game, sourceMap) then
+              mod.exports.__beta26.lockInRejection(game, "gym")
+              return mod.exports.__beta26.lockInBounce(game, sourceMap)
+          end
+      end
+
+      local sourceFamily = mod.exports.__beta26.dungeonFamily(sourceMap)
+      local destFamily = mod.exports.__beta26.dungeonFamily(destMap)
+      local state = mod.save:get("nuzlocke_dungeon_lock_state", nil)
+      if mod.save:get("dungeon_lock_in", false) ~= true then
+          if state ~= nil then mod.save:set("nuzlocke_dungeon_lock_state", nil) end
+          return next(destMap, x, y, ctx)
+      end
+
+      if not sourceFamily and destFamily then
+          mod.save:set("nuzlocke_dungeon_lock_state",
+              { family = destFamily, entryOutside = sourceMap })
+          return next(destMap, x, y, ctx)
+      end
+      if sourceFamily and destFamily == sourceFamily then
+          return next(destMap, x, y, ctx)
+      end
+      if sourceFamily and not destFamily then
+          if type(state) ~= "table" or state.family ~= sourceFamily
+              or not state.entryOutside then
+              -- An older save loaded inside a dungeon has no trustworthy entry
+              -- side. Fail open instead of manufacturing a softlock.
+              mod.save:set("nuzlocke_dungeon_lock_state", nil)
+              return next(destMap, x, y, ctx)
+          end
+          if destMap == tostring(state.entryOutside):upper() then
+              mod.exports.__beta26.lockInRejection(game, "dungeon")
+              return mod.exports.__beta26.lockInBounce(game, sourceMap)
+          end
+          -- A genuinely different exterior exit completes the lock-in.
+          mod.save:set("nuzlocke_dungeon_lock_state", nil)
+          return next(destMap, x, y, ctx)
+      end
+      return next(destMap, x, y, ctx)
+  end)
+
+  -- Escape-style field moves can bypass a physical entrance warp entirely.
+  -- fieldmove.eligibility is shared by Gen 1 and Gold and uses the same
+  -- (moveId, ctx) contract, so denying the move user while a dungeon lock is
+  -- active keeps DIG/TELEPORT/FLY from becoming an untracked back door.
+  -- Ordinary field moves still compose through the native/provider chain.
+  mod.hooks:wrap("fieldmove.eligibility", function(next, moveId, ctx)
+      local game = currentGame or mod.game
+      local id = tostring(moveId or ""):upper()
+      if mod.exports.__beta26.dungeonLockActive(game)
+          and (id == "DIG" or id == "TELEPORT" or id == "FLY") then
+          return nil
+      end
+      return next(moveId, ctx)
+  end)
 
   local function nextGscCapInfo(save, scope)
       local progress = gscProgress(save)
@@ -5766,6 +6202,8 @@ return function(mod)
       no_buying = true,
       no_selling = true,
       whiteout_clause = true,
+      gym_lock_in = true,
+      dungeon_lock_in = true,
       area_guide_enabled = true,
       automatic_running_shoes = true,
       automatic_default_names = true,
@@ -5805,6 +6243,8 @@ return function(mod)
       no_buying = Strings.source("GOLD BETA / TEST REQUIRED: intended to block Gold Mart purchases only. Mart adapters are under active compatibility testing."),
       no_selling = Strings.source("GOLD BETA / TEST REQUIRED: intended to block Gold Mart selling only. Mart adapters are under active compatibility testing."),
       whiteout_clause = Strings.source("GOLD BETA / TEST REQUIRED: arms run-ending Whiteout when no healthy party Pokemon remain after a faint."),
+      gym_lock_in = Strings.source("GOLD BETA / TEST REQUIRED: once you enter a supported Johto or Kanto Gym, ordinary exits are blocked until that Gym Leader is defeated. Already-cleared Gyms remain open."),
+      dungeon_lock_in = Strings.source("GOLD BETA / TEST REQUIRED: seals the entrance used to enter a supported multi-exit dungeon until you reach a different legitimate exit. Escape Rope and escape-style field moves are blocked while active; older saves without entry-side state fail open."),
       area_guide_enabled = Strings.source("GOLD BETA: toggles Gold's discovery-driven Tracker map page instead of preloading the Gen1 area list."),
       automatic_running_shoes = Strings.source("Hold B while walking to run at twice normal walking speed. Gold biking, surfing, scripts, and menus remain unchanged. OFF preserves vanilla movement."),
       automatic_default_names = Strings.source("NEW GAME only: skips Gold's player-name menu by choosing GOLD, then skips only the later police-report Rival naming screen by choosing SILVER. The first Rival battle still correctly displays ???, and Pokemon nickname prompts are unaffected."),
@@ -5961,8 +6401,7 @@ return function(mod)
               mod.save:get("ball_use_ban_tier", defaultRuleValue("ball_use_ban_tier"))) or 0)))
       end
 
-      if key == "route_splits" or key == "mt_moon_splits"
-          or key == "safari_zone_splits" then
+      if key == "mt_moon_splits" or key == "safari_zone_splits" then
           return math.max(0, math.min(1, math.floor(tonumber(
               mod.save:get(key, defaultRuleValue(key))) or 0)))
       end
@@ -6002,8 +6441,7 @@ return function(mod)
           value = math.max(0, math.min(2, math.floor(tonumber(value) or 0)))
       elseif key == "ball_use_ban_tier" then
           value = math.max(0, math.min(5, math.floor(tonumber(value) or 0)))
-      elseif key == "route_splits" or key == "mt_moon_splits"
-          or key == "safari_zone_splits" then
+      elseif key == "mt_moon_splits" or key == "safari_zone_splits" then
           value = math.max(0, math.min(1, math.floor(tonumber(value) or 0)))
       elseif key == "maximum_bst" then
           value = math.max(0, math.min(999, math.floor(tonumber(value) or 0)))
@@ -6050,7 +6488,8 @@ return function(mod)
           mod.save:set("locke_type", 0)
       end
 
-      if (key == "route_splits" or key == "mt_moon_splits"
+      if (key == "route_2_split" or key == "route_10_split"
+          or key == "route_20_split" or key == "mt_moon_splits"
           or key == "safari_zone_splits")
           and type(mod.exports.__beta26.reprojectEncounterAreas) == "function" then
           pcall(mod.exports.__beta26.reprojectEncounterAreas)
@@ -6397,6 +6836,7 @@ return function(mod)
                   return rule.key == "starting_money"
                       or rule.key == "starting_pokeballs"
                       or rule.key == "starting_rare_candies"
+                      or rule.key == "maximum_bst"
               end
 
               local function cycleNumericRule(rule, dir)
@@ -6565,8 +7005,12 @@ return function(mod)
                       Font.draw(marqueeText(Strings(item.name), 11,
                           self.marqueeTime), 30, drawY)
                       local key = item.sectionKey or sectionKey(item)
-                      Font.draw(collapsedSections[key] and "+" or "-",
-                          138, drawY)
+                      -- beta.29.2.0: use the engine theme's native directional
+                      -- glyphs for collapsed/expanded state instead of ASCII +/-.
+                      -- This lets field.theme overrides style the indicator too.
+                      local Theme = require("src.ui.Theme")
+                      Font.drawCode(collapsedSections[key]
+                          and Theme.cursor or (Theme.moreArrow or 0xEE), 138, drawY)
                   else
                       local isSelected = (i == self.cursor)
                       local key = item.rule.key
@@ -6645,10 +7089,6 @@ return function(mod)
                                   mod.exports.__beta26.ballBanTierLabels[
                                       tonumber(val) or 0] or "OFF"), 8,
                                   self.marqueeTime), 104, drawY)
-                          elseif key == "route_splits" then
-                              local labels = { [0] = "OFF", [1] = "CARDINAL" }
-                              Font.draw(marqueeText(Strings(labels[tonumber(val) or 0]
-                                  or "OFF"), 9, self.marqueeTime), 96, drawY)
                           elseif key == "mt_moon_splits"
                               or key == "safari_zone_splits" then
                               local labels = { [0] = "OFF", [1] = "COMMON" }
@@ -6835,14 +7275,17 @@ return function(mod)
           return false
       end
 
-      local routeMode = math.max(0, math.min(1,
-          math.floor(tonumber(mod.save:get("route_splits", 0)) or 0)))
       local routeFamily = mod.exports.__beta26.splitFamilyFor(area.id)
-      if routeFamily and routeFamily.selector == "route_splits" then
-          return routeMode == 1
+      if routeFamily and routeFamily.parent:match("^ROUTE_%d+$") then
+          local selector = routeFamily.selector
+          return selector ~= nil and mod.exports.__beta26.routeSplitActive(selector)
       end
       if mod.exports.__beta26.routeCardinalAxes[area.id] then
-          return routeMode == 0
+          local selectedFamily = mod.exports.__beta26.encounterSplitAreas[
+              "route_" .. tostring(area.id):match("ROUTE_(%d+)")]
+          local splitOn = selectedFamily and selectedFamily.selector
+              and mod.exports.__beta26.routeSplitActive(selectedFamily.selector)
+          return not splitOn
               or (type(trackerLog()[area.id]) == "table"
                   and #trackerLog()[area.id] > 0)
               or caughtAreas()[area.id] ~= nil
@@ -7143,8 +7586,6 @@ return function(mod)
                               mod.exports.__beta26.ballBanTierLabels[mode]))
                       end
                       return nil
-                  elseif rule.key == "route_splits" then
-                      return (tonumber(value) or 0) == 1 and Strings("Routes CARDINAL") or nil
                   elseif rule.key == "mt_moon_splits" then
                       return (tonumber(value) or 0) == 1 and Strings("Mt Moon COMMON") or nil
                   elseif rule.key == "safari_zone_splits" then
@@ -7265,7 +7706,7 @@ return function(mod)
                   -- Flip hint lives in the open band between the trainer
                   -- information/sprite area and the badge sprites.  Keep it
                   -- on the RIGHT side, clear of the WORD badges and dots.
-                  Font.draw(Strings("A:NUZ"), 112, 68)
+                  Font.draw(Strings("A:NUZ"), 112, 78)
                   return
               end
 
@@ -7683,6 +8124,31 @@ return function(mod)
       if refreshGymGuideVisibility and currentGame then
           refreshGymGuideVisibility(currentGame)
       end
+  end)
+
+  -- Scripted CANLOSE/tournament mods may intentionally heal survivors after
+  -- battle. Compose with that behavior, but never allow an already-recorded
+  -- Permadeath loss to be made usable again by a later battle.ended listener.
+  -- Gold trainer scripts can reload the map without map.entered, so repeat the
+  -- owned invariant at map.reloaded as well.
+  local function reconcileExternalBattleHealing()
+      if mod.save:get("nuzlocke_enabled", true) == false
+          or mod.save:get("permadeath", true) ~= true then return end
+      local save = currentGame and currentGame.save
+      for _, mon in ipairs(save and save.party or {}) do
+          if type(mon) == "table" and mon.nuzlockeDead == true then
+              mon.hp = 0
+          end
+      end
+  end
+  mod.events:on("battle.ended", function()
+      pcall(reconcileExternalBattleHealing)
+  end)
+  mod.events:on("map.reloaded", function()
+      pcall(reconcileExternalBattleHealing)
+  end)
+  mod.events:on("map.entered", function()
+      pcall(reconcileExternalBattleHealing)
   end)
 
 
@@ -8818,7 +9284,10 @@ return function(mod)
           end
       else
           mod.ui.insertBefore(result, optionAnchor, {
-              label = Strings("NUZ STAT"),
+              -- Gold's native START box has only seven safe label tiles after
+              -- its cursor gutter. Keep the full meaning in the description
+              -- instead of drawing through the right border.
+              label = Strings("NUZ ST."),
               desc = { Strings("Nuzlocke"), Strings("run status") },
               onSelect = function()
                   mod.ui.push(game, "NuzlockeGoldStatusScreen")
@@ -8827,15 +9296,18 @@ return function(mod)
       end
 
       mod.ui.insertBefore(result, optionAnchor, {
-          label = Strings("ENC TRACKER"),
+          label = goldMenu and Strings("ENC TRK") or Strings("ENC TRACKER"),
+          desc = goldMenu and { Strings("Encounter"), Strings("tracker") } or nil,
           onSelect = function()
               mod.ui.push(game, "NuzlockeTrackerScreen")
           end
       })
 
       mod.ui.insertBefore(result, optionAnchor, {
-          -- Short underlying label preserves the original start-menu width.
-          label = Strings("NUZ RULES"),
+          -- Gold's native menu has a seven-tile safe label field. R/B/Y retain
+          -- the clearer full label because their START menu is wider.
+          label = goldMenu and Strings("NUZ RUL") or Strings("NUZ RULES"),
+          desc = goldMenu and { Strings("Nuzlocke"), Strings("rules") } or nil,
           onSelect = function()
               mod.ui.push(game, "NuzlockeConfigScreen")
           end
@@ -9434,6 +9906,13 @@ return function(mod)
                   "no_repels", "field_repels", "Repels are banned!",
                   "No Repels. Kanto wants you to meet the locals.",
                   "The wild Pokemon have vetoed your Repel privileges.")
+          end
+          if id == "ESCAPE_ROPE" and type(mod.exports.__beta26.dungeonLockActive) == "function"
+              and mod.exports.__beta26.dungeonLockActive(game) then
+              return ItemPolicy.denied(
+                  "dungeon_lock_in", "dungeon_escape_rope", "Dungeon Lock-In blocks the Escape Rope!",
+                  "No rope retreat. Find another exit.",
+                  "The entrance is sealed and the rope loophole is closed. Find another way out.")
           end
           if mod.save:get("no_escape_rope", false) == true and id == "ESCAPE_ROPE" then
               return ItemPolicy.denied(
@@ -10168,6 +10647,19 @@ return function(mod)
               and game.save.player.map)
       local loc = routeKey(rawLoc) or "UNKNOWN"
 
+      -- Gold's starter may be randomized to any valid species, so species-family
+      -- heuristics cannot identify it after acquisition. The Gen 2 transaction
+      -- wrapper normally registers it synchronously; this event fallback covers
+      -- engine/provider paths that emit only pokemon.received. A first owned mon
+      -- explicitly reported as a starter is always New Bark Town.
+      if getGameVersion() == "GOLD" and source == "starter" then
+          local party = game and game.save and game.save.party or {}
+          if #party <= 1 then
+              registerStarterCatch(species, mon)
+              return
+          end
+      end
+
       -- 1. Starter (explicit flag or species+location heuristic). Some
       -- current R/B/Y event paths report Oak's Lab rather than PALLET_TOWN,
       -- and may omit source="starter". Canonicalize those opening acquisitions
@@ -10424,9 +10916,42 @@ return function(mod)
   -- selector changes. It never deletes catch rows: COMMON separates them and
   -- OFF groups them back under the parent while preserving every row.
   mod.exports.__beta26.reprojectEncounterAreas = function()
+      -- One-time compatibility bridge for saves from the retired blanket
+      -- Route Splits rule. A legacy ON carries forward as ON for Routes 2, 10,
+      -- and 20 only. Other legacy route halves collapse to their parent below;
+      -- consumed states and every tracker row are preserved, so migration does
+      -- not create additional legal encounters.
+      if mod.save:get("route_split_rules_migrated", false) ~= true then
+          local legacyOn = tonumber(mod.save:get("route_splits", 0)) == 1
+          for _, key in ipairs({ "route_2_split", "route_10_split",
+              "route_20_split" }) do
+              if mod.save:get(key, nil) == nil then mod.save:set(key, legacyOn) end
+          end
+          mod.save:set("route_split_rules_migrated", true)
+      end
+
       local oldLog = trackerLog()
       local newLog = {}
-      for oldKey, entries in pairs(oldLog) do
+
+      -- REVIEWED: split families can collapse multiple physical buckets into
+      -- one logical area. Lua pairs() order is deliberately unspecified, so
+      -- collect and sort the physical/source keys before projection. This
+      -- makes the representative CAUGHT row/state stable across reloads and
+      -- repeated split toggles while preserving each bucket's ipairs order.
+      local function orderedKeys(tbl)
+          local keys = {}
+          for key in pairs(tbl or {}) do keys[#keys + 1] = key end
+          table.sort(keys, function(a, b)
+              local ar = routeKey(a) or tostring(a or "")
+              local br = routeKey(b) or tostring(b or "")
+              if ar == br then return tostring(a) < tostring(b) end
+              return tostring(ar) < tostring(br)
+          end)
+          return keys
+      end
+
+      for _, oldKey in ipairs(orderedKeys(oldLog)) do
+          local entries = oldLog[oldKey]
           if oldKey == "__LEGACY__" then
               newLog[oldKey] = entries
           elseif type(entries) == "table" then
@@ -10455,7 +10980,8 @@ return function(mod)
       local oldStates = encounterStates()
       local stateLedger = mod.save:get("encounter_area_state_ledger", {})
       if type(stateLedger) ~= "table" then stateLedger = {} end
-      for oldKey, state in pairs(oldStates) do
+      for _, oldKey in ipairs(orderedKeys(oldStates)) do
+          local state = oldStates[oldKey]
           if type(state) == "table" then
               local physical = routeKey(state.encounterMapId) or routeKey(oldKey)
               if physical and (stateLedger[physical] == nil
@@ -10470,7 +10996,8 @@ return function(mod)
       end
 
       local newStates = {}
-      for physical, state in pairs(stateLedger) do
+      for _, physical in ipairs(orderedKeys(stateLedger)) do
+          local state = stateLedger[physical]
           if type(state) == "table" then
               local target = mod.exports.__beta26.projectEncounterArea(physical)
                   or routeKey(physical)
@@ -10610,8 +11137,9 @@ return function(mod)
           end
       end
       mod.save:set("encounter_projection_signature",
-          tostring(math.max(0, math.min(1, math.floor(tonumber(
-              mod.save:get("route_splits", 0)) or 0)))) .. ":"
+          tostring(mod.exports.__beta26.routeSplitActive("route_2_split") and 1 or 0) .. ":"
+          .. tostring(mod.exports.__beta26.routeSplitActive("route_10_split") and 1 or 0) .. ":"
+          .. tostring(mod.exports.__beta26.routeSplitActive("route_20_split") and 1 or 0) .. ":"
           .. tostring(math.max(0, math.min(1, math.floor(tonumber(
               mod.save:get("mt_moon_splits", 0)) or 0)))) .. ":"
           .. tostring(math.max(0, math.min(1, math.floor(tonumber(
@@ -10620,8 +11148,9 @@ return function(mod)
   end
 
   mod.exports.__beta26.ensureEncounterProjection = function()
-      local signature = tostring(math.max(0, math.min(1, math.floor(tonumber(
-          mod.save:get("route_splits", 0)) or 0)))) .. ":"
+      local signature = tostring(mod.exports.__beta26.routeSplitActive("route_2_split") and 1 or 0) .. ":"
+          .. tostring(mod.exports.__beta26.routeSplitActive("route_10_split") and 1 or 0) .. ":"
+          .. tostring(mod.exports.__beta26.routeSplitActive("route_20_split") and 1 or 0) .. ":"
           .. tostring(math.max(0, math.min(1, math.floor(tonumber(
           mod.save:get("mt_moon_splits", 0)) or 0)))) .. ":"
           .. tostring(math.max(0, math.min(1, math.floor(tonumber(
@@ -10957,7 +11486,7 @@ return function(mod)
 
   mod.exports.battle_classifier = {
       api = 1,
-      build = "beta.29.1.0",
+      build = "beta.29.2.7",
       classify = function(game, battle, species)
           return mod.exports.__beta26.classifyBattle(game, battle, species)
       end,
@@ -11926,7 +12455,7 @@ return function(mod)
                       pokemonId = Identity.ensurePokemonIdentity(mon, currentSave, mon.nuzlockeOrigin or "NORMAL"),
                       catchLocation = mon.catchLocation,
                       encounterType = mon.encounterType,
-                      status = "LOST",
+                      status = "DEAD",
                       deathLocation = key,
                       deathCause = causeText,
                       deathOpponentSpecies = enemySpecies,
@@ -12002,7 +12531,7 @@ return function(mod)
               local msg = Strings("All of your\nPOKeMON are dead...\nYour run is over.")
               if worldTier(self.game) >= 3 then
                   local losses = tonumber(mod.save:get("nuzlocke_losses", 0)) or 0
-                  msg = Strings("NUZLOCKE OVER\n%d POKéMON lost.\nThe League will remember.",
+                  msg = Strings("NUZLOCKE OVER\nDEATHS: %d\nThe League will remember.",
                       losses)
               end
               if type(self.sayNext) == "function" then
@@ -12026,7 +12555,18 @@ return function(mod)
       local vanillaFinish = BattleState.finish
       BattleState.finish = function(self)
           if not self.nuzlockeGameOver then
-              return vanillaFinish(self)
+              -- REVIEWED: battle.ended fires before the engine invokes the
+              -- battle's onFinish callback. A scripted trainer/gym callback
+              -- can therefore restore or replace party state after our normal
+              -- battle.ended prune has already run. Prune once more after the
+              -- complete native finish/onFinish chain so a dead Pokemon cannot
+              -- be reinserted and later healed back into service.
+              local results = { vanillaFinish(self) }
+              if mod.save:get("nuzlocke_enabled", true) == true
+                  and mod.save:get("permadeath", true) == true then
+                  pruneRestoredDeadPokemon(self.game)
+              end
+              return unpack(results)
           end
 
           self.nuzlockeGameOver = nil
@@ -12174,7 +12714,7 @@ return function(mod)
               local last = mod.save:get("last_loss", {}) or {}
               local lastName = tostring(last.name or "NONE")
               local lastLoc = routeName(last.location or "UNKNOWN")
-              local summary = Strings("NUZLOCKE OVER\nBADGES: %d\nCAUGHT: %d  LOST: %d\nLAST LOSS: %s\n%s",
+              local summary = Strings("NUZLOCKE OVER\nBADGES: %d\nCAUGHT: %d  DEATHS: %d\nLAST DEATH: %s\n%s",
                   badges, catches, losses, lastName, lastLoc)
               local okText, TextBox = pcall(require, "src.render.TextBox")
               if okText and TextBox and self.game and self.game.stack then
@@ -12616,9 +13156,21 @@ return function(mod)
   if mod.content and mod.content.map_scripts then
       mod.content.map_scripts:register("REDS_HOUSE_1F", {
           priority = 20,
-          onInteract = function(game, ow, fx, fy)
-              if tonumber(fx) ~= 3 or tonumber(fy) ~= 1 then return false end
-              if worldTier(game) < 3 then return false end
+          talk = {
+          TEXT_REDSHOUSE1F_TV = function(game, ow, npc, done)
+              if worldTier(game) < 3 then
+                  local t = game.data.text
+                  local text = ow.player.facing == "up"
+                      and t._RedsHouse1FTVStandByMeMovieText
+                      or t._RedsHouse1FTVWrongSideText
+                  local okText, TextBox = pcall(require, "src.render.TextBox")
+                  if okText and TextBox then
+                      game.stack:push(TextBox.new(game, text, done))
+                      return
+                  end
+                  if done then done() end
+                  return
+              end
 
               -- beta.26.4: the home TV is a live run recap rather than one
               -- static rule gag. It combines current story progression, route
@@ -12646,6 +13198,7 @@ return function(mod)
                   for i = #history, 1, -1 do
                       local row = history[i]
                       if type(row) == "table" and row.status ~= "LOST"
+                          and row.status ~= "DEAD"
                           and (row.name or row.species) then
                           latestCaught = tostring(row.name or row.species)
                           break
@@ -12748,8 +13301,10 @@ return function(mod)
               parts[#parts + 1] = ruleLine
               local msg = table.concat(parts, "\n")
 
-              return mod.exports.__beta26.pushWorldText(game, msg)
+              if not mod.exports.__beta26.pushWorldText(game, msg, done)
+                  and done then done() end
           end,
+          },
       })
   end
 
@@ -13431,7 +13986,7 @@ return function(mod)
                   mon.nuzlockeOrigin or "NORMAL"),
               catchLocation = mon.catchLocation,
               encounterType = mon.encounterType,
-              status = "LOST",
+              status = "DEAD",
               deathLocation = key,
               deathCause = cause,
               deathOpponentSpecies = enemySpecies,
@@ -13813,11 +14368,25 @@ return function(mod)
 
               mod.exports.__beta26.StatRules.applyPlayer(game, mon)
               local species = mon.species or scriptedSpecies
+              -- Gold can expose a party mon's species as the numeric Gen 2
+              -- index even though tracker/history keys are symbolic ids. Resolve
+              -- that index before registration so a randomized starter cannot
+              -- become an UNKNOWN/numbered provenance row.
+              if tonumber(species) and game and game.data
+                  and type(game.data.pokemon) == "table" then
+                  for id, def in pairs(game.data.pokemon) do
+                      if type(def) == "table"
+                          and tonumber(def.index) == tonumber(species) then
+                          species = tostring(id):upper()
+                          break
+                      end
+                  end
+              end
               local actualUpper = tostring(species or ""):upper()
               if isStarter then
-                  registerStarterCatch(species, mon)
+                  registerStarterCatch(actualUpper, mon)
               else
-                  registerSpecialCatch(species, area, "gift", mon)
+                  registerSpecialCatch(actualUpper, area, "gift", mon)
               end
               G2.requireGiftNickname(game, mon, ctx and ctx.vm)
               mod.exports.__beta26.syncHistoryNickname(mon)
@@ -14100,7 +14669,7 @@ return function(mod)
                   local last = mod.save:get("last_loss", {}) or {}
                   local lastName = tostring(last.name or "NONE")
                   local lastLoc = routeName(last.location or "UNKNOWN")
-                  local summary = Strings("NUZLOCKE OVER\nBADGES: %d\nCAUGHT: %d  LOST: %d\nLAST LOSS: %s\n%s",
+                  local summary = Strings("NUZLOCKE OVER\nBADGES: %d\nCAUGHT: %d  DEATHS: %d\nLAST DEATH: %s\n%s",
                       badges, catches, losses, lastName, lastLoc)
                   local okText, TextBox = pcall(require, "src.render.TextBox")
                   if okText and TextBox and game and game.stack then
@@ -14136,6 +14705,8 @@ return function(mod)
                   mon.catchLocation = area
                   mon.encounterType = "starter"
                   mon.nuzlockeTrackerRegistered = true
+                  Identity.setPokemonOrigin(mon, "NORMAL")
+                  Identity.baselineAdd(mon, "NORMAL")
               end
               return
           end
@@ -14316,8 +14887,11 @@ return function(mod)
                           Chrome.print(label, 2, 11 + row * 1)
                       end
                   end
-                  if self.ruleScroll > 0 then Chrome.print(Strings("^"), 18, 12) end
-                  if self.ruleScroll + visible < #names then Chrome.print(Strings("v"), 18, 14) end
+                  if self.ruleScroll > 0 then Chrome.cursor(18, 12, true) end
+                  if self.ruleScroll + visible < #names then
+                      local Font = require("src.render.Font")
+                      Font.drawCode(Chrome.DOWN_ARROW, 18 * 8, 14 * 8)
+                  end
                   Chrome.print(Strings("B:EXIT"), 2, 16)
               end
 

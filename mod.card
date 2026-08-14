@@ -17,10 +17,11 @@ return {
     known = {
       "Gold remains beta and some Gold rule paths still need dedicated runtime verification",
       "Nuzlocke-owned screens are not yet fully themed by every UI replacement",
-      "lost-encounter presentation and Pokemon-death presentation still need a backward-compatible separation pass",
+      "LOST encounter and Pokemon-death presentation are separated in beta.29.2.0 but still need old-save/new-save runtime regression testing",
       "beta.29.0.2 scripted gift/nickname, Gold PC-gift, and static-provenance fixes still need targeted runtime confirmation",
-      "Gen1Recomp 0.1.83 is source-audited in beta.29.1.0 but still needs the release-candidate gameplay runtime pass",
-      "Gen1Recomp may show a redundant update notice for beta-tagged releases because its current updater compares only the x.y.z portion",
+      "Gen1Recomp 0.1.83 is source-audited; beta.29.2.7 still needs targeted startup-dialogue, random-starter presentation, common-route migration, Gym Permadeath, lock-in, and final trainer-cap runtime regression testing",
+      "Gym Leader/special-trainer Permadeath reconciliation was hardened in beta.29.2.1 and remains release-blocking until the reported Misty case is runtime retested",
+      "Gen1Recomp may resolve this multi-part beta tag to an older published build in its updater; install the newest Nuzlocke package manually instead of accepting an offered downgrade",
     },
   },
   credits = {

@@ -1,6 +1,6 @@
 # Compatibility
 
-This document records compatibility claims for Nuzlocke `2.0.0-beta.29.1.0`. A compatibility percentage is an evidence-weighted confidence estimate, not a measured failure rate.
+This document records compatibility claims for Nuzlocke `2.0.0-beta.29.2.7`. A compatibility percentage is an evidence-weighted confidence estimate, not a measured failure rate.
 
 Repository/release metadata in the named-project table was refreshed on **2026-08-13** where a canonical repository could be verified. Historical test confidence remains attached to the exact tested/reviewed version, not automatically to the refreshed latest release.
 
@@ -18,7 +18,7 @@ Gen1Recomp 0.1.83 adds a public Gold `mod.world:mapOverview()` surface without r
 
 ### Mod Manager beta-release limitation
 
-Current Gen1Recomp release parsing compares beta-tagged releases by their leading `x.y.z` triple. A tag such as `2.0.0-beta.29.1.0` can therefore be presented as `v2.0.0 available` even when the installed beta is current. This is an update-status limitation, not a Nuzlocke gameplay compatibility failure.
+Current Gen1Recomp release parsing compares beta-tagged releases by their leading `x.y.z` triple. A tag such as `2.0.0-beta.29.2.7` can therefore be presented as `v2.0.0 available` even when the installed beta is current. This is an update-status limitation, not a Nuzlocke gameplay compatibility failure.
 
 An unpublished local candidate is also ahead of what the repository can serve: using **Update** on that local build installs the latest **published** Nuzlocke release. Manual import should be used for unpublished runtime candidates. The public release requires an end-to-end update test after publication.
 
@@ -106,3 +106,33 @@ The current compatibility surface addresses these interaction classes through se
 - A known runtime FAIL overrides static success.
 - Changing a relevant code path lowers confidence until that path is retested.
 - A newer third-party version never inherits the older version's confidence automatically.
+
+## Historical compatibility record
+
+The beta.29.2.0 history-recovery pass added two supported historical checkpoints without changing the current compatibility contract:
+
+- beta.21 surviving reconstruction: Gen1Recomp 0.1.78 audit era, save schema 4, Nuzlocke Compatibility API v9.
+- beta.27.3: Gen1Recomp 0.1.79 audit era, shared `ItemEffects.use` repair, Nuzlocke Compatibility API v11.
+
+These are historical records only. Current integration targets remain the version/API values documented at the top of this file.
+
+## beta.29.2.2 trainer-roster compatibility hardening
+
+Level caps continue to read the final merged trainer registry at point of use. beta.29.2.2 broadens ace-level discovery to a bounded set of nested semantic roster containers (`party`, `team`, `pokemon`, `mons`, `roster`, `members`) so compatible trainer-content changes do not have to preserve one exact immediate-array shape. Runtime confirmation is still required for any named trainer-content package/version before compatibility is promoted beyond TEST REQUIRED.
+
+Level Cap Scope **POST** is the current opt-in for provider-driven postgame cap stages. The retired separate expanded/additional-content control is not expected to appear in current Setup/NUZ RULES.
+
+Gen1Recomp's in-game update flow is currently treated as unsafe for this beta tag line when it resolves a newer installed beta to an older published candidate. Until the engine's version-resolution behavior is verified corrected, use the newest release package manually rather than accepting an offered downgrade.
+
+### Indigo Plateau Conference 1.0.2
+
+Audited for Pokemon Gold. Indigo Plateau Conference owns its Colosseum staging, runtime NPCs, tournament run state, CANLOSE setup, challenger substitution, and intended survivor healing. Nuzlocke does not overwrite those systems.
+
+`trainer.party` is cooperative: Nuzlocke observes the final composed party and does not replace it. Gold trainer-content inspection also understands the canonical `gen2Trainers.classes` registry.
+
+Permadeath remains Nuzlocke-owned. Tournament healing may restore surviving Pokemon, but a Pokemon already recorded dead by Nuzlocke is returned to 0 HP during post-battle/map reconciliation. Whiteout also remains Nuzlocke-owned; if enabled, it can still end a Nuzlocke run even though the tournament itself uses CANLOSE.
+
+
+### Stronger Trainers runtime cap preview
+
+The active boss roster can be produced only through the shared `trainer.party` composition path. Nuzlocke therefore performs a protected preview of that semantic hook for the next boss when the relevant runtime trainer-balance mod is active, then reads the ace from the composed result. The real battle still owns and recomputes its own party normally; Nuzlocke does not replace trainer teams. Runtime certification is still required because 29.2.6 showed vanilla caps before this pre-battle preview existed.

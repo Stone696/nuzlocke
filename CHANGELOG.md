@@ -1,6 +1,143 @@
+## 2.0.0-beta.29.2.7
+- R/B Random Starter selection confirmation now names the persisted randomized species, with the existing Dex preview and actual grant bound to the same roll.
+- Added protected pre-battle trainer-party preview for known runtime trainer-balance composition so Trainer Card and Encounter Log can show the actual next boss ace before the fight starts.
+- Gym Lock-In and Dungeon Lock-In moved from World to the Ironmon/Hardcore challenge section; rule behavior is unchanged.
+- Cleaned up the optional early Oak-lab Rival line to avoid repeating the later post-battle "toughen it up" idea.
+- Preserves Yellow in-game section glyphs and Running Shoes/QoL placement confirmed by runtime testing.
+
+## 2.0.0-beta.29.2.6
+- Audited compatibility with Indigo Plateau Conference v1.0.2 (Gold).
+- Trainer-party observation now runs outside normal priority-0 content wrappers, so Nuzlocke records the final composed tournament party rather than observing vanilla before a downstream replacement.
+- Gold trainer-data inspection now understands the canonical `game.data.gen2Trainers.classes` shape while retaining the existing R/B/Y trainer registry path.
+- Added a narrow Indigo Conference adapter declaration: its Colosseum NPC/state/CANLOSE flow remains tournament-owned; Nuzlocke retains death, rules, tracker, and Whiteout ownership.
+- Scripted post-battle healing is allowed for surviving Pokemon, while already Nuzlocke-dead party members are reasserted at 0 HP after battle/map reconciliation.
+- No IPC map, NPC, trainer, event-flag, tournament-state, or save keys are patched or overwritten.
+
 # Changelog
 
-This file is the permanent cumulative development/release history. A known revision is retained even when its exact per-build delta is only partially recoverable; uncertain history is labeled rather than guessed.
+This file is the permanent cumulative development/release history. A known revision is retained even when its exact per-build delta is only partially recoverable; uncertain history is labeled rather than guessed. A beta.29.2.0 history-recovery pass reconciled preserved source, packages, runtime evidence, and retained development records; newly recovered details are added only where their version attribution is supportable.
+
+## 2.0.0-beta.29.2.5 — focused common-route split rules
+- Gold START-menu labels for Nuz Status, Encounter Tracker, and Nuz Rules now use compact native-width labels so they do not draw through the menu border.
+- Gold Nuz Status now uses the native Gen 2 down-arrow glyph for additional rule rows.
+- Hardened Gold randomized-starter registration so numeric species IDs are resolved before tracker/history writes and explicit starter events canonicalize to New Bark Town.
+- Gold starter provenance now refreshes the tracker/Catch Info path immediately when the starter is received.
+
+- Built directly from beta.29.2.3.
+- Retires the player-facing blanket Route 1–25 CARDINAL rule.
+- Adds independent **Route 2 Split**, **Route 10 Split**, and **Route 20 Split** ON/OFF rules for R/B/Y, with descriptions explaining the progression/geography reason each route is commonly split.
+- Route 2 uses North/South around Viridian Forest, Route 10 uses North/South around Rock Tunnel, and Route 20 uses West/East around Seafoam Islands.
+- Existing saves with the retired blanket Route Splits rule enabled carry that intent forward to all three new route toggles. Legacy split rows on every other route collapse deterministically to their parent route while preserving every tracker row and consumed encounter state, so migration cannot create free encounters.
+- The compatibility API retains the legacy `routes` field as `0` and adds independent `route_2`, `route_10`, and `route_20` mode fields without changing Nuzlocke Compatibility API 25 or save schema 4.
+- Mt. Moon and Safari split behavior is unchanged.
+- Runtime migration and ON/OFF reprojection tests are required before public release.
+
+## 2.0.0-beta.29.2.3 — finite-number and review hardening
+
+- Built directly from beta.29.2.2.
+- Sanitizes non-finite numeric Setup/profile inputs (`NaN`, positive infinity, negative infinity) at rule normalization and profile-copy boundaries, falling back to established defaults before clamping/persistence.
+- Adds a serializer defense-in-depth guard so a non-finite number cannot be emitted as a persisted Setup-profile literal even if it bypasses earlier normalization.
+- Leaves normal gameplay arithmetic unchanged; this is corrupted/external-input hardening rather than a change to EXP, level caps, Stat EXP, or battle math.
+- Preserves beta.29.2.2 Gym/Dungeon Lock-In, trainer-cap compatibility hardening, and all beta.29.2.1 determinism/Permadeath fixes.
+- Expands repository-only review rationale and regression obligations for investigated technical edge cases that did not justify production changes.
+
+## 2.0.0-beta.29.2.2 — lock-in and trainer-cap compatibility hardening
+
+### Goal
+
+Build directly from beta.29.2.1 and add the missing Gym/Dungeon Lock-In rule family while improving live trainer-roster cap discovery without disturbing the beta.29.2.1 Permadeath and deterministic encounter-projection fixes.
+
+### Added
+
+- **Gym Lock-In** is now a selectable Setup/NUZ RULES option. Supported Gym exits are blocked until the corresponding Gym Leader is defeated; already-cleared Gyms fail open. R/B/Y and Gold Gym map aliases are normalized before lookup.
+- **Dungeon Lock-In** is now a selectable Setup/NUZ RULES option for a conservative set of known multi-exit dungeon families. The entrance used to enter is sealed, while reaching a different legitimate exterior exit releases the lock.
+- Escape Rope use is blocked while an active Dungeon Lock-In is in force, even when the separate No Escape Rope rule is OFF. Dig, Teleport, and Fly are also denied through the shared field-move eligibility seam if they would otherwise be usable from the locked dungeon.
+- Lock-In rejection text has plain/Tier 1, Tier 2, and Tier 3 presentation. Turning optional World Building OFF still leaves a plain enforcement explanation instead of silent rejection.
+
+### Compatibility hardening
+
+- Live trainer ace-level discovery now walks a bounded, cycle-safe set of common nested party containers (`party`, `team`, `pokemon`, `mons`, `roster`, `members`) instead of requiring an immediate vanilla party array. This is intended to make level caps follow trainer-content modifications that preserve semantic Pokémon rows but wrap the roster differently.
+- Level Cap Scope **POST** remains the supported opt-in for provider-driven postgame caps; the older separate expanded/additional-content toggle is not restored.
+- The current Gen1Recomp launcher updater downgrade behavior with multi-part beta tags remains a known install/update issue; manual installation of the newest release remains the safe path until version-resolution behavior is corrected.
+
+### Safety / preservation
+
+- Built directly from beta.29.2.1; no older branch was restored.
+- Dungeon coverage is deliberately conservative and excludes dead-end/single-exit locations unless a safe completion seam exists, preventing the rule itself from manufacturing a softlock.
+- A save loaded inside a dungeon without trustworthy entry-side state fails open rather than inventing a lock.
+- Save schema remains 4; Nuzlocke Compatibility API remains 25; Gen1Recomp Mod API remains 2.
+- Gym Leader Permadeath reconciliation, LOST-vs-DEATH semantics, native collapse glyphs, starting-money fallback, and unrelated rule paths remain inherited from the immediate parent.
+
+### Runtime validation required
+
+- R/B/Y: enter an uncleared Gym, verify ordinary exit rejection, defeat Leader, verify exit succeeds.
+- Gold: repeat on at least one Johto Gym.
+- Dungeon: enter a supported multi-exit dungeon, verify the entry exit is blocked, Escape Rope plus Dig/Teleport/Fly cannot bypass the lock, and a different legitimate exit releases the lock.
+- Existing/older save loaded inside a dungeon must fail open rather than trap the player.
+- Trainer-content compatibility: verify a modified Brock/early boss roster changes the displayed/enforced live cap instead of falling back to the vanilla value.
+
+## 2.0.0-beta.29.2.1 — determinism and Gym-Leader Permadeath hardening
+
+- Built directly from beta.29.2.0.
+- Made split-area re-projection deterministic instead of allowing merged representative encounter state to depend on Lua table iteration order.
+- Added a post-finish Permadeath reconciliation pass so special/Gym trainer teardown cannot restore a Pokémon already marked dead during battle.
+- Structural release-gate coverage was expanded for both fixes; exact runtime validation remained required.
+
+## 2.0.0-beta.29.2.0 — status semantics and native UI polish
+
+### Goal
+
+Turn the narrow beta.29.1.1 money checkpoint into a broader player-facing update while preserving the published beta.29.1.0 behavior baseline and every runtime-protected path.
+
+### Changed
+
+- Carries forward beta.29.1.1's R/B/Y fresh-start money correction: missing/unset Money defaults to **$3,000**, while an explicit **$0** remains valid.
+- Collapsible SETUP/NUZ RULES category headers now use Gen1Recomp's theme-aware native directional glyphs instead of ASCII `+` / `-`. Collapsed uses the native sideways cursor glyph; expanded uses the native more/down glyph.
+- New Pokémon-death history rows now use `status = "DEAD"` instead of overloading `"LOST"`.
+- Existing saves are migrated conservatively: legacy `LOST` history rows are rewritten to `DEAD` only when they carry death evidence such as a death location/cause/opponent.
+- Failed/fled/KO'd eligible encounters remain represented separately by `encounter_states[area].status = "FAILED"` and feed **LOST ENC.** counts.
+- Run-over summaries now label the owned-Pokémon counter as **DEATHS** / **LAST DEATH** rather than LOST, while the underlying legacy `nuzlocke_losses` save key remains intact for save compatibility.
+- Reconciled the cumulative version record against preserved source, packages, runtime evidence, and retained development records, enriching beta.19, beta.21, beta.27.3, beta.27.8, and beta.27.9 where the recovered attribution is strong enough to preserve without guessing.
+
+### Compatibility / preservation
+
+- Built directly from beta.29.1.1; no older branch was restored.
+- Save schema remains 4 because the migration is backward-compatible and does not remove or rename persisted keys.
+- Nuzlocke Compatibility API remains 25; no exported compatibility function signature changed.
+- Gen1Recomp compatibility remains `>=0.1.81 <0.1.84`, with 0.1.83 exact-source audited.
+- First Rival Mercy, acquisition provenance, Gold PC gifts, starter/gift nickname sync, temporary-party handling, item/shop/healing rules, and all unrelated gameplay paths are untouched.
+
+### Validation
+
+- Structural release gate expanded with assertions for the money fallback, explicit $0 preservation, native collapse glyphs, new `DEAD` history writes, legacy death-history migration, and LOST-encounter/DEATH separation.
+- Exact in-game runtime regression remains required before publication.
+
+### Known current runtime issue
+
+- A runtime report shows Permadeath working in an ordinary fight but failing to leave a Pokémon unusable after it faints against a Gym Leader (reported against Misty); the Pokémon remained in the party and could be healed at a Pokémon Center. This is treated as a current release-blocking reconciliation bug until the Gym Leader/special-trainer post-battle path is reproduced and fixed.
+
+## 2.0.0-beta.29.1.1 — fresh-start money default hotfix
+
+### Goal
+
+Fix the runtime-confirmed R/B/Y NEW GAME regression found in the published beta.29.1.0 player build without changing unrelated gameplay or compatibility behavior.
+
+### Fixed
+
+- The `save.new_game` starting-money fallback now matches the Setup default: a missing staged value produces **$3,000** instead of $0.
+- An explicit player selection of **$0** remains valid; only a missing/unset value receives the $3,000 fallback.
+
+### Preserved
+
+- Built directly from published beta.29.1.0.
+- Gen1Recomp compatibility remains `>=0.1.81 <0.1.84`, with 0.1.83 as the exact source-audited profile.
+- Gen1Recomp Mod API 2, Nuzlocke Compatibility API 25, compatibility floor 10, save schema 4, and R/B/Y/Gold targets are unchanged.
+- Starting Poké Balls, starting Rare Candies, Gold native starting resources, Soft Start, and all beta.29.0.2 acquisition/provenance fixes are untouched.
+
+### Validation
+
+- Static release gate includes explicit assertions for the $3,000 missing-value fallback and the preservation of explicit $0.
+- Exact in-game R/B/Y fresh-start retest remains required; runtime evidence is authoritative.
 
 ## 2.0.0-beta.29.1.0 — Gen1Recomp 0.1.83 compatibility profile
 
@@ -255,15 +392,21 @@ Apply the four pre-runtime code-review decisions with the smallest practical cha
 - This revision is explicitly preserved by the forward source lineage.
 - Exact per-build attribution is not fully recovered. The beta.27.6–27.12 sequence collectively covered World Building cleanup, Maximum BST, glitch/MissingNo handling, opening Rival mercy, static-encounter policy, Game Corner restrictions, and broader compatibility/Save Editor/item/acquisition/Gold audits.
 
-## 2.0.0-beta.27.9 — preserved beta.27 rule/interaction revision
+## 2.0.0-beta.27.9 — glitch/MissingNo acquisition handling
 
-- This revision is explicitly preserved by the forward source lineage.
-- Exact per-build attribution is not fully recovered. The beta.27.6–27.12 sequence collectively covered World Building cleanup, Maximum BST, glitch/MissingNo handling, opening Rival mercy, static-encounter policy, Game Corner restrictions, and broader compatibility/Save Editor/item/acquisition/Gold audits.
+- Added conservative MissingNo/glitch-species classification for known MissingNo identities plus flagged, malformed, or unregistered species records.
+- Added the player-facing **Allow Glitches** rule: OFF blocks new glitch-species acquisitions on supported R/B/Y and Gold paths while preserving already-owned Pokémon.
+- Normalized Catch Info/tracker/history handling for supported glitch-species records instead of assuming every acquisition maps cleanly to ordinary registered species data.
+- Classification remained conservative/fail-open when incomplete modded metadata could not prove a species was a glitch.
 
-## 2.0.0-beta.27.8 — preserved beta.27 rule/interaction revision
+## 2.0.0-beta.27.8 — Maximum BST acquisition rule
 
-- This revision is explicitly preserved by the forward source lineage.
-- Exact per-build attribution is not fully recovered. The beta.27.6–27.12 sequence collectively covered World Building cleanup, Maximum BST, glitch/MissingNo handling, opening Rival mercy, static-encounter policy, Game Corner restrictions, and broader compatibility/Save Editor/item/acquisition/Gold audits.
+- Added numeric **Maximum BST** with `000/OFF` or `001–999` selection.
+- Applied supported BST acquisition checks to wild catches, scripted gifts, and trades while keeping mandatory starters exempt from rejection.
+- Used Gen 1 combined SPECIAL and Gold split special-stat data appropriately when computing base-stat totals.
+- Merged available species metadata and failed open when complete/reliable base stats were unavailable rather than blocking an unknown modded species on guessed data.
+- Preserved Dupes evaluation ahead of the BST gate and exposed the rule through Nuzlocke Compatibility API v15-era metadata.
+- Lua 5.1 structural validation passed for the implementation; representative in-game numeric/acquisition coverage remained required.
 
 ## 2.0.0-beta.27.7 — preserved beta.27 rule/interaction revision
 
@@ -287,7 +430,11 @@ Apply the four pre-runtime code-review decisions with the smallest practical cha
 
 ## 2.0.0-beta.27.3 — shared-seam compatibility negotiation
 
+- Built directly from beta.27.2 and audited against the Gen1Recomp 0.1.79 line.
+- Repaired the shared `ItemEffects.use` seam used by item-rule enforcement.
 - Expanded advertised compatibility capabilities to shared engine/UI surfaces such as item use, shops, battle finish, Trainer Card, party/start menus, screens, static encounters, trainer parties, and boss caps.
+- Began separating encounter-loss presentation from owned-Pokémon death presentation with **LOST ENC.** / **DEATHS** terminology, while the deeper legacy-history status overlap remained for the later beta.29.2.0 migration.
+- Advanced the additive compatibility surface to Nuzlocke Compatibility API v11 while retaining backward-compatible older provider expectations.
 
 ## 2.0.0-beta.27.2 — preserved beta.27 development revision
 
@@ -389,8 +536,11 @@ Apply the four pre-runtime code-review decisions with the smallest practical cha
 
 ## 2.0.0-beta.21 — Gold/GSC architecture groundwork
 
-- Added version-profile architecture and experimental Gold targeting groundwork.
+- Reconstructed directly from beta.20 while preserving save schema 4 and existing rule/save behavior.
+- Added version-profile architecture and experimental Gold/GSC targeting groundwork; the surviving reconstruction audited against Gen1Recomp 0.1.78.
 - Expanded progression architecture through Red/postgame-provider concepts and the R/B/Y Trainer Card active-rule display.
+- Preserved a two-row R/B/Y Trainer Card rule display and expanded World Building Tier 1/2/3 labels in the reconstructed build.
+- The reconstructed beta.21 compatibility surface is recorded as Nuzlocke Compatibility API v9; later planned semantics not proven present in that source remain unassigned.
 
 ## 2.0.0-beta.20 — compatibility and regression hardening
 
@@ -399,8 +549,12 @@ Apply the four pre-runtime code-review decisions with the smallest practical cha
 
 ## 2.0.0-beta.19 — protected reconciliation baseline
 
-- Served as the protected baseline for the beta.20 surgical update line.
-- Complete per-change details are not fully recovered in the current archive; this entry is retained rather than replaced with inferred history.
+- Served as the protected canonical baseline for the beta.20 surgical update line.
+- Recovered project-log evidence identifies beta.19 as the point where split **No Buying** / **No Selling** replaced the retired combined shop rule, persistent Pokémon identities were established, and Dupes supported OFF / SPECIES / FAMILY modes.
+- Numeric starting resources, separate item restrictions, presets, R/B/Y-specific handling, additive save/persistence reconciliation, and transactional gift/trade enforcement were present in the protected baseline.
+- Multiple legitimate same-area tracker catches were preserved as separate records instead of being collapsed together.
+- Wonderlocke remained visible/dormant and forced OFF; the baseline also carried the v0.1.77-era audit work, Blue/Yellow Setup/cursor fixes, and removal of the old NEXT BOSS display.
+- Some earlier feature-by-feature introduction points remain unrecovered, so this entry records known beta.19 baseline properties rather than claiming every listed feature originated in beta.19.
 
 ## 2.0.0-beta.16 — reconstructed from surviving source/release records
 

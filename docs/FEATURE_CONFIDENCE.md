@@ -1,4 +1,4 @@
-# Feature confidence — beta.29.1.0
+# Feature confidence — beta.29.2.7
 
 These percentages express **confidence that the feature behaves as intended in this candidate**, based on the combination of runtime evidence, behavior/static checks, compile/load history, and how recently the relevant path changed. They are not literal observed success rates.
 
@@ -14,7 +14,9 @@ These percentages express **confidence that the feature behaves as intended in t
 
 Runtime failures override compile/static success. A material code change lowers confidence until the changed path is retested.
 
-**Engine-profile note:** beta.29.1.0 changes compatibility metadata/profile coverage rather than gameplay logic. Gen1Recomp 0.1.83 is exact-source audited, but that does not promote feature confidence until the 0.1.83 runtime pass completes.
+**Current runtime note:** Yellow in-game collapse glyphs and Running Shoes/QoL placement are runtime PASS; Yellow Stronger Trainers cap display failed on 29.2.6 and is a 29.2.7 regression target.  Blue/Yellow public-build testing confirmed Default Names, starting resources, random-starter grant/provenance, forced nicknames, Soft Start, No Mom Heal/No Center Heal, and Yellow First Rival Mercy. beta.29.2.7 changes presentation/compatibility around some of these paths, so exact-current-build retesting is still required.
+
+**Engine-profile note:** beta.29.2.7 inherits the audited Gen1Recomp 0.1.83 profile, beta.29.2.1 determinism/Permadeath fixes, and beta.29.2.2 lock-in/trainer-cap hardening. This candidate preserves the Route 2/10/20 split migration and finite-number hardening while changing startup/random-starter presentation, final trainer-party cap observation, Maximum BST editing, and Trainer Card/front-menu UI; those changed paths require current-version runtime testing.
 
 ## Full matrix
 
@@ -28,23 +30,24 @@ Runtime failures override compile/static success. A material code change lowers 
 | Setup | **Save Setup profile** | 91% | 91% | 96% | 92% | Supported | Separate R/B/Y and Gold pre-game profiles are implemented; current Gold Setup runtime is healthy, but exact save/reload profile testing is not complete for every game. |
 | UI | **Save Rules** | 92% | 92% | 97% | 90% | Supported | Active-save rule persistence is longstanding; exact Gold save/reopen rule matrix remains incomplete. |
 | Recovery | **Recover Catches** | 84% | 84% | 88% | 0% | Test Required | R/B/Y legacy catch-recovery UI exists for unresolved older-save provenance; Gold does not expose this control. |
-| Setup | **Starting Money** | 90% | 90% | 99% | 0% | Verified | Yellow new-game starting Money runtime PASS; R/B shares setup implementation. Not exposed on Gold. |
+| Setup | **Starting Money** | 82% | 82% | 86% | 0% | Test Required | Historical Yellow runtime PASS exists, but beta.29.1.0 player testing found untouched fresh-start Money at $0 instead of the intended $3,000. beta.29.2.0 carries the corrected shared R/B/Y seam; exact runtime retest required. Not exposed on Gold. |
 | Setup | **Starting Poke Balls** | 90% | 90% | 96% | 0% | Supported | R/B/Y starting-ball handoff/activation has runtime history; not exposed on Gold. |
 | Setup | **Starting Rare Candy** | 90% | 90% | 99% | 0% | Verified | Yellow new-game starting Rare Candies runtime PASS; R/B shares setup implementation. Not exposed on Gold. |
 | Utility | **Gym Guide Rare Candy** | 94% | 94% | 97% | 0% | Verified | R/B/Y repeatable Gym Guide Rare Candy mechanics were runtime-established in the beta.25/26 line. Not exposed on Gold. |
 | UI | **ENC TRACKER** | 95% | 95% | 99% | 94% | Verified | Yellow and Gold runtime history; R/B shared code and older tracker coverage. |
 | UI | **R/B/Y Trainer Card NUZ STATUS / Gold status screen** | 94% | 94% | 98% | 86% | Supported | Yellow Trainer Card runtime history; Gold uses separate Start-menu status path. |
+| UI/Data | **LOST ENC / DEATH semantics** | 82% | 82% | 86% | 76% | Test Required | beta.29.2.0 writes new death-history rows as `DEAD`, conservatively migrates legacy death rows, and keeps failed encounters in `FAILED` area state. Runtime old-save/new-save verification required. |
 | UI | **CATCH INFO** | 93% | 93% | 98% | 80% | Test Required | Yellow current/historical coverage and Gold beta26.6 runtime PASS; Gold PC-routed gift provenance changed in beta.29.0.2 and needs targeted runtime retest. |
 | UI | **UI-theme replacement composition** | 62% | 62% | 65% | 65% | Known Issue | Six Nuzlocke-owned screens remain outside full UI-theme handling. |
 | Core | **Nuzlocke master switch** | 95% | 95% | 98% | 88% | Supported | Longstanding shared enforcement; Gold reduced rule surface. |
-| Core | **Permadeath** | 94% | 94% | 96% | 78% | Test Required | Longstanding R/B/Y path; Gold remains explicitly test-required and temporary-party hardening needs targeted runtime. |
+| Core | **Permadeath** | 84% | 84% | 88% | 70% | Test Required | Ordinary-battle behavior has runtime history. A Misty/Gym Leader report restored a dead Pokémon after battle; beta.29.2.1 adds a post-`onFinish` dead-party prune. Gym Leader, ordinary trainer, Whiteout, temporary-party, heal, and save/reload regression tests are required. |
 | Core | **First Rival Mercy** | 88% | 88% | 92% | 70% | Test Required | beta.29.0.2 removed inert persisted telemetry while preserving the established one-shot/battle-local gate; targeted regression runtime is required after touching this path. |
 | Core | **One Per Area** | 96% | 96% | 99% | 78% | Test Required | Yellow catch/encounter tracking runtime PASS; Gold PC-routed scripted-gift area consumption was fixed in beta.29.0.2 and needs runtime confirmation. |
 | Core | **Failed Encounters** | 94% | 94% | 99% | 80% | Supported | Yellow failed Route 2 runtime PASS; Gold exact edge cases still open. |
-| Core | **Nickname Rule** | 92% | 92% | 97% | 72% | Test Required | Live nickname enforcement has runtime history, but beta.29.1.0 changes post-naming history synchronization on R/B/Y and Gold and adds boxed-gift handling; targeted runtime retest required. |
+| Core | **Nickname Rule** | 92% | 92% | 97% | 72% | Test Required | Live nickname enforcement has runtime history, but beta.29.2.0 changes post-naming history synchronization on R/B/Y and Gold and adds boxed-gift handling; targeted runtime retest required. |
 | Clauses | **Dupes Clause** | 91% | 91% | 95% | 78% | Test Required | Shared merged evolution/species logic; exact current Gold combinations need runtime. |
 | Clauses | **Shiny Clause** | 96% | 96% | 99% | 82% | Supported | Yellow pre-Ball Shiny ON/OFF route-preservation PASS; Gold exact combinations less tested. |
-| Area | **Route Splits** | 86% | 86% | 90% | 0% | Supported | R/B/Y implemented with reversible projection; not part of Gold beta rule surface. |
+| Area | **Route 2 / 10 / 20 Splits** | 86% | 86% | 90% | 0% | Supported | R/B/Y independently selectable common route splits with reversible projection and legacy blanket-split migration; runtime migration regression still required. |
 | Area | **Mt Moon Splits** | 84% | 84% | 88% | 0% | Supported | R/B/Y implemented; dedicated current runtime coverage limited. |
 | Area | **Safari Splits** | 84% | 84% | 88% | 0% | Supported | R/B/Y implemented; dedicated current runtime coverage limited. |
 | Starter | **Random Starter** | 84% | 84% | 86% | 74% | Test Required | Implementation/smoke coverage; exact per-game runtime matrix remains incomplete. |
@@ -60,7 +63,7 @@ Runtime failures override compile/static success. A material code change lowers 
 | General | **Perfect Player IVs/DVs** | 82% | 82% | 84% | 68% | Test Required | Creation-only implementation; exact runtime combinations remain open. |
 | General | **Perfect Wild IVs/DVs** | 82% | 82% | 84% | 68% | Test Required | Creation-only implementation; exact runtime combinations remain open. |
 | General | **Perfect Trainer IVs/DVs** | 82% | 82% | 84% | 68% | Test Required | Creation-only implementation; exact runtime combinations remain open. |
-| General | **No Static** | 84% | 84% | 87% | 68% | Test Required | beta.29.1.0 hardens the one-shot scripted-static lifecycle; genuine static and intervening-trainer/ordinary-wild regressions need runtime confirmation. |
+| General | **No Static** | 84% | 84% | 87% | 68% | Test Required | beta.29.2.0 hardens the one-shot scripted-static lifecycle; genuine static and intervening-trainer/ordinary-wild regressions need runtime confirmation. |
 | General | **No Gambling** | 86% | 86% | 89% | 72% | Test Required | Pre-mutation transaction adapters; Gold exact runtime still required. |
 | General | **Maximum BST** | 82% | 82% | 84% | 70% | Test Required | Numeric handling fixed in beta.28.15; representative values/acquisition paths still need runtime. |
 | General | **Allow Glitches** | 84% | 84% | 86% | 68% | Test Required | Conservative classification and fail-open safety; exact current gameplay matrix limited. |
@@ -85,6 +88,8 @@ Runtime failures override compile/static success. A material code change lowers 
 | Challenge | **Whiteout** | 86% | 86% | 90% | 72% | Test Required | Teardown and temporary-party hardening exist; destructive exact current runtime remains important, especially Gold. |
 | Challenge | **Solo Only** | 86% | 86% | 89% | 0% | Supported | R/B/Y enforcement architecture; not exposed on Gold beta rule surface. |
 | World | **World Building** | 88% | 88% | 94% | 0% | Supported | Several Yellow/Blue runtime paths; Kanto-focused and not exposed on Gold beta rule surface. |
+| World | **Gym Lock-In** | 72% | 72% | 74% | 62% | Test Required | beta.29.2.2 gates supported Gym exits through the shared warp destination seam and unlocks from leader progression. R/B/Y and Gold runtime alias/progression validation required. |
+| World | **Dungeon Lock-In** | 70% | 70% | 72% | 60% | Test Required | beta.29.2.2 tracks the entry side for a conservative multi-exit dungeon set, blocks entry-side retreat plus Escape Rope/Dig/Teleport/Fly while active, allows a different legitimate exit, and fails open when entry provenance is unavailable. |
 | QoL | **Default Names** | 90% | 90% | 92% | 88% | Supported | Player/Rival name skip has runtime PASS evidence; exact game of the latest pass is not preserved. |
 | QoL | **Skip Catch Demo** | 0% | 0% | 0% | 75% | Test Required | Gold-only implementation; dedicated current runtime confirmation still needed. |
 | UI | **Area Guide** | 93% | 93% | 97% | 90% | Supported | Tracker/map architecture with Yellow/Gold runtime evidence. |
@@ -94,13 +99,12 @@ Runtime failures override compile/static success. A material code change lowers 
 
 ## Current highest-priority confidence gaps
 
-- beta.29.0.2 reviewed-fix regressions carried into beta.29.1.0 unchanged: First Rival Mercy, scripted gift/starter history nickname synchronization, Gold full-party/PC-routed gifts, and scripted-static provenance across an intervening trainer battle.
+- beta.29.0.2 reviewed-fix regressions carried into beta.29.2.0 unchanged: First Rival Mercy, scripted gift/starter history nickname synchronization, Gold full-party/PC-routed gifts, and scripted-static provenance across an intervening trainer battle.
 - Maximum BST and all Stat EXP/DV controls need representative numeric runtime tests after the beta.28.15 numeric-rule correction.
 - Destructive Whiteout paths need disposable-save runtime coverage on the current code, especially Gold.
 - Gold field/item/shop/nickname paths marked TEST REQUIRED should be exercised individually before their scores are promoted.
 - Temporary-party Permadeath/Whiteout reconciliation needs an exact runtime combination that narrows/reorders and restores the party.
 - UI-theme composition remains a known issue even though the underlying Nuzlocke screens function.
-- Lost-encounter presentation must be separated from Pokémon death presentation without rewriting historical save meaning.
 
 ## Evidence carried into this candidate
 
@@ -109,3 +113,13 @@ Runtime failures override compile/static success. A material code change lowers 
 - Historical/current: Yellow rules/tracker/catch behavior, failed encounter tracking, next-cap displays, fresh shops, Mom/Center behavior, starter nickname, starter Catch Info, and several early-game flows have runtime PASS evidence.
 - Historical: Red/Blue shop behavior, Blue field healing, Red Gym Guide, R/B/Y startup, and multiple battle/field-item restrictions have runtime PASS evidence.
 - Save Editor follow-up: Yellow No TMs and No Rare Candy passed after fully closing/reopening Gen1Recomp.
+
+## History-recovery evidence note
+
+Preserved source/packages and runtime evidence were reconciled during the beta.29.2.0 documentation pass. Existing evidence—including Gold Setup/collapsible sections, Yellow existing-save controls, Save Editor restart behavior, and Default Names—was cross-checked against retained development records. Where an exact build under test could not be proven, the evidence remains in this ledger rather than being assigned to a guessed changelog version.
+
+## beta.29.2.2 lock-in confidence
+
+- **Gym Lock-In:** source/static implemented for R/B/Y and Gold through the shared `warp.destination` hook; **TEST REQUIRED** for live exit rejection, post-Leader unlock, and map aliases.
+- **Dungeon Lock-In:** source/static implemented for a conservative multi-exit family set; **TEST REQUIRED** for entry-side rejection, alternate-exit release, Escape Rope/Dig/Teleport/Fly rejection, and older-save fail-open behavior.
+- **Nested trainer-roster cap discovery:** source/static implemented; **TEST REQUIRED** against an actual trainer-content modification before compatibility confidence increases.

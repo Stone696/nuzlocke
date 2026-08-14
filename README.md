@@ -2,12 +2,12 @@
 
 A configurable, enforced Nuzlocke ruleset for **Pokémon Gen1Recomp**, focused first on **Red, Blue, and Yellow** with **Gold beta support**.
 
-**Release candidate:** `2.0.0-beta.29.1.0`  
+**Release candidate:** `2.0.0-beta.29.2.7`  
 **Targeted Gen1Recomp:** `0.1.83`  
 **Games:** Red, Blue, Yellow, Gold  
 **Gen1Recomp Mod API:** `2` · **Nuzlocke Compatibility API:** `25` · **Save schema:** `4`
 
-This candidate is built directly from beta.29.0.2. It preserves beta.29.0.2 gameplay behavior while adding an exact-source compatibility profile for Gen1Recomp 0.1.83 and widening the declared engine range for the upcoming runtime certification pass.
+This release candidate is built directly from beta.29.2.1. It preserves the Gen1Recomp 0.1.83 profile, starting-money correction, LOST-vs-DEATH split, deterministic encounter projection, native collapse glyphs, and Gym-Leader Permadeath hardening while adding Gym/Dungeon Lock-In rules and broader live trainer-roster cap discovery.
 
 ## Feature highlights
 
@@ -21,13 +21,13 @@ Nuzlocke 2.0 is more than a first-encounter/permadeath toggle. The current beta 
 - **R/B/Y NUZ STATUS** on the Trainer Card plus a Gold Start-menu status surface.
 - **Catch Info** for tracked owned Pokémon.
 - **Live level caps** that can follow the final merged trainer rosters.
-- **Route 1–25, Mt. Moon, and Safari Zone encounter splitting** for R/B/Y.
+- **Independent Route 2, Route 10, Route 20, Mt. Moon, and Safari Zone encounter splitting** for R/B/Y.
 - **Random Starter** while preserving the surrounding story choice path.
 - **Legendary, Mythical, Pseudo, Maximum BST, Static, Glitch, Gift, and Trade controls**.
 - **Player/Wild/Trainer starting Stat EXP presets**, **No Player Stat EXP Gain**, and independent **Perfect Player/Wild/Trainer DV** controls.
 - **Battle restrictions** for healing items, X items, escape, and cumulative Ball tiers.
 - **Field restrictions** for Repels, Escape Rope, healing, PP items, TMs, and Rare Candy.
-- **Challenge rules** for buying, selling, Pokémon Center healing, Mom healing, Whiteout, and Solo Only.
+- **Challenge rules** for buying, selling, Pokémon Center healing, Mom healing, Whiteout, Solo Only, **Gym Lock-In**, and conservative **Dungeon Lock-In**.
 - **R/B/Y Gym Guide Rare Candy** utility with repeatable selectable batches.
 - **Quality-of-life controls** including Default Names, Gold Skip Catch Demo, Catch Info, Area Guide, and B-button running.
 - **Save Editor-aware loader handling**, stable Pokémon identity/provenance, and compatibility APIs for other mods.
@@ -39,8 +39,9 @@ The current development line has added or substantially hardened:
 
 - independent Player/Wild/Trainer Stat EXP and DV controls;
 - **No Pseudos** and **Maximum BST** acquisition rules;
-- Route 1–25, Mt. Moon, and Safari encounter-area splits;
-- live merged-roster level-cap discovery;
+- independent Route 2, Route 10, Route 20, Mt. Moon, and Safari encounter-area splits;
+- live merged-roster level-cap discovery, including bounded nested roster containers used by trainer-content modifications;
+- Gym Lock-In and conservative multi-exit Dungeon Lock-In enforcement;
 - First Rival Mercy, No Static, No Gambling, and glitch-species handling;
 - dynamic trainer-party and temporary-party Permadeath/Whiteout compatibility;
 - Save Editor session separation and restart-safe gameplay rebinding;
@@ -53,6 +54,10 @@ For the exact per-build history, see [CHANGELOG.md](CHANGELOG.md). Public docume
 ## Runtime evidence and regression protection
 
 Runtime-confirmed behavior is treated as the strongest project evidence and is protected from unrelated changes. Current evidence includes fresh-run and existing-save Setup behavior, rule-selection and collapsible-section behavior, shop and item restrictions, encounter tracking, nickname enforcement, Save Editor restart handling, and other core rule paths. When implementation touching a runtime-confirmed path changes, the historical pass remains recorded but the changed path requires renewed regression consideration before current-version confidence is raised again.
+
+### Development-history recovery
+
+The cumulative changelog is reconciled against preserved source, packages, runtime evidence, and retained development records. Exact per-build attribution is preserved only where supported; conflicting or incomplete historical records remain labeled rather than silently rewritten. The repository-only history audit keeps that recovery work durable for future releases.
 
 ## Quick start
 
@@ -140,6 +145,8 @@ The pre-runtime code-review batch is implemented in this candidate. Because thes
 
 These are implementation fixes, not runtime PASS claims. The targeted regression matrix is kept in the repository-only testing ledger.
 
+**Current runtime priority:** beta.29.2.7 inherits the beta.29.2.1 Gym-Leader Permadeath reconciliation and beta.29.2.2 lock-in/trainer-cap hardening. Those paths still require their targeted runtime matrices before release approval.
+
 ## Planned work
 
 The backlog is intentionally driven by confirmed bugs, runtime evidence, version parity, compatibility needs, and project priorities. **R/B/Y is the first priority; Gold advances as its support matures; Silver/Crystal remain later work.** Only project-owner decisions determine what stays, moves, is deferred, or is removed from this list.
@@ -148,7 +155,6 @@ The backlog is intentionally driven by confirmed bugs, runtime evidence, version
 
 - Native directional glyphs for collapsible rule headers.
 - UI-theme composition for Setup, NUZ RULES, ENC TRACKER LOG/MAP, R/B/Y NUZ STATUS, and CATCH INFO.
-- Backward-compatible separation of **lost encounters** from Pokémon **deaths** in status/history presentation.
 - Authentic runtime screenshot set for the public repository.
 - Gen1Recomp 0.1.83 runtime certification across the release-gate matrix.
 
@@ -167,16 +173,32 @@ The backlog is intentionally driven by confirmed bugs, runtime evidence, version
 - Native Pokémon-icon rendering where it improves supported UI surfaces; previously discussed, not implemented or promised.
 - Silver/Crystal investigation after R/B/Y is stable and Gold support is sufficiently mature.
 
-## What changed in beta.29.1.0
+## What changed in beta.29.2.7
 
-- Built directly from beta.29.0.2 with **no intended gameplay behavior change**.
-- Audited the exact Gen1Recomp 0.1.83 source for every protected engine seam used by Nuzlocke, including Gen 1 battle/item/shop/save hooks and Gold battle/script/UI adapters.
-- Added explicit engine profiles for Gen1Recomp 0.1.82 and 0.1.83; the current audited profile is now 0.1.83.
-- Widened the manifest engine range to `>=0.1.81 <0.1.84` so the candidate can be runtime-tested on the current 0.1.83 release.
-- Kept Gen1Recomp Mod API 2, Nuzlocke Compatibility API 25, compatibility floor 10, and save schema 4 unchanged.
-- Kept the existing ENC TRACKER implementation intact. Gen1Recomp 0.1.83's new Gold `mapOverview()` surface is additive and is recorded as a future public-seam migration opportunity rather than a reason to rewrite runtime-proven tracker behavior immediately before release.
-- Recorded the Mod Manager runtime evidence: manual beta.29.0.2 import/discovery worked on 0.1.83; the old `<0.1.82` gate correctly blocked gameplay; and pressing Update on an unpublished local candidate installed the latest published Nuzlocke release instead.
-- Recorded the current Gen1Recomp beta-tag update-comparison limitation so it is not mistaken for a Nuzlocke gameplay failure.
+- R/B random starter presentation now rewrites the selection confirmation to the persisted rolled species and keeps the Dex preview/reward on that same roll.
+- Level-cap UI can preview a known runtime-composed trainer party before the battle, allowing Trainer Card and Encounter Log caps to follow active trainer-balance changes instead of waiting for the fight to start.
+- Gym Lock-In and Dungeon Lock-In moved from World into the Ironmon/Hardcore challenge section.
+- The optional early-lab rival line is shortened so it no longer repeats the later "toughen it up" idea.
+
+
+- Replaces the blanket Route 1–25 CARDINAL split option with independent **Route 2 Split**, **Route 10 Split**, and **Route 20 Split** rules for R/B/Y.
+- Explains why each route is commonly split: Viridian Forest separates Route 2, Rock Tunnel separates Route 10, and Seafoam Islands divide Route 20.
+- Existing saves/profiles that had the old blanket Route Splits rule ON carry that intent forward to all three new rules.
+- Legacy child-area history on every other route collapses conservatively to the parent route without deleting tracker rows or creating a new legal encounter.
+- Mt. Moon and Safari split behavior is unchanged.
+- Preserves all beta.29.2.3 finite-number hardening and beta.29.2.2 lock-in/trainer-cap behavior.
+- Exact runtime migration/reprojection testing remains required before publication.
+
+## What changed in beta.29.2.2
+
+- Adds **Gym Lock-In**: supported Gym exits stay closed until the Leader is defeated.
+- Adds conservative **Dungeon Lock-In**: the entrance used to enter a supported multi-exit dungeon is sealed until a different legitimate exit is reached.
+- Active Dungeon Lock-In also blocks Escape Rope use without requiring the separate No Escape Rope rule.
+- Adds tiered lock-in rejection messages while preserving a plain explanation when optional World Building flavor is OFF.
+- Broadens live trainer-roster ace detection for compatibility with nested party/team/roster containers.
+- Preserves beta.29.2.1 deterministic encounter re-projection and Gym-Leader Permadeath reconciliation.
+- Level Cap Scope **POST** remains the current additional-content/postgame provider option.
+- Exact runtime testing is still required before publication.
 
 ## Reporting a bug
 

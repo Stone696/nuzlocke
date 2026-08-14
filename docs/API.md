@@ -1,6 +1,6 @@
 # Developer API
 
-This document describes the supported integration surface exported by Nuzlocke `2.0.0-beta.29.1.0`. It is intended for mod authors who want to query Nuzlocke policy or cooperate with shared engine seams without reading internal implementation details.
+This document describes the supported integration surface exported by Nuzlocke `2.0.0-beta.29.2.7`. It is intended for mod authors who want to query Nuzlocke policy or cooperate with shared engine seams without reading internal implementation details.
 
 ## Discovering Nuzlocke
 
@@ -178,7 +178,8 @@ Convenience queries:
 Projects physical map/provenance information into the current R/B/Y encounter-area split mode.
 
 ### `getEncounterSplitModes()`
-Returns current numeric modes for `routes`, `mt_moon`, and `safari`.
+
+Returns the active split configuration. The legacy numeric `routes` field is retained as `0` for compatibility; current R/B/Y callers should read `route_2`, `route_10`, and `route_20` independently, alongside `mt_moon` and `safari`.
 
 ## Starter randomization
 
@@ -283,3 +284,20 @@ English source strings are the stable lookup keys; missing translations fall bac
 ## Stability guidance
 
 Treat `mod.exports.nuzlocke_compat`, `nuzlocke_translation`, `starter_randomizer`, `battle_classifier`, and `mod.exports.owns` as the intended developer-facing surface. Names under `mod.exports.__beta26` are implementation scaffolding and should not be treated as a stable external contract.
+
+## History/status semantics
+
+`nuzlocke_history` is persisted run history rather than a versioned public function API. In beta.29.2.0, new owned-Pokémon death rows use `status = "DEAD"`. Legacy `status = "LOST"` death rows may be migrated to `DEAD` when explicit death evidence is present. Failed encounter opportunities remain represented separately by `encounter_states[area].status = "FAILED"`. The legacy `nuzlocke_losses` and `last_loss` save keys are retained for backward compatibility.
+
+## Historical compatibility-API checkpoints
+
+The beta.29.2.0 history-recovery pass preserves two older integration checkpoints for maintainers reviewing old packages or provider contracts:
+
+- beta.21 surviving reconstruction: Nuzlocke Compatibility API v9, save schema 4, Gen1Recomp 0.1.78 audit era.
+- beta.27.3: Nuzlocke Compatibility API v11, Gen1Recomp 0.1.79 audit era, including the shared `ItemEffects.use` seam repair and broader capability negotiation.
+
+These are historical compatibility records, not alternate current APIs. Integrations targeting this candidate should use Nuzlocke Compatibility API v25 and the current compatibility floor documented above.
+
+## beta.29.2.2 rule-state additions
+
+Two persisted boolean rule keys are added without changing the Nuzlocke Compatibility API version: `gym_lock_in` and `dungeon_lock_in`. They are ordinary Nuzlocke rule state, not new provider contracts. Dungeon lock state is internal and must not be treated as a public compatibility API.
