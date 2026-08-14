@@ -1,6 +1,10 @@
+## 2.0.0-beta.30.0.0.10
+
+When another active mod explicitly owns a duplicate non-core mechanic, the Nuzlocke row stays visible but is greyed and effectively OFF. Your saved Nuzlocke preference is not erased. Applying a Nuzlocke loadout while a provider is active also updates that dormant preference, so disabling the provider later restores the loadout's intended setting rather than an older stale value. EXP Edging follows an externally owned level-cap system.
+
 # Nuzlocke 2.0 User Guide
 
-This is the complete player guide for Nuzlocke `2.0.0-beta.29.2.7` on Pokémon Gen1Recomp.
+This is the complete player guide for Nuzlocke `2.0.0-beta.29.3.13` on Pokémon Gen1Recomp.
 
 The mod is focused first on **Red, Blue, and Yellow**. **Gold is supported as a beta target** with a deliberately smaller rule surface and additional TEST REQUIRED paths. Silver and Crystal are not currently declared targets.
 
@@ -28,6 +32,18 @@ After changing a save in Save Editor:
 
 This restart sequence is important. Yellow runtime testing confirmed No TMs and No Rare Candy after an edited-save full restart.
 
+## 2.0.0-beta.29.3.13 behavior notes
+
+- Turning the **Nuzlocke** master switch OFF now also disables Trainer Money scaling and Route Forgiveness rewards/spending. QoL, World Building, UI options, and independent Game Difficulty remain available.
+- **Game Difficulty** remembers a stable profile/provider identity. If a selected external difficulty provider is temporarily unavailable, the run safely uses VANILLA rather than silently selecting whatever moved into the old list position; the requested provider is remembered so it can return when re-enabled.
+- **Dungeon Lock-In** seals the exact entrance used. A different legitimate exit is allowed even when it leads back to the same outside map. Old/ambiguous lock state fails open instead of trapping the player.
+- **No Catching** is an absolute capture ban and is no longer inferred from retired partial Ball-ban settings. If an older beta may already have converted a partial Ball ban into No Catching, 29.3.13 flags that ambiguity for review rather than guessing whether a current ON value was migration-created or intentionally selected later.
+- Source-less external gift/trade notifications are classified conservatively using version-valid source data and the live/reported location; if no location exists, only species with a genuinely deterministic vanilla source are inferred.
+- Gold now exposes **Gift Pokemon** and **In-Game Trades** on its beta rule surface. Native NPC trades are refused before the outgoing Pokemon or one-shot trade flag changes when another active rule makes the received Pokemon illegal.
+- RANDOM Mono/Duo type selection chooses from types represented by the live merged species/provider pool when possible, so vanilla R/B/Y cannot randomly start an empty Dark/Steel Type Locke.
+
+New restrictive rules keep neutral defaults: Type Locke, No Day Care, Gym Lock-In, Dungeon Lock-In, Route Forgiveness, and No Catching are OFF; Trainer Money is 100%; Game Difficulty is VANILLA.
+
 ## 2. Starting a run
 
 ### Fresh save
@@ -51,6 +67,10 @@ For current boolean/multi-state rules, Up/Down is navigation rather than value-c
 
 Collapsible category headers use Gen1Recomp's native theme-aware directional glyphs: the sideways cursor glyph indicates a collapsed section and the native more/down glyph indicates an expanded section.
 
+### Gold-native Nuzlocke screens
+
+Gold uses its own menu presentation rather than reusing the R/B/Y pixel-positioned screens. Since `2.0.0-beta.29.3.9`, Nuzlocke Setup/Nuz Rules, ENC TRACKER, CATCH INFO, Route Forgiveness prompts, and NUZ STATUS use Gold's native 20x18 tile-grid box/cursor vocabulary. The rule and encounter data are shared; only the generation-specific presentation differs. This presentation is **TEST REQUIRED** until runtime validated.
+
 ## 4. Presets
 
 | Preset | What it is for |
@@ -59,6 +79,7 @@ Collapsible category headers use Gen1Recomp's native theme-aware directional gly
 | **NUZ** | Classic Nuzlocke-oriented starting point. |
 | **HARD** | Adds Champion-level caps plus battle healing and X-item restrictions. If you also want SET battle style, use Gen1Recomp's native battle-style option. |
 | **SOLO** | Adds Solo Only and Whiteout to the Nuzlocke foundation. |
+| **IRON / IronMON** | IronMON-style Nuzlocke loadout using only challenge rules owned by this mod. |
 
 Presets are starting configurations. The visible rules remain the authoritative state for the run.
 
@@ -66,8 +87,8 @@ Presets are starting configurations. The visible rules remain the authoritative 
 
 | Control | Behavior |
 |---|---|
-| **Locke Type** | R/B/Y preset selector for CUSTOM, NUZ, HARD, and SOLO. Gold currently uses its reduced rule surface without this preset selector. |
-| **Lock Rules** | Locks the visible Nuzlocke rules in place. The lock control itself remains usable so the owner can unlock the rules again. |
+| **Nuzlocke Loadout** | Shared Nuzlocke Loadout selector for CUSTOM, NUZ, HARD, SOLO, and IRON/IronMON where exposed by the generation-specific rule surface. |
+| **Permanent Rule Seal** | Irreversibly seals challenge rules on that save after confirmation. Game Difficulty, World Building, QoL, and presentation controls remain adjustable. |
 | **Save Setup** | Saves the next-new-game setup profile. R/B/Y and Gold profiles are stored separately so configuring one does not replace the other. |
 | **Save Rules** | Saves the current active-save rule configuration. |
 | **Recover Catches** | R/B/Y recovery flow for older-save Pokémon whose encounter location could not be recovered automatically. |
@@ -75,6 +96,28 @@ Presets are starting configurations. The visible rules remain the authoritative 
 | **Poke Balls** | R/B/Y new-game starting Poké Balls, placed in the room PC. |
 | **Rare Candy** | R/B/Y new-game starting Rare Candies, placed in the room PC. |
 | **Gym Guide Rare Candy** | R/B/Y Gym Guides keep their normal dialogue and can offer repeatable Rare Candy batches when enabled. This is separate from the starting Rare Candy setup value. |
+
+## Nuzlocke variants
+
+### Type Locke — Monolocke / Duolocke
+
+**Type Locke** has three modes:
+
+- **OFF** — normal species eligibility.
+- **MONO** — a Pokémon is legal when either of its types matches **Type 1**.
+- **DUO** — a Pokémon is legal when either of its types matches **Type 1** or **Type 2**.
+
+Type 1 and Type 2 use the shared Gen 1+2 type list. Dark and Steel can be selected in R/B/Y for content mods that supply those types. While DUO is active the two selections are kept distinct.
+
+An off-type wild encounter cannot be caught and does **not** consume One Per Area, Failed Encounters, or a Route Forgiveness Token. Shiny Clause does not bypass Type Locke. Native gifts and trades are also checked where the engine exposes a safe pre-transaction gate.
+
+If Random Starter is ON, its candidate pool is filtered toward the active Type Locke. The mandatory story starter is never blocked when no legal starter is available, preventing a new run from becoming impossible before encounters open. Existing Pokémon are never deleted when Type Locke is enabled mid-run.
+
+### No Day Care
+
+When **No Day Care** is ON, new Day Care deposits are refused. If a Pokémon was already deposited before the rule was enabled, you may still retrieve it. Gold also preserves existing parents, breeding progress, and any pending Egg state.
+
+Both Type Locke and No Day Care are challenge rules and are therefore frozen by Permanent Rule Seal.
 
 ## 5. Main Nuzlocke screens
 
@@ -256,7 +299,7 @@ beta.28.20 specifically hardened Whiteout/Permadeath against trainer systems tha
 
 | Rule | Behavior |
 |---|---|
-| **World Building** | Optional Kanto-focused flavor dialogue. Cosmetic. |
+| **World Building** | Cosmetic OFF/T1/T2/T3 rule feedback for Kanto and Johto. T1 is clear, T2 adds challenge personality, and T3 adds region/NPC-aware flavor. At T3, Vermilion's Fan Club is also cosmetically presented as the **Pokemon Bois Club** with a Bryan-the-Boi tribute chairman sprite. It remains changeable after Permanent Rule Seal. |
 | **Default Names** | Skips supported new-game player/Rival naming screens using canonical defaults. |
 | **Skip Catch Demo** | Gold-only setup option that skips the Route 29 catching demonstration while preserving progression. |
 | **Catch Info** | Enables the supported owned-Pokémon Catch Info surface. |
@@ -391,3 +434,163 @@ Dungeon Lock-In deliberately targets known **multi-exit** dungeon families rathe
 
 Lock-In feedback follows the World Building tier when enabled. With World Building OFF, a plain rule-enforcement explanation is still shown.
 
+
+
+## Route Forgiveness and Trainer Money (29.3.3)
+
+Route Forgiveness has three setup values: OFF, 0, and 1. OFF disables the system. 0 enables it with no starting tokens; 1 enables it with one. Defeating a non-Leader Gym Trainer awards one token once. When an otherwise eligible failed encounter would consume an area, an available token is spent first and the area remains open. Duplicate encounters rejected by Dupes Clause never consume a token.
+
+Trainer Money scales the final trainer payout at 0%, 25%, 50%, 75%, 100%, 150%, 200%, 300%, or 500%. 100% is vanilla/default.
+
+Permanent Rule Seal is irreversible after its confirmation step. It freezes **challenge-rule configuration**, not runtime state. It does not freeze **Game Difficulty, World Building, QoL, or presentation controls**.
+
+## 29.3.15
+LEVELS now contains Game Difficulty, Level Cap Scope, and EXP Edging. BATTLE ITEMS contains only battle item-use bans. No Catching is the semantic full capture ban; the retired Ball tier is migration-only. Gold can optionally skip the Guide Gent's Cherrygrove walking tour while retaining the native MAP CARD reward and cleanup. Stat EXP 0% is the native default; 100% means 32768 and 200% means 65535 on the challenge preset scale.
+
+## 29.3.16 NUZ INFO
+The party submenu exposes NUZ INFO when at least one of Catch Page, Stat Page, or Move Page is enabled. A/Right advances to the next enabled page, Left goes backward, and B closes. Catch shows provenance; Stat shows current stats/DVs/raw Stat EXP; Move shows type/power/accuracy/current-max PP from the active merged move data. All three presentation toggles remain adjustable after Permanent Rule Seal.
+
+## Randomizer expansion — beta.30.0.0.1
+- **Random Starter** randomizes only the starter.
+- **Random Encounters** replaces species in wild table slots while preserving level/rate/map/time/method structure.
+- **Random Learnsets** replaces starting and level-up move identities while preserving learn levels and entry counts.
+- **Learnset Gen**: AUTO = merged move registry; GEN1 = indices 1-165; GEN2 = 166-251. Missing source data safely leaves learnsets unchanged.
+
+Existing Pokemon keep moves already learned. New paths are TEST REQUIRED.
+
+## 2.0.0-beta.30.0.0.2
+## No Fishing
+Enable **No Fishing** under **FIELD ITEMS** to block fishing-rod use. Rods can still be owned; Surf and other encounter methods are unaffected.
+
+## 2.0.0-beta.30.0.0.3
+## Mod-stack compatibility
+No new player setup is required for the interoperability API. Compatible mods can ask Nuzlocke whether an item/acquisition is legal and can consume the effective randomized registries. FAFF0x collection certification is being built on these generic seams.
+
+## 2.0.0-beta.30.0.0.4
+## Compatibility note — 30.0.0.4
+No new player-facing setup is required. This build improves how compatible alternate Bag, PC, encounter, EXP, Pokédex and move-management mods can ask Nuzlocke for the effective rules/data instead of bypassing enforcement.
+
+## 2.0.0-beta.30.0.0.5
+## Encounter Tracker recovery repair
+`REMOVE ENTRY` on a recovered/legacy tracker row now safely returns the record to the unassigned legacy list without persisting UI-only Pokémon references. Existing saves that passed through the older recovery UI are sanitized when this path saves again.
+
+## 2.0.0-beta.30.0.0.6
+## Mod-added quest content
+Compatible quest/content mods can now tell Nuzlocke about new catch areas, dungeons, gifts and scripted encounters. Player-facing rules continue to work normally; story-critical encounters can be marked non-randomizable by the content provider.
+
+## 2.0.0-beta.30.0.0.7
+## Existing FAFF0x releases
+No setup is required for the automatic compatibility bridge. When compatible older mods are active, Nuzlocke can recognize common alternate Bag, PC, encounter, EXP, quest and registry-consumer behavior families. Runtime certification will be performed later.
+
+## 2.0.0-beta.30.0.0.8
+## Compatibility consolidation
+No player-facing settings changed in 30.0.0.8. This build hardens how Nuzlocke composes with alternate Bags, storage systems, encounter providers, EXP providers, registry consumers, and quest/content mods.
+
+## 2.0.0-beta.30.0.0.9
+## Greyed external-provider rules
+If a non-core setting is greyed and says OFF, highlight it to read the help panel. The panel names the active mod/provider handling that feature. You cannot toggle the duplicate Nuzlocke control until that provider is disabled or removed. Your previous Nuzlocke choice is preserved and returns automatically afterward.
+
+## 2.0.0-beta.30.0.0.11
+## 0.1.84 compatibility build
+This build is intended to restore loading on Gen1Recomp 0.1.84 with the smallest possible change. All existing Nuzlocke settings and feature work are retained; runtime validation remains pending.
+
+## 2.0.0-beta.30.0.0.12
+## Future engine updates
+Routine Gen1Recomp 0.x updates should no longer make Nuzlocke disappear or refuse to load merely because the engine version increased. If a future engine actually changes a hook or runtime contract, affected features may still require a compatibility repair; 1.0 and later remain intentionally blocked pending review.
+
+## 2.0.0-beta.30.0.0.13
+## Fresh-game SETUP on current Gen1Recomp
+On a game version with no existing save, the title menu should expose SETUP before NEW GAME. If a valid save exists and CONTINUE is present, SETUP intentionally remains hidden; use in-game Nuzlocke Rules for an existing run.
+
+## 2.0.0-beta.30.0.0.14
+## 30.0.0.14
+This build is a parser hotfix for 30.0.0.13. Expected user-facing SETUP behavior is unchanged.
+
+## 2.0.0-beta.30.0.0.15
+## 30.0.0.15 test build
+The title compatibility code is now loaded as a separate internal Lua module. User-facing behavior should remain the same: fresh games expose SETUP; existing saves do not. Until runtime validation is complete, treat this build as TEST REQUIRED.
+
+## 2.0.0-beta.30.0.0.16
+## 30.0.0.16 test build
+Internal code is now split across `main.lua`, `title_setup_compat.lua`, and `trainer_rewards.lua`. Expected player behavior is unchanged, but title SETUP, Trainer Money, Forgiveness Tokens, and progression/cap reporting require runtime confirmation before this build is considered stable.
+
+The build now passes static Lua parsing, but runtime confirmation is still required before treating the new module/scoping structure as stable.
+
+## 2.0.0-beta.30.0.0.17
+## Permanent Rule Seal confirmation
+Permanent Rule Seal is intentionally irreversible after commitment. To prevent accidental activation, it now requires three deliberate activations: the first displays WARNING 1/2, the second displays FINAL WARNING 2/2, and the third permanently seals challenge-rule configuration. Move away from the option or press B before the final activation to cancel.
+
+## 2.0.0-beta.30.0.0.18
+## Permanent Rule Seal persistence
+After the final seal confirmation, the challenge-rule lock is intended to survive immediately even if you quit before making another normal Pokémon SAVE. Nuzlocke stores the irreversible seal marker in playthrough-scoped durable storage while normal configurable rules continue to use the game's ordinary save flow. QoL, World Building, and UI/presentation settings remain editable after sealing.
+
+## 2.0.0-beta.30.0.0.19
+## Permanent Rule Seal — temporarily unavailable
+Permanent Rule Seal is currently a WIP placeholder. It appears grey in Setup/Nuz Rules and cannot be selected or activated. Older development-test seals are not enforced while the feature is disabled, so normal challenge rules remain editable. The underlying implementation is being retained for possible reintroduction after further persistence/runtime validation.
+
+## 2.0.0-beta.30.0.0.20
+## Dialogue compatibility
+Nuzlocke World Building flavor text is presentation-only. If the game is already showing dialogue, optional Nuzlocke flavor now waits by simply not opening another box, rather than interrupting the active dialogue. This is intended to prevent repeated/overlapping page text.
+
+## 2.0.0-beta.30.0.0.21
+## Percentage rules and Maximum BST
+Percentage-based rules display their percentage value, including Trainer Money and Player/Wild/Trainer Stat EXP.
+
+Maximum BST is now a preset control:
+- OFF — no BST restriction
+- 400
+- 450
+- 500
+- 550
+
+Use A or Left/Right to cycle the preset. Direct three-digit editing is no longer used. Older development saves with a custom Maximum BST remain at that exact value until you change the option; the row shows CUSTOM until it is moved onto the preset ladder.
+
+## 2.0.0-beta.30.1.0 notes
+
+Permanent Rule Seal is currently unavailable and appears as a grey WIP option.
+
+Maximum BST uses five choices: **OFF, 400, 450, 500, 550**.
+
+Percentage-based controls display their percentage values, including Trainer Money and starting Stat EXP presets.
+
+World Building dialogue is optional. When another textbox is already active, Nuzlocke suppresses its optional flavor text instead of stacking a second textbox on top. This protects story/NPC dialogue from repeated or overlapping page text.
+
+Yellow runtime testing has confirmed the tested Gym Lock-In boundary rejection and successful non-reproduction of the previously demonstrated Poké Mart dialogue duplication case.
+
+## Gold Setup status — 30.1.1
+
+Gold Nuzlocke Setup remains intended to appear for a fresh NEW GAME. This candidate removes a newer compatibility fallback that caused a runtime crash when selecting Setup. The older Gold title integration remains active.
+
+Gold NEW GAME -> SETUP should be treated as TEST REQUIRED until the corrected path is runtime confirmed.
+
+## 2.0.0-beta.30.1.2 — Gold warning
+
+Gold support is experimental.
+
+**Known bug:** on a fresh Gold NEW GAME, selecting the Nuzlocke SETUP entry currently crashes in the tested Gen1Recomp environment. Do not rely on the Gold fresh-game Setup screen in this release.
+
+This known issue does not change the documented R/B/Y rule usage. Permanent Rule Seal remains unavailable/WIP.
+
+## Setup diagnostic — 30.1.3
+
+If SETUP or Nuz Rules cannot open, the game should now show `NUZLOCKE SETUP ERROR` rather than closing. Please capture the exact text shown so the failing subsystem can be repaired directly.
+
+## Setup diagnostic — 30.1.4
+
+If SETUP or Nuz Rules fails, look for `NUZ SETUP UPDATE ERROR` or `NUZ SETUP DRAW ERROR`. Please capture the full message shown.
+
+## Setup profile persistence — 30.1.5
+
+Fresh-game Setup keeps its profile selections during the current application session. Fully closing and reopening Gen1Recomp resets the Setup-profile preference layer to defaults in this diagnostic build.
+
+Rules committed to an actual save continue using their normal save-backed persistence.
+
+## 2.0.0-beta.30.1.6 — Setup compatibility
+
+Fresh-game Nuzlocke Setup has been runtime validated on the current tested engine path for Gold and Yellow, and Blue fresh NEW GAME has been confirmed to proceed into the player's bedroom.
+
+### Setup-profile persistence note
+
+Your pre-game Setup selections are retained during the current Gen1Recomp session. If you completely close and reopen Gen1Recomp before starting the run, the Setup preference layer returns to defaults.
+
+Once rules are committed to an actual game save, normal save-backed Nuzlocke persistence applies.

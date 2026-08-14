@@ -1,3 +1,69 @@
+## 2.0.0-beta.30.0.0.10
+
+Updated all existing release documentation for the compatibility/conflict-hardening pass. Clarified stored-vs-effective delegated state, granular randomizer ownership, unified public item/acquisition policy behavior, AutoCompat save ownership, Gold No Fishing handling, and the remaining runtime-test flags. No documentation files were added or removed.
+
+## 2.0.0-beta.29.3.13
+
+- Refreshed all release-facing documentation to 29.3.13 and Compatibility API 26.
+- Documented corrected No Catching migration, Trainer Money master/Gold behavior, stable difficulty-provider identity, Route Forgiveness master gating, exact/final-composed Dungeon Lock semantics, Random Type viable-pool behavior, authoritative Gen-I prize/trade provenance, Gold native NPC-trade gating, conservative source-less acquisition inference, and Level Cap/EXP Edging message consolidation.
+- Documented the audited neutral defaults for new restrictive rules.
+- Added API 26 helper/ownership documentation and compatibility guidance for stable difficulty IDs, migration warnings, deterministic source-less acquisition checks, provider wallet ceilings, and shared `warp.destination` composition.
+- Preserved runtime-vs-static confidence boundaries; new 29.3.13 paths remain TEST REQUIRED.
+
+## 2.0.0-beta.29.3.12
+
+- Updated README, release notes, compatibility notes, and user-facing summaries for the Pokemon Bois Club Tier 3 World Building pass.
+- Aligned current-version documentation references on the 29.3.11 build label.
+
+## 2.0.0-beta.29.3.10
+
+- Documented Type Locke (`OFF / MONO / DUO`), Type 1/Type 2 selection, off-type free-encounter semantics, Shiny precedence, Random Starter interaction, provider fail-open behavior, and mandatory-starter progression safety.
+- Documented No Day Care for both generation backends, including guaranteed retrieval of pre-existing deposits and preservation of Gold breeding/Egg state.
+- Corrected Permanent Rule Seal documentation so Game Difficulty, World Building, QoL, and presentation remain adjustable after sealing.
+- Updated current build/version and confidence references without rewriting historical entries.
+
+## 2.0.0-beta.29.3.9
+
+- Documented the Gold-native custom UI integration for Setup/Nuz Rules, ENC TRACKER, CATCH INFO, Route Forgiveness, and NUZ STATUS.
+- Recorded the upstream Gen1Recomp guidance that `src.ui.OptionRows` is not a Gold compatibility facade and should not be used as Gold chrome.
+- Corrected the Nuzlocke Loadout documentation to include IRON/IronMON.
+- Removed the remaining Feature Confidence reference to the retired Ball Use Ban tier system in favor of No Catching.
+- Preserved TEST REQUIRED status for the new Gold presentation.
+
+## 2.0.0-beta.29.3.8
+
+- Updated all player-facing version references for the World Building parity/cleanup pass.
+- Documented Gold/Johto World Building OFF/T1/T2/T3 support, full implemented-rule catalogue coverage, safe-seam presentation policy, and its TEST REQUIRED status.
+- Restored IRON / IronMON to the documented Nuzlocke Loadout list.
+- Removed stale references to cumulative Ball-ban tiers in favor of semantic No Catching.
+
+# 2.0.0-beta.29.3.3 documentation update
+
+Documented Route Forgiveness, Trainer Money, Permanent Rule Lock, revised preset/default policy, and the 1,000,000 Forgiveness Token shop-price contract. New behavior remains TEST REQUIRED.
+
+## 2.0.0-beta.29.3.3
+
+- Documented the Gold progression/badge corrections, Legacy Recovery flat-key fix, version-aware Eevee/trade provenance corrections, and unified Solo Only active-party semantics.
+- Added static regression coverage for the reviewed defects.
+- Preserved the distinction between static validation and runtime confirmation.
+
+## 2.0.0-beta.29.3.0 — full release documentation roll-up
+
+### Public docs
+
+- Promoted the 29.2.x development line into the 29.3.0 full beta release.
+- Consolidated all public-facing changes since published beta.29.1.0 into the main changelog and README release summary.
+- Added a standalone `RELEASE_NOTES.md` for the public 29.3.0 package.
+- Updated compatibility documentation to reflect runtime-confirmed Stronger Trainers next-cap support on Yellow.
+- Updated Gold, lock-in, route-split, Random Starter, Permadeath, and menu/UI confidence notes without overstating untested paths.
+- Preserved known runtime follow-ups rather than marking untested behavior as verified.
+
+### Internal docs
+
+- Recorded beta.29.3.0 as the direct child of beta.29.2.7.
+- Promoted the Yellow + Stronger Trainers next-cap result to protected runtime evidence.
+- Preserved the reasons for rejected speculative code-review findings and the conditions that would reopen them.
+
 ## 2.0.0-beta.29.2.7 — runtime-driven startup and cap compatibility
 - Documented pre-battle composed-party cap preview, R/B starter-presentation correction, lock-in section move, and current Yellow runtime evidence.
 - Added focused regression targets for Stronger Trainers cap display and protected Yellow menu glyph/QoL behavior.
@@ -269,3 +335,132 @@ This file records public-document changes separately from gameplay/code changes.
 
 **Reason / goal**
 - Make every recoverable development step durable so later releases do not need to reconstruct history from memory or whichever old ZIP happens to survive.
+
+## 2.0.0-beta.29.3.14
+Split the completed Gold runtime-critical repair work into the first small sequential update. Compatibility API remains 26.
+
+## 2.0.0-beta.29.3.15
+Documented the second split update: rule-menu reorganization, Stat EXP default clarification, Gold Cherrygrove tour skip, and richer item-rule dialogue.
+
+## 2.0.0-beta.29.3.16
+Documented the third split update: multi-page NUZ INFO and Compatibility API 27.
+
+## 2.0.0-beta.30.0.0.1
+- Documented Random Encounters.
+- Documented Random Learnsets and Learnset Gen.
+- Documented persistence, merged-registry composition, reversibility, and fail-open behavior.
+- Marked new runtime paths TEST REQUIRED.
+
+## 2.0.0-beta.30.0.0.2
+- Documented No Fishing behavior and test status.
+
+## 2.0.0-beta.30.0.0.3
+- Added Interoperability API v1 documentation.
+- Declared FAFF0x/gen1recomp a first-class compatibility target.
+- Documented capability-first provider, acquisition, item, registry, and EXP composition philosophy.
+
+## 2.0.0-beta.30.0.0.4
+- Documented second FAFF0x compatibility pass and practical consumer APIs for item, encounter, PC, registry and EXP integrations.
+
+## 2.0.0-beta.30.0.0.5
+- Documented the Yellow existing-save Encounter Tracker REMOVE ENTRY crash and the detached-view serialization repair.
+
+## 2.0.0-beta.30.0.0.6
+- Documented the FAFF0x quest/content provider layer, dynamic areas/dungeons, quest acquisition metadata, boss metadata and randomizer preservation policies.
+
+## 2.0.0-beta.30.0.0.7
+- Documented FAFF0x automatic compatibility/legacy adapters, capability scanning, passive acquisition detection, and explicit-provider precedence.
+
+## 2.0.0-beta.30.0.0.8
+- Consolidated compatibility/provider terminology.
+- Documented canonical capability families, explicit-provider precedence, and provider-mechanics/Nuzlocke-policy ownership.
+
+## 2.0.0-beta.30.0.0.9
+- Documented greyed external-provider controls, provider identification, effective-OFF behavior, dormant preference restoration, and the core-rule non-delegation invariant.
+
+## 2.0.0-beta.30.0.0.11
+- Added the 30.0.0.11 Gen1Recomp 0.1.84 compatibility checkpoint and documented the intentionally narrow scope.
+
+## 2.0.0-beta.30.0.0.12
+- Replaced patch-by-patch engine ceiling maintenance with a pre-1.0 compatibility-family policy and documented the distinction between loader acceptance and runtime certification.
+
+## 2.0.0-beta.30.0.0.13
+- Documented the 0.1.86 fresh-game SETUP regression, fallback architecture, narrowed engine family, and required Blue/Gold retest.
+
+## 2.0.0-beta.30.0.0.14
+- Recorded the 30.0.0.13 parser regression and 30.0.0.14 structural fix.
+
+## 2.0.0-beta.30.0.0.15
+- Documented the explicitly approved first Lua split, upstream sandbox rationale, parser failures in .13/.14, expected system impact, and runtime-test requirements. Further Lua splitting requires explicit approval.
+
+## 2.0.0-beta.30.0.0.16
+- Documented the parser-confirmed 200-local failure, rejected pre-package narrow extraction, completed cohesive trainer-reward module boundary, preserved exports, expected compatibility impact, and mandatory parser validation.
+
+- Added the final `.16` nested-scope safeguard and recorded that all packaged Lua sources pass parser validation.
+
+## 2.0.0-beta.30.0.0.17
+- Recorded Yellow 30.0.0.16 runtime PASS evidence and updated Permanent Rule Seal documentation from one confirmation step to two explicit warnings plus final commit.
+
+## 2.0.0-beta.30.0.0.18
+- Recorded Yellow `.17` seal-scope PASS and reload-persistence FAIL.
+- Documented the Gen1Recomp `mod.save` versus `mod.storage` persistence model and the `.18` permanent-seal durable mirror.
+
+## 2.0.0-beta.30.0.0.19
+- Marked Permanent Rule Seal WIP/dormant in `.19`.
+- Added an implementation recovery map to `docs/API.md`.
+- Recorded that prior development-test markers are preserved but suspended rather than deleted.
+
+## 2.0.0-beta.30.0.0.20
+- Promoted recurring Yellow duplicate/overlapping dialogue to a known regression target.
+- Documented the `.20` active-TextBox World Building guard.
+- Recorded the Yellow `NUZ` vertical-position issue as deferred.
+
+## 2.0.0-beta.30.0.0.21
+- Documented shared percentage-label presentation.
+- Replaced Maximum BST free-entry documentation with OFF / 400 / 450 / 500 / 550 presets and legacy custom-value handling.
+
+## 2.0.0-beta.30.1.0
+- Promoted 30.0.0.21 directly to 30.1.0.
+- Recorded Yellow runtime PASS for existing-save boot/menu access, Nuz Rules, tested Gym Lock-In boundary rejection, and the specific duplicate-dialogue regression NPC.
+- Marked the active-TextBox World Building safeguard as protected/reusable for future duplicate-dialogue defects.
+- Preserved Permanent Rule Seal as WIP.
+- Preserved the deferred Yellow `NUZ` vertical-position issue.
+- Kept runtime confidence separate from static/parser validation.
+
+## 2.0.0-beta.30.1.1
+- Recorded Gold NEW GAME -> SETUP crash on 30.1.0.
+- Compared against published 29.1.0 Gold title architecture.
+- Documented surgical disabling of the newer `MainMenu:buildList()` fallback.
+- Documented that its implementation remains preserved in comments.
+- Marked 30.1.0 as rejected and Gold Setup as RETEST REQUIRED.
+
+## 2.0.0-beta.30.1.2
+- Converted the current 30.1.1 code into a release/documentation child with no intended behavior change.
+- Recorded repeat Gold NEW GAME -> SETUP runtime crash after the 30.1.1 fallback disable.
+- Marked Gold fresh Setup as an accepted known bug for this beta release.
+- Preserved Yellow runtime PASS evidence and other known/deferred issues.
+
+## 2.0.0-beta.30.1.3
+- Added Setup/Nuz Rules crash containment and visible underlying-error reporting.
+- Recorded unsplit 29.3.0 reproduction.
+- Recorded confirmed Lua 200-local ceiling pressure in the current main chunk.
+- Deferred any additional split until the surfaced runtime error identifies the failing Setup subsystem.
+
+## 2.0.0-beta.30.1.4
+- Recorded that construction-level guarding did not intercept the Setup crash.
+- Added update/draw phase protection and visible phase-specific diagnostics.
+
+## 2.0.0-beta.30.1.5
+- Recorded the blocked filesystem facade as the first concrete fresh-Setup crash cause.
+- Replaced pre-game profile disk persistence with session-local profile persistence.
+- Kept prior crash guards temporarily for diagnosis.
+- No additional Lua split.
+
+## 2.0.0-beta.30.1.6
+
+- Promoted the 30.1.5 Setup sandbox repair after runtime validation.
+- Recorded Gold fresh Setup as RUNTIME PASS.
+- Recorded Yellow fresh Setup as RUNTIME PASS.
+- Recorded Blue fresh NEW GAME bedroom entry as RUNTIME PASS.
+- Reclassified the prior fresh Setup CTD as repaired on the tested current-engine path.
+- Kept session-local Setup-profile persistence documented as a temporary limitation.

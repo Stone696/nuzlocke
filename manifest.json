@@ -1,12 +1,12 @@
 {
   "id": "nuzlocke",
   "name": "Nuzlocke",
-  "version": "2.0.0-beta.29.3.0",
+  "version": "2.0.0-beta.30.1.6",
   "api": 2,
   "entry": "main.lua",
   "profile": "content",
   "category": "BALANCE",
-  "game_version": ">=0.1.81 <0.1.84",
+  "game_version": ">=0.1.86 <0.1.91",
   "priority": 100,
   "permissions": [
     "engine_internals"

@@ -16,11 +16,11 @@ return {
     },
     known = {
       "Gold remains beta and some Gold rule paths still need dedicated runtime verification",
-      "Nuzlocke-owned screens are not yet fully themed by every UI replacement",
+      "Gold Nuzlocke-owned run screens use native Gen 2 Chrome; third-party UI-theme replacement coverage is still not guaranteed",
       "LOST encounter and Pokemon-death presentation are separated in beta.29.2.0 but still need old-save/new-save runtime regression testing",
       "beta.29.0.2 scripted gift/nickname, Gold PC-gift, and static-provenance fixes still need targeted runtime confirmation",
-      "Gen1Recomp 0.1.83 is source-audited; beta.29.2.7 still needs targeted startup-dialogue, random-starter presentation, common-route migration, Gym Permadeath, lock-in, and final trainer-cap runtime regression testing",
-      "Gym Leader/special-trainer Permadeath reconciliation was hardened in beta.29.2.1 and remains release-blocking until the reported Misty case is runtime retested",
+      "Gen1Recomp 0.1.83 is source-audited; beta.29.3.13 hardens No Catching migration, Trainer Money/master-switch and Gold wallet handling, stable difficulty-provider identity, Route Forgiveness gating, exact/final-composed Dungeon Lock entrances, Random Type viable pools, authoritative acquisition provenance, Gold NPC-trade gating, and Compatibility API 26; changed paths need targeted runtime regression coverage",
+      "Gym Leader/special-trainer Permadeath reconciliation was hardened in beta.29.2.1 and remains a targeted runtime follow-up for the reported Misty case",
       "Gen1Recomp may resolve this multi-part beta tag to an older published build in its updater; install the newest Nuzlocke package manually instead of accepting an offered downgrade",
     },
   },
@@ -30,3 +30,5 @@ return {
   },
   compat = { engine = ">=0.1.81 <0.1.84", modApi = 2 },
 }
+
+Release: 2.0.0-beta.30.1.6
