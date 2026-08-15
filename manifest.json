@@ -1,24 +1,29 @@
 {
   "id": "nuzlocke",
   "name": "Nuzlocke",
-  "version": "2.0.0-beta.25",
+  "version": "2.2.2",
   "api": 2,
   "entry": "main.lua",
   "profile": "content",
-  "category": "GAMEPLAY",
-  "game_version": ">=0.1.78 <2.0.0",
+  "category": "BALANCE",
+  "game_version": ">=0.1.86 <0.1.98",
   "priority": 100,
   "permissions": [
     "engine_internals"
   ],
   "dependencies": [],
-  "optional_dependencies": [],
-  "conflicts": [],
-  "description": "A configurable Nuzlocke for Gen1Recomp with regression-hardened Red/Blue/Yellow support and conservative experimental Gold compatibility adapters.",
-  "github": "bryanthaboi/nuzlocke",
-  "games": [
-    "gen1",
-    "gold"
+  "optional_dependencies": [
+    "pokegear_cards",
+    "pokemon_randomizer",
+    "wide-menus"
   ],
-  "gen2compat": true
+  "conflicts": [],
+  "description": "Configurable Nuzlocke enforcement, encounter tracking, challenge rules, run status, and quality-of-life options for Red, Blue, Yellow, and beta Gold support.",
+  "github": "Stone696/nuzlocke",
+  "games": [
+    "red",
+    "blue",
+    "yellow",
+    "gold"
+  ]
 }
