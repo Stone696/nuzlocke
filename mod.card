@@ -15,20 +15,30 @@ return {
       "presets, area splits, starter randomization, challenge restrictions, and compatibility APIs",
     },
     known = {
+      "2.2.2 renames compact Trainer Money to Btl. ¥; Yellow 2.1.24 runtime confirmed No Buying, No Selling, and No Center Heal.",
+      "2.2.1 moves Gold Setup/NUZ RULES values one native tile left after runtime border crowding; visual retest required.",
+      "2.1.22 replaces crashing R/B/Y NUZ ST. and MOD COMPAT custom states with host ListMenu surfaces; runtime retest required.",
       "Gold remains beta and some Gold rule paths still need dedicated runtime verification",
       "Gold Nuzlocke-owned run screens use native Gen 2 Chrome; third-party UI-theme replacement coverage is still not guaranteed",
       "LOST encounter and Pokemon-death presentation are separated in beta.29.2.0 but still need old-save/new-save runtime regression testing",
       "beta.29.0.2 scripted gift/nickname, Gold PC-gift, and static-provenance fixes still need targeted runtime confirmation",
       "Gen1Recomp 0.1.83 is source-audited; beta.29.3.13 hardens No Catching migration, Trainer Money/master-switch and Gold wallet handling, stable difficulty-provider identity, Route Forgiveness gating, exact/final-composed Dungeon Lock entrances, Random Type viable pools, authoritative acquisition provenance, Gold NPC-trade gating, and Compatibility API 26; changed paths need targeted runtime regression coverage",
       "Gym Leader/special-trainer Permadeath reconciliation was hardened in beta.29.2.1 and remains a targeted runtime follow-up for the reported Misty case",
-      "Gen1Recomp may resolve this multi-part beta tag to an older published build in its updater; install the newest Nuzlocke package manually instead of accepting an offered downgrade",
+      "Gen1Recomp 0.1.94 is source-audited for this candidate; 0.1.95 through 0.1.97 remain forward-allowed but not runtime-confirmed.",
+      "2.1.21 adjusts Gold Setup/NUZ RULES label-value spacing only; runtime visual confirmation required.",
+      "2.1.19 hardens Gen1 kerning lifecycle retries, requires explicit Modern UI adapter-registration success, and makes the R/B/Y title SETUP wrapper reload-safe; runtime confirmation required.",
+      "2.1.18 restores native R/B/Y Trainer Card ownership, moves Nuzlocke status to a separate NUZ ST. screen, and adds one-response-per-script Nuzlocke dialogue ownership; runtime confirmation required.",
+      "2.1.13 repairs Yellow random-starter status safety plus T3 Mom, Pallet TV, and Bryan-at-home world-building; all changed paths require runtime confirmation.",
     },
   },
   credits = {
     { who = "bryanthaboi", for_ = "original Nuzlocke mod and project baseline" },
     { who = "Stone696", for_ = "updater of bryanthaboi's original Nuzlocke mod" },
   },
-  compat = { engine = ">=0.1.81 <0.1.84", modApi = 2 },
+  compat = { engine = ">=0.1.86 <0.1.98", modApi = 2 },
 }
 
-Release: 2.0.0-beta.30.1.6
+Release: 2.2.2
+Current RC: compact Trainer Money label is Btl. ¥; Yellow shop and Pokémon Center enforcement runtime PASSes are protected. Other 2.2.x runtime retests remain required.
+2.1.22: R/B/Y NUZ ST. and MOD COMPAT now use host ListMenu surfaces after Yellow runtime crashes; Gold-native paths unchanged. Runtime retest required.
+2.1.21: Gold Setup spacing cleanup. Reserves one native tile between each Gold rule label and value/toggle while preserving the seven-tile value column. Presentation only; runtime visual retest required.

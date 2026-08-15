@@ -1,18 +1,22 @@
 {
   "id": "nuzlocke",
   "name": "Nuzlocke",
-  "version": "2.0.0-beta.30.1.6",
+  "version": "2.2.2",
   "api": 2,
   "entry": "main.lua",
   "profile": "content",
   "category": "BALANCE",
-  "game_version": ">=0.1.86 <0.1.91",
+  "game_version": ">=0.1.86 <0.1.98",
   "priority": 100,
   "permissions": [
     "engine_internals"
   ],
   "dependencies": [],
-  "optional_dependencies": [],
+  "optional_dependencies": [
+    "pokegear_cards",
+    "pokemon_randomizer",
+    "wide-menus"
+  ],
   "conflicts": [],
   "description": "Configurable Nuzlocke enforcement, encounter tracking, challenge rules, run status, and quality-of-life options for Red, Blue, Yellow, and beta Gold support.",
   "github": "Stone696/nuzlocke",

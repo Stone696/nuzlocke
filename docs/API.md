@@ -1,3 +1,176 @@
+## 2.2.2 API note
+
+No API, save-schema, permission, or compatibility-contract changes. 2.2.2 only changes the compact Trainer Money presentation label to `Btl. ¥` and records Yellow runtime PASS evidence for shop and Pokémon Center enforcement. Compatibility API remains 27 and audited Gen1Recomp remains 0.1.94.
+
+## 2.2.1 API note
+
+No API, save-schema, permission, or compatibility-contract changes. 2.2.1 only adjusts the Gold Setup/NUZ RULES value-column presentation. Compatibility API remains 27 and audited Gen1Recomp remains 0.1.94.
+
+## 2.2.0 API / engine-audit note
+
+`getCompatibilityReport().audited_recomp` now reports **`0.1.94`**. Nuzlocke Compatibility API remains **27**; no exported function signature changes in 2.2.0.
+
+Gen1Recomp 0.1.94 introduces an engine API-2 facility, `mod.postLog`, backed by a manifest `log_url` and the `network` permission. Nuzlocke 2.2.0 does **not** opt into that facility and does not add network permission. It is documented here only as a newly available upstream diagnostic seam.
+
+`getPokemonNuzInfo(game, mon)` retains its existing read-only shape. The R/B/Y consumer now isolates failures from optional legality/provenance providers; if the richer model cannot be produced, NUZ INFO displays safe direct Pokémon facts instead of propagating an exception into PartyMenu.
+
+## 2.1.23 internal presentation helper
+
+`mod.exports.__beta26.formatWorldText(message)` is the shared World Building formatter used by Nuzlocke-owned overworld text. It cleans, wraps to the Gen1 dialogue width, converts mod-owned continuation-style text into explicit pages, and is presentation-only. No public compatibility API version or signature changed.
+
+## 2.1.22 presentation note
+
+No Nuzlocke API contract changed. R/B/Y NUZ ST. and MOD COMPAT changed presentation implementation only, from custom states to host ListMenu surfaces.
+
+## 2.1.21 API note
+
+No API changes. Gold configuration row spacing is presentation-only.
+
+## 2.1.19 compatibility lifecycle note
+
+## 2.1.20 API note
+
+No public API signature changes. `getTypeLockAllowedTypes()` remains mode-authoritative: it returns an empty list when Type Locke is OFF, one configured type for MONO, two distinct configured types for DUO, and three distinct configured types for TRI. An empty list therefore means no type restriction.
+
+- Gen1 Modern UI registration is now fail-closed: Nuzlocke marks the adapter active only when the provider returns explicit boolean `true`. Provider exceptions, `false`, `nil`, and other unexpected results remain inactive and expose an error state rather than a phantom registration.
+- Gen1 kerning hook installation is lifecycle-driven rather than generation-driven. Installation may occur while Gold/Gen2 is active, but `kerningEnabled()` still makes the wrapped font methods behaviorally inert unless a confirmed Gen1 game is active.
+- The R/B/Y title SETUP fallback now stores mutable dependencies on `TitleState.__nuzlockeSetupFallbackState`; hot reload refreshes that state instead of stacking another Nuzlocke wrapper.
+
+## 2.1.18 presentation ownership note
+
+No public API or save-schema bump. R/B/Y navigation now treats the native Trainer Card as engine-owned and launches Nuzlocke status separately with `NuzlockeTrainerCardScreen` context `{ statusOnly = true }`. Internal ScriptRunner contexts may receive `__nuzlockeRuleMessageShown = true` after a mod-authored denial/flavor response; this is transient transaction metadata only and is never persisted.
+
+## 2.1.18 configuration note
+
+No compatibility-API or save-schema bump. The new stored config key is `pc_starting_heal_items` (boolean, default false); the one-shot save marker is `nuzlockePcHealItemsGranted`. Difficulty presentation now cycles by the live `difficultyOptions()` list and stable `difficulty_provider_id` rather than exposing unused numeric slots.
+
+## 2.1.16 Type Locke state note
+
+The existing Type Locke API remains signature-compatible, but `typeLockMode()` now accepts mode `3` (TRI) and `typeLockAllowedTypes()` can return three concrete type ids. New internal configuration key: `type_lock_tertiary`. OFF returns an empty allowed-type list, MONO returns exactly the primary type, DUO returns exactly two distinct types, and TRI returns exactly three distinct types. `resolveRandomTypeLockSelection(profile)` clears inactive selectors and resolves active RANDOM selections once. No compatibility API version bump.
+
+## 2.1.15 configuration-state note
+
+Adds the internal reversible `rule_lock` configuration key. It is distinct from dormant Permanent Rule Seal state (`rules_locked` / `rules_permanently_locked`). `NuzlockeConfigScreen` treats `rule_lock` as a temporary editing guard and preserves Permanent Rule Seal behind its existing WIP gate. Type Locke profile normalization now clears both selectors in OFF and the secondary selector in MONO. No public compatibility API version change.
+
+## 2.1.14 Type Locke state note
+
+`typeLockAllowedTypes()` remains mode-authoritative. MONO returns only Type 1. The config surface now also clears/hides the secondary selector in MONO, while DUO recreates a valid distinct secondary when needed. No API signature changed.
+
+## 2.1.13 repair notes
+
+No public compatibility API or save-schema bump.
+
+`randomStarterCandidates(game, original)` now admits only concrete species records that satisfy the runtime construction/Summary-screen contract. This intentionally does **not** change provider legality APIs: a provider may expose partial species metadata for legality/BST/type purposes without that partial record automatically becoming a valid concrete Random Starter.
+
+T3 Bryan-at-home uses an internal runtime NPC plus a contributed `map_scripts` talk id; no new public NPC-provider contract is introduced.
+
+## 2.1.12 reward and presentation notes
+
+`route_forgiveness_gym_leaders` is the authoritative one-time reward ledger for Gym Leader Forgiveness awards. The previous per-Gym-Trainer reward path is no longer active.
+
+Canonical labels remain full natural `Strings.source(...)` values. Compact forms such as `Nuz. Loadout`, `Dung. Lock-In`, `BATTLE ITMS`, and `No PP Itms` are optional presentation metadata only.
+
+No public compatibility API version bump.
+
+## 2.1.11 localization-safe presentation metadata
+
+Rule objects may now carry:
+
+```lua
+name = Strings.source("Random Encounters")
+shortName = Strings.source("Rndm Enc.")
+```
+
+The stable rule key remains the machine contract (`random_encounter_tables` in this example). `name` is the canonical natural-language source string. `shortName` is presentation-only and must never be treated as a semantic identifier.
+
+R/B/Y display selects the full translated label first. If it overflows, a short label may be used. When the full label is translated but the short label is not, Nuzlocke preserves the translated full label and uses its normal slow marquee rather than injecting untranslated English shorthand.
+
+Section headers can likewise carry `shortTitle`.
+
+`getCompatibilityReport().audited_recomp` now reports `0.1.93`.
+
+## 2.1.10 presentation-only update
+
+No API, rule-key, save-schema, or provider-contract changes. The compact vocabulary affects only Nuzlocke-owned player-facing menu labels and section titles.
+
+## 2.1.9 presentation/compatibility note
+
+No Nuzlocke API contract changes. `NuzlockeConfigScreen` now declares the Wide Menus-compatible classic layout markers on each instance. Internal rule keys remain unchanged despite shorter player-facing labels.
+
+## 2.1.8 presentation-only update
+
+No API change. Randomizer internal rule keys and compatibility identifiers are unchanged; only player-facing menu labels are abbreviated.
+
+## 2.1.7 presentation/compatibility note
+
+No compatibility API changes. Nuzlocke temporarily declines the Wide Menus presentation claim for its rules screen and uses native-width fallback. The optional dependency remains non-owning of Nuzlocke rule state.
+
+## 2.1.6 presentation-only update
+
+No compatibility API changes. Conditional overflow scrolling timing and R/B/Y selection rendering were adjusted for Yellow runtime readability.
+
+## 2.1.5 presentation-only update
+
+No compatibility API contract changes. The R/B/Y configuration and MOD COMPAT screens use glyph-span-safe conditional scrolling on measured overflow. Rule/ownership semantics are unchanged.
+
+## 2.1.4 presentation-only note
+
+No compatibility API contract changes. R/B/Y Nuzlocke-owned diagnostic/configuration screens now consume the current engine Font measurement helpers for pixel-aware layout. Semantic provider/legality contracts are unchanged.
+
+## 2.1.3 compatibility API correction
+
+`compat21.pokemonLegality(game, mon)` now treats a non-empty string in `mon.nuzlockeInvalidAcquisition` as an invalid acquisition. The returned result still includes `reasons = { "INVALID ACQUISITION", ... }` and now also exposes:
+
+```lua
+invalidAcquisitionReason = "disabled" | "glitch" | "legendary" | "mythical" | "pseudo" | "area" | "solo" | ...
+```
+
+Consumers should use the semantic result rather than reading Nuzlocke's internal Pokémon fields directly.
+
+No public compatibility-API version bump accompanies this correction because the change fixes the implementation to match the existing intended contract.
+
+## 2.1.2 engine-surface repair
+
+R/B/Y MOD COMPAT no longer imports the obsolete `src.render.Draw` private module and instead uses the current `src.render.Font` drawing API. Gen1 kerning installation is lifecycle-retried after game generation is resolvable. No public Nuzlocke API version change.
+
+## 2.1.1 / Gen1Recomp 0.1.92 audit
+
+Gen1Recomp 0.1.92 introduces `mod.fetch` (permission: `network`) and `mod.job` (permission: `background`) as sanctioned asynchronous facilities. Nuzlocke 2.1.1 does not consume either API because current rule enforcement, compatibility providers and presentation do not require background HTTP or worker computation.
+
+The engine also adds a legacy sandbox compatibility layer. Nuzlocke continues to prefer current scoped engine APIs rather than depending on compatibility shims.
+
+Mod API remains 2. Nuzlocke compatibility/save contracts are unchanged.
+
+## 2.1.0
+
+Versioning transition only. No Nuzlocke compatibility API or save-schema bump accompanies the move from the former `2.0.0-beta.31.0.4` identity to `2.1.0`.
+
+## Wide Menus V0.1.0 presentation bridge
+
+No Nuzlocke API version bump. `NuzlockeConfigScreen` advertises/claims Wide Menus' public `wide` layout only for non-pre-game R/B/Y instances. No Nuzlocke state is delegated to the UI provider.
+
+## beta.31.0.3
+
+No compatibility API version change. `nuzlocke_compat.dungeonFamily` retains the same contract; its built-in fallback now fails open for Pokémon Center/Poké Mart service-interior identifiers before dungeon-prefix matching.
+
+## Gen1Recomp 0.1.90 compatibility review
+
+No Nuzlocke compatibility API or save-schema bump is required. The upstream 0.1.90 delta does not change the public Nuzlocke provider contracts.
+
+## beta.31.0.1
+
+No compatibility API version bump. Existing contracts are preserved. Optional Modern UI integration now reports current `active` state separately from historical registration state and fails closed when generation is unknown or Gold/Gen2.
+
+## beta.30.1.22 diagnostic additions
+
+`mod.exports.__beta26.compat21.trackerCatchContext(game, catch, area)` returns spoiler-safe semantic encounter context (`tag`, `status`, known `provider`, `encounterType`). It never exposes future randomizer mappings.
+
+`mod.exports.__beta26.compat21.pokemonLegality(game, mon)` is a read-only diagnostic against the currently active roster restrictions. It returns `legal`, `status`, `reasons`, `bst`, and `maximumBST`; it does not mutate the Pokémon or save.
+
+`mod.exports.__beta26.compat21.pokemonProvenance(game, mon)` returns known Nuzlocke/provider/source fields without inventing missing provenance.
+
+`compat21.surfaceRows(game)` now reports a broader effective ownership map for the MOD COMPAT presentation.
+
 ## 2.0.0-beta.30.0.0.10
 
 ### Delegation
@@ -56,7 +229,7 @@ allowed:boolean, reason:string|nil, details:table|nil
 
 A denied Maximum BST result may include `details.bst` and `details.maximum`. A denied glitch result may include the glitch-classification record.
 
-`reason` may also be `type_lock` when an otherwise catchable Pokémon does not match the active Monolocke/Duolocke type set. Type Locke is evaluated before Shiny/area/Dupes exceptions for new acquisitions, so a caller should treat it as a hard acquisition-eligibility denial. Existing owned Pokémon are not deleted or retroactively invalidated. Off-type wild encounters are not counted as failed encounters by Nuzlocke's own tracker.
+`reason` may also be `type_lock` when an otherwise catchable Pokémon does not match the active Mono/Duo/Trilocke type set. Type Locke is evaluated before Shiny/area/Dupes exceptions for new acquisitions, so a caller should treat it as a hard acquisition-eligibility denial. Existing owned Pokémon are not deleted or retroactively invalidated. Off-type wild encounters are not counted as failed encounters by Nuzlocke's own tracker.
 
 
 ```lua
@@ -547,3 +720,124 @@ No compatibility API version bump is introduced.
 The 30.1.5 session-local Setup-profile bridge remains active and is now runtime-validated for fresh Gold and Yellow Setup. `mod.exports.__beta26.sessionSetupProfiles` is still an internal beta implementation detail rather than a stable public API.
 
 The diagnostic `lastConfigScreenError` / guarded screen opener remain present for compatibility diagnostics but are not promoted as public API guarantees.
+
+## 2.0.0-beta.30.1.7 — Pokegear Cards consumer
+
+Nuzlocke consumes only an active `pokegear_cards` handle whose exports report `apiVersion == 1`.
+
+Stable IDs:
+- `nuzlocke_status` — custom card
+- `nuzlocke_map_status` — MAP overlay
+- `nuzlocke_radio_world` — RADIO overlay
+
+Successful registration publishes informational metadata at `mod.exports.pokegear_cards`. `mod.exports.__beta26.goldPokegearRuleNames()` exposes the same Gold rule labels used by Nuzlocke's native Gold status UI for this optional presentation provider.
+
+No PHONE append is registered.
+
+## 2.0.0-beta.30.1.8 — delegated numeric neutrality
+
+Internal rule specs may declare `neutral` for numeric controls whose neutral/provider-owned display is not the same as their minimum.
+
+`trainer_money_multiplier` declares `neutral = 4`, corresponding to 100%.
+
+`trainer_rewards.lua` now receives the existing `externalRuleDelegation` dependency and uses it before applying Trainer Money scaling. An active `economy_provider` therefore owns the final trainer payout without a second Nuzlocke wallet rewrite.
+
+No public compatibility API version bump.
+
+## 2.0.0-beta.30.1.9 — Gold cap-stage ordering
+
+The fallback `VersionCompat.gscStages` progression order is restored to Chuck -> Pryce -> Jasmine for the Johto mid-game.
+
+This does not alter `gscBadgeStages`: badge-key and positional fallback identities remain Chuck/Storm 5, Jasmine/Mineral 6, Pryce/Glacier 7.
+
+No public compatibility API version bump.
+
+## 2.0.0-beta.30.1.10
+
+No public API changes.
+
+Internal title fallback adapters now evaluate `isSaveEditorSession()` at callback time as well as install time. This is lifecycle hardening only.
+
+## 2.0.0-beta.30.1.11
+
+No public API change.
+
+Internal callers outside `trainer_rewards.lua` must access Route Forgiveness helpers through `mod.exports.__beta26.TrainerRewards`. Bare main-chunk calls to `forgivenessEnabled` / `forgivenessTokens` have been removed.
+
+## 2.0.0-beta.30.1.12
+
+No public API change. Internally, `nuzlockeTrackerRegistered` now reflects successful stored-location recovery rather than merely the presence of a tracked `catchLocation`.
+
+## 2.0.0-beta.30.1.13
+
+No public API change.
+
+Internal `specialAcquisitionDenied(game, species, area, kind)` now applies the Solo Only party-slot check to both `gift` and `trade` acquisition kinds.
+
+## 2.0.0-beta.30.1.14
+
+No public API version change.
+
+`mod.exports.__beta26.armFirstRivalForgiveness(game, battle)` now persists `nuzlocke_first_rival_battle_seen` only after `isOpeningRivalBattle(game, battle)` succeeds. Non-opening Rival classifications return false without mutating the durable one-shot.
+
+## 2.0.0-beta.30.1.15
+
+No public API change.
+
+Internal `worldOnce(game, key, message, minimumTier?)` now accepts an optional threshold. If omitted, the historical Tier 3 requirement remains. `queueTrainerFlavor` forwards its own threshold to this fallback.
+
+## 2.0.0-beta.30.1.16 — Type Locke canonical Fairy support
+
+The Type Locke selector now has a sparse compatibility-stable layout:
+
+- concrete legacy types: indices 0..16;
+- RANDOM sentinel: index 17, unchanged;
+- FAIRY: index 18.
+
+`mod.exports.__beta26.typeLockTypes[18] == "FAIRY"`.
+
+`typeLockTypeCount` now reports 18 concrete canonical types. Consumers must not infer that every numeric value from 0 through the highest selector value is concrete; index 17 remains the RANDOM selector sentinel.
+
+Internal helpers `normalizeTypeLockIndex` and `nextTypeLockConcreteIndex` keep runtime legality and DUO distinct-type handling sentinel-safe.
+
+The public Nuzlocke compatibility surface continues to expose allowed type strings rather than requiring consumers to understand selector indices.
+
+## 2.0.0-beta.30.1.17
+
+No public API change.
+
+The internal R/B/Y `ShopMenu.new` gate now resolves action identity against both literal canonical English labels and the current `Strings("BUY")` / `Strings("SELL")` translations before wrapping the action callbacks.
+
+## 2.0.0-beta.30.1.18 — Gen1 Modern UI presentation contract
+
+When loaded, Nuzlocke exports:
+
+`mod.exports.gen1ModernUi`
+
+with `apiVersion = 1` and semantic screen entries for:
+- `NuzlockeTrackerScreen`
+- `NuzlockeCatchInfoScreen`
+- `NuzlockeTrainerCardScreen`
+
+The contract is presentation-only. Models contain plain row/detail data. Actions delegate back to methods on the source Nuzlocke screen state.
+
+`mod.exports.__beta26.ModernUiIntegration` exposes integration diagnostics including `registered`, `providerId`, `lastError`, `contract`, and `tryRegister()`.
+
+No gameplay compatibility API version change.
+
+## 2.0.0-beta.30.1.21 — PokemonRecompRandomizer ownership adapter
+
+For active Gen1 gameplay, Nuzlocke recognizes mod id `pokemon_randomizer` when `exports.contractVersion == 1` and `exports.save.activeRun()` returns a public run with settings. The adapter is read-only and never mutates provider state.
+
+Ownership mapping: `starters != "off"` → Random Starter; `wild_pokemon != "off"` → Random Encounter Tables; `pokemon_movesets != "vanilla"` or `learnset_levels != "vanilla"` → Random Learnsets and its generation selector. Fishing is intentionally not treated as encounter-table ownership. Gold is excluded.
+
+
+
+## beta.30.1.21 compatibility additions
+
+`mod.exports.nuzlocke_compat.species_metadata.get(game, species)` returns merged semantic species metadata. Provider metadata is preserved and live merged species data fills missing types/base stats/BST where available. `species_metadata.api = 2` and `merged = true` advertise this behavior.
+
+`mod.exports.__beta26.compat21.randomizerTrackerContext(game)` returns spoiler-safe ownership context only; it never exposes randomized encounter mappings. `compat21.surfaceRows(game)` supplies semantic ownership rows for presentation, and `compat21.guidance(game, context)` returns optional World Building guidance without enforcement side effects.
+
+## 2.1.24 presentation note
+R/B/Y party NUZ INFO now consumes the existing API-27 `getNuzInfoPages()` and `getPokemonNuzInfo(game, mon)` helpers through a host-owned ListMenu. No API signatures changed.

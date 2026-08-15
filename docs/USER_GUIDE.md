@@ -1,3 +1,253 @@
+## 2.2.2 compact money label
+
+The Trainer Money multiplier is displayed as **`Btl. ¥`** in compact rule menus. It still scales final trainer-battle money exactly as before; this is a label-only clarification.
+
+## 2.2.1 Gold Setup / NUZ RULES layout
+
+Gold keeps the expanded rule-name field introduced in the recent UI pass, but 2.2.1 moves the right-aligned toggle/value column one native tile left so ON/OFF, WIP, money, and type values no longer crowd the right frame. This is presentation-only; rule behavior is unchanged.
+
+## 2.2.0 compatibility and repaired UI behavior
+
+Nuzlocke 2.2.0 is the direct successor to 2.1.24. Gen1Recomp **0.1.94** is source-audited; the manifest continues to allow `>=0.1.86 <0.1.98`. Versions 0.1.95–0.1.97 remain forward allowance rather than runtime-confirmed support until individually reviewed.
+
+### NUZ INFO
+On R/B/Y, party **NUZ INFO** uses the engine's native ListMenu. 2.2.0 adds a safety boundary around optional legality/provenance providers: if richer diagnostic data fails, the screen still opens with direct Pokémon name, level, location, and status instead of crashing the party menu.
+
+### MOD COMPAT / NUZ ST.
+Without Gen1 Modern UI, MOD COMPAT uses compact width-bounded labels and provider names so its two columns cannot write over each other. With Modern UI active, it keeps full semantic labels. NUZ ST. now includes explicit **RUN STATUS** and **ACTIVE RULES** rows so the rule list remains understandable in either presentation.
+
+### Skip Catch Demo in Yellow
+Yellow has two distinct catch demonstrations relevant to this option. The early Pallet Town scene has Professor Oak directly create a demo battle before escorting the player to the lab; later Viridian uses the tutorial old man. 2.2.0 skips both demonstrations while keeping the surrounding story dialogue, flags, movement, and progression callbacks.
+
+### Bryan T3 NPC
+Bryan now uses engine-native NPC walker art/animation rather than the previous rough custom renderer. No new asset file is included.
+
+## 2.1.23 runtime note — World Building T3 dialogue
+
+World Building T3 now uses a shared dialogue-presentation rule instead of per-NPC fixes. Nuzlocke-owned world text is wrapped into native-sized pages consistently. In R/B/Y, ScriptRunner dialogue using the cartridge-style continuation marker is also normalized while T3 is active; this changes presentation only, not story flags or choices. `Skip Catch Demo` now skips only the actual Red/Blue/Yellow demonstration battle and leaves the surrounding vanilla progression intact.
+
+## 2.1.22 menu stability note
+
+On R/B/Y, **NUZ ST.** and **MOD COMPAT** use the engine-native scrollable list surface. B exits; Up/Down scroll and Left/Right page-jump. Gold retains its generation-native screens.
+
+## 2.1.21 Gold Setup layout note
+
+Gold Setup and Gold in-game NUZ RULES now leave one native tile between each rule label and its displayed value/toggle. This changes presentation only; controls and rule behavior are unchanged.
+
+## 2.1.19 compatibility hardening
+
+## 2.1.20 menu notes
+
+**GAME DIFFICULTY** is now its own section. Selecting VANILLA means no trainer/game difficulty override; the other profiles change game difficulty independently of Nuzlocke challenge rules.
+
+Compact labels now use `Btl. ¥` for Trainer Money, `Start ¥` for Starting Money, `No Esc. Rope` for the Escape Rope ban, and `Heal Loadout` for the fresh-PC healing-item kit.
+
+Type Locke remains exact to the visible mode: OFF imposes no type restriction, MONO uses only Type 1, DUO uses only Type 1 and Type 2, and TRI uses only Type 1, Type 2, and Type 3.
+
+This candidate does not add or change challenge rules. It hardens optional presentation and title-setup lifecycle behavior: Gen1 kerning hooks can install regardless of which generation is active but only affect confirmed R/B/Y at render time; Gen1 Modern UI is considered connected only after an explicit successful adapter registration; and R/B/Y's title **SETUP** fallback keeps one reload-stable wrapper whose current setup callback and save-editor state are refreshed after mod reloads. Save-editor mode still suppresses SETUP while active and should allow it to return after leaving the editor in the same process. Runtime confirmation is required.
+
+## 2.1.18 Yellow runtime hardening
+
+- R/B/Y's normal Trainer Card is native again. Nuzlocke no longer replaces the player-name/card START-menu action.
+- **NUZ ST.** is the dedicated Nuzlocke run-status entry on R/B/Y and Gold. On Gen1 it opens status directly without constructing the native Trainer Card.
+- Nuzlocke-authored rule/world-building responses are transaction-owned: one script interaction can produce at most one Nuzlocke denial/flavor box even if more than one compatibility seam observes it.
+- The bedroom SNES still uses vanilla dialogue. Its `playing the SNES!` → `...Okay!` → `It's time to go!` scrolling is original Gen1 `cont` behavior, not repeated Nuzlocke World Building.
+- 2.1.17 menu/QOL changes remain: Wonderlocke under VARIANTS, No Static Enc below No Pseudos, starting resources in QOL, optional PC Heal Itms, and live-bounded Game Difficulty.
+
+## 2.1.16 Type Locke modes and menu cleanup
+
+**Type Locke** now has four modes. **OFF** hides all type selectors and applies no type restriction. **MONO** shows only Type 1 and allows only Pokemon matching that displayed type. **DUO** shows Types 1 and 2 and accepts a Pokemon matching either displayed type. **TRI** shows Types 1, 2, and 3 and accepts a Pokemon matching any of the displayed three. Dual-type Pokemon need only one matching type. Active selections are kept distinct; RANDOM resolves once to a concrete type and persists.
+
+**Route Forgiveness** now appears under **CLAUSES**. **No Catching** now appears under **GENERAL**. Their mechanics did not change. Section headers remain centered and bold-like, with subtle one-pixel tracking between glyphs for readability.
+
+## 2.1.15 Rules UI and Rule Lock
+
+Rule-section headers are centered and visually emphasized, while individual rules begin farther left for more label space. Type Locke shows no type selectors while OFF, Type 1 only while MONO, and Type 1 + Type 2 while DUO. **Rule Lock** is a reversible ON/OFF editing lock intended to prevent accidental rule changes; **Permanent Rule Seal** remains a separate WIP/unavailable irreversible feature.
+
+## 2.1.14 Type Locke MONO behavior
+
+When **Type Locke = MONO**, only **Type 1** is active. **Type 2** is cleared and omitted from Setup/NUZ RULES. Switching to **DUO** restores a valid Type 2 distinct from Type 1. This shared behavior applies to R/B/Y and Gold.
+
+## 2.1.13 Yellow/T3 repair
+
+### Yellow Random Starter
+
+Random Starter still changes the starter before the engine constructs the Pokémon. The candidate pool now excludes incomplete species records that cannot be safely constructed **and** opened in the Party/Summary screen. With Random Starter OFF, Yellow's normal Pikachu path is left unchanged.
+
+Runtime check for this RC: test Yellow once with Random Starter OFF and once ON, then open the Pokémon/Party screen and the starter's Summary immediately after acquisition.
+
+### Home world-building at T3
+
+At World Building T3, Bryan is now an actual NPC in the player's downstairs home rather than dialogue-only flavor. His rotating lines reference “boi”, the Pokémon Bois Club, using the player's computer for Gen1Recomp/Nuzlocke work, and the game console. Mom/Bryan jokes remain suggestive/comedic rather than explicit.
+
+Mom's No Mom Heal rejection is owned once per interaction. When home healing is allowed, the special T3 Bryan/Mom flavor can replace the final heal line once per save; later visits use vanilla heal dialogue.
+
+The home TV rotates self-contained T3 broadcasts. Reports are explicitly wrapped/paginated and no longer append a separate `Rule watch:` line. T0–T2 keeps the vanilla TV.
+
+## 2.1.12 Route Forgiveness rewards
+
+Route Forgiveness can start OFF, enabled with 0 tokens, or enabled with 1 token. Once active, **ordinary Gym Trainers do not award tokens**. Defeating a Gym Leader awards **one Route Forgiveness Token for that Gym, once**. The Gym Guide does not independently give another token, so one Gym clear cannot pay twice.
+
+Tokens are still spent only to preserve an otherwise lost eligible encounter opportunity. Dupes and other free rejections do not consume them.
+
+## Compact labels
+
+The menu may show compact forms such as `Nuz. Loadout`, `Dung. Lock-In`, `BATTLE ITMS`, `FIELD ITMS`, and `No PP Itms` when the full translated label does not fit. Full natural labels remain the canonical translation strings.
+
+## 2.1.11 labels and translations
+
+The compact R/B/Y rules UI no longer replaces normal translation strings with English shorthand.
+
+For example, the rule is canonically `Random Encounters`; `Rndm Enc.` is only an optional compact display label. Nuzlocke first translates and measures the full label. If it fits, the full translation is shown. If it does not fit, Nuzlocke may use a translated compact label. If only the full label has a translation, that full translated wording is retained and slowly scrolled instead of falling back to English shorthand.
+
+Descriptions always keep their complete wording.
+
+## Gen1Recomp
+
+Gen1Recomp 0.1.94 has been source-reviewed for this candidate. The manifest still allows `>=0.1.86 <0.1.98`; future 0.1.95–0.1.97 versions remain forward allowance rather than tested support.
+
+## 2.1.10 compact menu vocabulary
+
+The rules list uses compact labels to avoid unnecessary horizontal scrolling. Examples:
+
+- `1st Rival Mercy` — First Rival Mercy
+- `1 Per Area` — One Per Area
+- `Failed Enc.` — Failed Encounters
+- `Rt. Forgiveness` — Route Forgiveness
+- `Rt. 2`, `Rt. 10`, `Rt. 20` — route split rules
+- `Rndm Starter`, `Rndm Enc.`, `Rndm Lrnset`
+- `Twn Catches`
+- `No Lgndries`, `No Mythcs`
+- `Plyr`, `Wld`, `Trnr` Stat EXP
+- `No Stat EXP`
+- `Trnr $`
+- `Max. BST`
+- `Alw. Glitches`
+- `Gift Mon`, `Ingame Trds`
+- `Wndrlocke`
+- `Lvl Cap Scope`
+- `No Heal Items`
+- `No Esc.`
+- `No Rare Cndy`
+- `Deflt Names`
+- `PC Vtmn`
+
+The description pane continues to show the complete rule explanation.
+
+## 2.1.9 concise rule labels
+
+To reduce unnecessary marquee scrolling in R/B/Y rules menus:
+
+- `1st Rival Mercy` = First Rival Mercy
+- `1 Per Area` = One Per Area
+- `Failed Enc.` = Failed Encounters
+- `Rndm Starter` = Random Starter
+- `Rndm Enc.` = Random Encounters
+- `Rndm Learnset` = Random Learnsets
+
+The explanation pane always keeps the full meaning.
+
+When Wide Menus is installed, Nuzlocke Setup and NUZ RULES explicitly stay in classic/native width for compatibility.
+
+## 2.1.8 Randomizer labels
+
+To keep the R/B/Y rules screen readable without unnecessary scrolling, the menu uses concise labels:
+
+- `Rndm Starter` — Random Starter
+- `Rndm Enc.` — Random Encounters
+- `Rndm Learnset` — Random Learnsets
+
+Selecting a row still shows the complete explanation in the description pane. Text that fits does not marquee-scroll.
+
+## 2.1.7 rules-screen selection
+
+R/B/Y NUZ RULES uses the engine's native cursor glyph again for the selected row. It is positioned farther left than the historical layout, so rule labels still gain extra room.
+
+Text that fits its measured width stays still. Only true overflow scrolls, after a pause and at a slow pace.
+
+If Wide Menus is installed, Nuzlocke currently keeps NUZ RULES at native width to avoid the Yellow crash observed during 2.1.6 testing.
+
+## 2.1.6 rules-screen behavior
+
+On R/B/Y:
+- fitting labels stay still;
+- only overlong labels scroll;
+- scrolling waits about three seconds before moving and advances slowly;
+- selected rows use an outline instead of a filled color bar;
+- no left-side arrow gutter is reserved, so labels keep the extra width;
+- descriptions remain pixel-wrapped and only scroll vertically for real overflow.
+
+## 2.1.5 rules-screen behavior
+
+On R/B/Y:
+- rule names that fit stay still;
+- longer names scroll only when they truly exceed the available rendered width;
+- long names are not replaced by ellipses;
+- the selected row is highlighted in reverse video instead of using the old left-side cursor arrow;
+- descriptions remain stationary unless they need additional vertical lines.
+
+MOD COMPAT uses separate label/owner regions so text cannot overlap; overlong text scrolls inside its own region.
+
+## 2.1.4 rules-screen presentation
+
+On R/B/Y, rule names and descriptions are now designed to stay still. The UI measures the actual rendered glyph width: rule labels use the available pixel space and only show an ellipsis when they truly cannot fit. Descriptions wrap across the full description pane and only scroll vertically when more than three wrapped lines are required.
+
+MOD COMPAT uses safe measured columns so provider ownership text cannot overlap rule-surface labels.
+
+## 2.1.3 candidate test focus
+
+For R/B/Y on Gen1Recomp 0.1.92, verify MOD COMPAT opens and scrolls, then check that variable-width text is visibly active in Setup and NUZ RULES. Gym Trainer Forgiveness should award once per distinct Gym Trainer. Preserved gift/trade Pokémon denied by a Nuzlocke acquisition rule should appear as restricted/invalid through compatibility-aware presentation.
+
+## 2.1.2 test note
+
+On Yellow with Gen1Recomp 0.1.92, fresh Setup and starting the game are runtime-confirmed. This candidate repairs MOD COMPAT and retries the optional Gen1 variable-width text presentation after game initialization. Retest those two presentation paths before release promotion.
+
+## Engine compatibility — 2.1.1 candidate
+
+Nuzlocke supports Gen1Recomp `>=0.1.86 <0.1.98`. Engine 0.1.92 has been source-reviewed for this candidate. Later 0.1.95–0.1.97 versions are allowed proactively but will be re-reviewed when released.
+
+No network or background-compute permission is needed for normal Nuzlocke operation.
+
+## Version 2.1.0
+
+The former `2.0.0-beta.31.0.4` development build is now identified as `2.1.0`. This renumbering does not alter saves, rules or gameplay behavior.
+
+## Wide Menus — optional
+
+With Wide Menus V0.1.0 enabled, the in-game R/B/Y **NUZ RULES** screen can use a 304×144 layout with wider rule labels and descriptions. All controls and rule behavior remain Nuzlocke-owned. Without Wide Menus the normal compact screen is used.
+
+Fresh New Game Setup and Gold remain native in this phase.
+
+## Dungeon Lock-In — beta.31.0.3
+
+Dungeon Lock-In applies to actual dungeon maps. Adjacent service interiors such as the Pokémon Center beside Mt. Moon are not intended to become part of the dungeon lock simply because a runtime map identifier shares the landmark name.
+
+## Gen1Recomp 0.1.90
+
+`2.0.0-beta.31.0.2` remains within the supported engine range and requires no rule migration. Existing saves and Nuzlocke save schema remain unchanged. Gold users should still treat Gold support as beta and runtime-test field moves and title/save transitions after updating the engine.
+
+## beta.31.0.1 stability update
+
+This build does not add new player-facing rules. It hardens difficulty-profile synchronization, optional Modern UI lifecycle behavior, title Setup availability after save-editor sessions, and trainer progression/reward bookkeeping.
+
+## Tier 3 World Building — Bryan expansion (beta.30.1.23)
+
+Tier 3 now treats Bryan as a recurring fictional Pallet/Bois Club character. His dialogue may claim authorship of the Nuzlocke mod and Gen1Recomp development work performed from the player's bedroom computer, and Pallet TV may report increasingly suspicious Bryan sightings. This is flavor-only: it does not alter story progression, rules, encounters, or saves.
+
+Future design notes: after achievements are implemented, World Building may let NPCs and occasional rule presentation comment on unlocked achievements. A separate **Black Market** concept is also on the backlog for provider-aware access to unusual rare items or Pokémon earlier than normal; it is not active in this build.
+
+## Tracker, Mod Compat, and NUZ INFO intelligence (beta.30.1.22)
+
+**Encounter Tracker / Area Guide** can now show compact encounter-context tags such as WILD, FISH, GIFT, STATIC, TRADE, or RNG. When a compatible provider is known, provider context is exposed without revealing future randomized encounter mappings.
+
+**MOD COMPAT** is the player-facing ownership map for shared mechanics. It reports the effective owner for supported randomization, economy, level-cap, difficulty, species/identity, encounter, escape/warp, movement and presentation surfaces.
+
+**NUZ INFO → Catch** now reports a Pokémon's status against the current active restriction set. `LEGAL` means no current roster restriction was detected; `RESTRICTED` includes the detected reason(s); `LOST` reports a dead Nuzlocke Pokémon. This display is informational and does not edit or remove Pokémon.
+
+## Gen1 variable-width Nuzlocke text (beta.30.1.20)
+
+On Red, Blue, and Yellow, Nuzlocke can tighten selected narrow tile-font glyphs so long rule descriptions, tracker/status text, NUZ INFO, Setup, and World Building dialogue have more horizontal room. Wrapping uses the same adjusted advances as drawing. This presentation layer does not change rules or saves. Gold/Gen2 is explicitly excluded and continues using its original font metrics. If a compatible external kerning provider already owns the Gen1 font surface, Nuzlocke avoids applying a second transform.
+
 ## 2.0.0-beta.30.0.0.10
 
 When another active mod explicitly owns a duplicate non-core mechanic, the Nuzlocke row stays visible but is greyed and effectively OFF. Your saved Nuzlocke preference is not erased. Applying a Nuzlocke loadout while a provider is active also updates that dormant preference, so disabling the provider later restores the loadout's intended setting rather than an older stale value. EXP Edging follows an externally owned level-cap system.
@@ -594,3 +844,91 @@ Fresh-game Nuzlocke Setup has been runtime validated on the current tested engin
 Your pre-game Setup selections are retained during the current Gen1Recomp session. If you completely close and reopen Gen1Recomp before starting the run, the Setup preference layer returns to defaults.
 
 Once rules are committed to an actual game save, normal save-backed Nuzlocke persistence applies.
+
+## Gold Pokégear — 30.1.7
+
+When optional Pokegear Cards is active, Gold gets a NUZ card plus MAP/RADIO additions.
+
+### NUZ
+A opens the card from the strip. UP/DOWN changes Run, Encounters, Rules, and Caps/Difficulty pages. A on Rules advances additional rules. B returns to the strip.
+
+### MAP
+The vanilla map remains intact. Small markers show known visited/open, failed, and caught/claimed Nuzlocke landmark states.
+
+### RADIO
+With World Building enabled, the vanilla Radio shows a short Nuzlocke status/flavor line. It never changes actual stations or story behavior.
+
+If Pokegear Cards is not active, none of these additions appear and normal Nuzlocke menus remain available.
+
+## Trainer Money and external economy mods — 30.1.8
+
+If a compatible active mod provides the economy capability, Nuzlocke delegates Trainer Money to it. The Nuzlocke control presents **100%** as the neutral value and does not modify that provider's trainer payout after battle.
+
+Without an external economy provider, the selected Nuzlocke Trainer Money percentage works normally.
+
+## Gold level-cap note — 30.1.9
+
+The built-in Gold fallback cap path now progresses through the middle Johto bosses as:
+
+**Chuck 30 -> Pryce 31 -> Jasmine 35 -> Clair 40**
+
+Compatible difficulty/trainer providers may still supply authoritative live boss levels through the existing provider system.
+
+## Save Editor compatibility — 30.1.10
+
+Nuzlocke's title SETUP fallback is suppressed whenever the current title session is a save-editor session, even if the fallback wrapper was installed earlier during normal play.
+
+## Route Forgiveness — 30.1.11
+
+Gold Standard Marts can safely expose Forgiveness Token stock when Route Forgiveness is active. The rules/status display also reports the current Forgiveness Token count through the same Trainer Rewards module used by runtime logic.
+
+## Legacy Recovery — 30.1.12
+
+If an older Pokémon's stored catch location conflicts with a different catch already established in that area, the stale location is now treated as unresolved. The Pokémon remains available for Legacy Recovery instead of disappearing from the recovery workflow.
+
+## Solo Only — 30.1.13
+
+While Solo Only is active, NPC trades now follow the same one-usable-party-Pokémon restriction as gifts and wild catches. If the solo slot is already occupied, the trade is rejected with the normal Solo Only rule message.
+
+## First Rival Mercy — 30.1.14
+
+First Rival Mercy belongs only to the canonical opening Rival battle. A later Rival encounter does not consume the one-time slot. When the true opener is reached, the slot is consumed whether Mercy is enabled or disabled; when enabled, faints in that battle receive the existing Mercy treatment.
+
+## World Building — 30.1.15
+
+First Rival Mercy's notice is intended to be available from World Building Tier 1. That remains true even on a battle implementation that cannot display the message through its native battle text queue; Nuzlocke's fallback now keeps the same tier threshold.
+
+## Fairy Type Locke — 30.1.16
+
+If a compatible content/typing mod adds canonical Fairy typings, **FAIRY** is available as a Type 1 or Type 2 selection.
+
+RANDOM only chooses Fairy when at least one Fairy-typed species is represented in the live merged species pool. Manually selecting Fairy is still allowed for custom/modded challenge setups.
+
+Existing saves are safe: the old RANDOM selector value was not moved.
+
+## Localization compatibility — 30.1.17
+
+On Red/Blue/Yellow, No Buying and No Selling now work even when another mod translates the Mart's BUY and SELL menu text. The Nuzlocke rule is tied to the live translated action label rather than requiring English text on screen.
+
+## Modern UI companion support — 30.1.18
+
+If a compatible **Gen1 Modern UI** mod is active, Nuzlocke's Encounter Tracker, NUZ INFO and Trainer Card/status pages may be presented using its responsive UI.
+
+Controls and rule behavior stay the same. Disable Modern UI or its original-UI suppression to return to Nuzlocke's native presentation.
+
+Setup and the Nuz Rules editor intentionally continue using the native Nuzlocke screen in this version.
+
+## PokemonRecompRandomizer companion support — 30.1.19
+
+When PokemonRecompRandomizer is active on R/B/Y, Nuzlocke automatically yields duplicate Random Starter, Random Encounter Tables, or Random Learnsets controls only for features enabled in that external run. If its corresponding setting is vanilla/off, your Nuzlocke setting remains effective. Fishing-only randomization can coexist with Nuzlocke encounter-table randomization.
+
+The integration is optional and does not apply to Gold.
+
+
+
+## Mod Compat and contextual guidance (beta.30.1.21)
+
+Open **MOD COMPAT** from the Start menu to inspect active mechanic ownership. The Encounter Tracker may show an RNG marker when an external provider owns encounter randomization; this does not reveal future encounters. World Building can surface situational rule guidance at the selected tier, while mechanical enforcement remains independent.
+
+## NUZ INFO on R/B/Y (2.1.24)
+Open a Pokemon's party submenu and choose **NUZ INFO**. R/B/Y now presents enabled Catch/Stat/Move information in a native scrollable list. Gold retains its native-styled pages.

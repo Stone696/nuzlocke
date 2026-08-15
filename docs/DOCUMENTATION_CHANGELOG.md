@@ -1,3 +1,209 @@
+## 2.2.2
+
+- Updated current documentation for the `Btl. ¥` compact Trainer Money label.
+- Added Yellow 2.1.24 runtime PASS evidence for No Buying, No Selling, and No Center Heal.
+- Historical changelog entries retain their historical labels where applicable.
+
+## 2.2.1
+
+- Documented the Gold 2.1.24 runtime finding that the value/toggle column was slightly too far right.
+- Recorded the one-tile left correction while preserving the wider rule-label field.
+- Confirmed no API, rule-mechanics, file-tree, or Gen1Recomp 0.1.94 compatibility change.
+
+## 2.2.0
+
+- Updated every existing release/documentation surface for the requested 2.2.0 version step from parent 2.1.24.
+- Documented the Gen1Recomp v0.1.94 source audit, 10-commit delta, version-aware conflict handling, and new opt-in `mod.postLog`/`log_url` facility.
+- Recorded the decision not to add `network` permission or a logging endpoint.
+- Updated compatibility/audited-engine language from 0.1.93 to 0.1.94 where it describes the current candidate; historical entries remain historical.
+- Documented the NUZ INFO safe fallback, classic/Modern UI MOD COMPAT behavior, NUZ ST. semantic headings, Yellow Professor Oak demo skip, and native Bryan sprite direction.
+- Updated runtime-confidence/test guidance for all affected paths.
+
+## 2.1.23
+
+Documented the systemic T3 dialogue presentation boundary, R/B/Y semantic catch-demo skip, and Gold value-column alignment change. No files were added or removed.
+
+## 2.1.22
+
+Documented the Yellow NUZ ST./MOD COMPAT runtime crash and R/B/Y migration to native ListMenu presentation.
+
+# 2.1.19
+
+## 2.1.21
+
+- Documented the Gold Setup/NUZ RULES label-value spacing cleanup.
+- No API, rule-mechanics, or save-schema documentation changes.
+
+## 2.1.20
+
+Documented Yellow 2.1.19 runtime PASS/FAIL results, deferred Nuz-menu crash recovery, dedicated Game Difficulty section, updated compact labels, and the current Type Locke enforcement confidence state.
+
+- Documented the compatibility-only scope of the 2.1.19 child build.
+- Documented generation-neutral kerning installation retries with Gen1-only call-time behavior.
+- Documented fail-closed Modern UI adapter registration requiring explicit `true`.
+- Documented the reload-stable R/B/Y title SETUP wrapper and 2.1.18 legacy-wrapper migration behavior.
+- Kept the 2.1.18 Yellow runtime evidence and unresolved runtime tests intact as inherited history.
+
+# 2.1.18
+
+- Documented Yellow runtime PASS for default-name skip and PC Vitamins, plus Trainer Card FAIL/crash evidence from 2.1.16.
+- Documented restoration of native R/B/Y Trainer Card ownership and separate `NUZ ST.` status navigation.
+- Documented one-response-per-script Nuzlocke dialogue ownership.
+- Clarified that the bedroom SNES line overlap is vanilla Gen1 `cont` scrolling, not duplicate T3 World Building.
+- Retained documentation for the 2.1.17 menu/QOL changes now inherited by 2.1.18.
+
+# 2.1.16
+
+- Documented Trilocke and the Type 3 selector.
+- Clarified OFF/MONO/DUO/TRI effective Type Locke behavior.
+- Documented No Catching → GENERAL and Route Forgiveness → CLAUSES menu relocation.
+- Documented one-pixel header micro-tracking.
+
+# 2.1.15
+
+- Documented centered/emphasized rule-section headers and left-shifted rule rows.
+- Documented Type Locke OFF/MONO/DUO selector visibility.
+- Restored documentation for reversible Rule Lock as distinct from Permanent Rule Seal.
+
+# 2.1.14
+
+- Documented MONO as a true one-type configuration state.
+- Documented Type 2 clearing/hiding in shared R/B/Y + Gold Setup/Rules and DUO secondary reinitialization.
+
+# 2.1.13
+
+- Documented the Yellow Random Starter concrete-data safety gate and retained pre-creation hook contract.
+- Documented transactional Mom T3/No Mom Heal behavior.
+- Documented clean Pallet TV pagination and removal of the unrelated rule suffix.
+- Documented Bryan as a real T3 home NPC with rotating contextual dialogue.
+- Recorded parser/static/source-audit status separately from runtime TEST REQUIRED.
+- No save-schema, Mod API, permission, or repository-tree change.
+
+# 2.1.12
+
+- Changed Route Forgiveness reward source from ordinary Gym Trainers to one award per defeated Gym Leader.
+- Documented Leader-keyed one-time reward ledger and no double-award Gym Guide behavior.
+- Added localization-safe compact fallbacks for Nuzlocke Loadout, Dungeon, and Items labels.
+- No save-schema or Mod API bump.
+
+# 2.1.11
+
+- Restored full natural labels as canonical translation strings.
+- Added optional compact-label metadata and translation-safe fallback rules.
+- Documented Gen1Recomp 0.1.93 source audit and updated audited-engine marker.
+- Engine envelope remains `>=0.1.86 <0.1.98`.
+
+# 2.1.10
+
+- Recorded Wide Menus coexistence without active widening as the current safe state.
+- Simplified collapsible section headers.
+- Added compact player-facing rule abbreviations to reduce marquee use.
+- Full descriptions and gameplay semantics remain unchanged.
+
+# 2.1.9
+
+- Recorded approved marquee cadence.
+- Added 1st / 1 / Enc. menu abbreviations for common rules.
+- Documented explicit Wide Menus classic-layout refusal for Setup and Rules.
+- No gameplay or save changes.
+
+# 2.1.8
+
+- Documented concise Randomizer menu labels intended to reduce unnecessary marquee scrolling.
+- Full rule descriptions remain unchanged in meaning.
+- No gameplay/API/save changes.
+
+# 2.1.7
+
+- Recorded Yellow 2.1.6 Wide Menus crash.
+- Recorded failed custom outline selection rendering.
+- Documented temporary native-width fallback when Wide Menus is installed.
+- Documented restored native cursor with reduced gutter.
+
+# 2.1.6
+
+- Recorded 2.1.5 Yellow runtime feedback for marquee speed and selected-row readability.
+- Restored historical marquee timing for true overflow only.
+- Replaced filled selection highlight with a non-destructive outline.
+- Preserved reclaimed left-side text space.
+
+# 2.1.5
+
+- Recorded 2.1.4 runtime presentation feedback.
+- Changed R/B/Y long-label behavior from ellipsis to conditional pixel-aware marquee.
+- Documented reverse-video row selection and reclaimed left-side text space.
+- Documented MOD COMPAT conditional-overflow scrolling.
+
+# 2.1.4
+
+- Recorded Yellow 0.1.92 Gen1 kerning runtime PASS.
+- Recorded MOD COMPAT no-crash runtime PASS.
+- Documented pixel-measured static R/B/Y rule presentation.
+- Documented description wrapping/overflow behavior.
+- Documented measured MOD COMPAT columns and pending visual retest.
+
+# 2.1.3
+
+- Recorded Gym Trainer Forgiveness identity-key repair.
+- Recorded active-game dependency injection for Gen1 kerning.
+- Recorded `compat21.pokemonLegality` invalid-acquisition correction and new reason metadata.
+- Preserved Yellow 0.1.92 Setup/boot PASS evidence and pending runtime checks.
+
+# 2.1.2
+
+- Recorded Yellow 0.1.92 fresh Setup and boot runtime PASS.
+- Recorded and repaired the 2.1.1 R/B/Y MOD COMPAT crash.
+- Documented Gen1 kerning lifecycle retry and pending runtime verification.
+
+# 2.1.1
+
+- Documented Gen1Recomp 0.1.92 source audit.
+- Documented the `>=0.1.86 <0.1.98` engine envelope and the distinction between audited and forward-allowed versions.
+- Removed obsolete multi-part-beta updater guidance now that Nuzlocke uses ordinary SemVer.
+
+# 2.1.0
+
+- Established `2.1.0` as the canonical development version, replacing the former `2.0.0-beta.31.0.4` identity without changing its code behavior.
+- Preserved the complete historical beta lineage in documentation.
+
+# 2.0.0-beta.31.0.4
+
+- Added Wide Menus V0.1.0 to the optional compatibility surface.
+- Documented phase-1 R/B/Y in-game Nuz Rules integration and protected native fallbacks.
+
+# 2.0.0-beta.31.0.3
+
+- Documented the Mt. Moon Pokémon Center Dungeon Lock-In repair and generic service-interior classifier hardening.
+
+# 2.0.0-beta.31.0.2
+
+- Recorded Gen1Recomp 0.1.90 source compatibility review.
+- Confirmed the existing supported engine envelope already includes 0.1.90.
+- Added the upstream Gold field-move and orphaned-slot recovery implications to compatibility documentation.
+
+# 2.0.0-beta.31.0.1
+
+- Documented the reviewed lifecycle/progression repair batch and synchronized build identity.
+- Clarified that Champion progression already had a correct `true` return and was not modified.
+- Preserved all prior release history.
+
+# 2.0.0-beta.31.0.0
+
+- Documented the Tier 3 Bryan/Bois Club/Pallet home/TV World Building expansion.
+- Recorded future achievement-reactive World Building and the provider-aware Black Market shop concept as backlog only.
+- Explicitly distinguished those future designs from implemented mechanics.
+
+# 2.0.0-beta.30.1.22
+
+- Documented Tracker/Area Guide provenance tags, expanded MOD COMPAT ownership reporting, and NUZ INFO current-rules legality/provenance.
+- Corrected stale `.30.1.21` documentation that mislabeled the `.30.1.20` kerning change and repaired executable build-identity documentation.
+- Preserved prior release history and the runtime-test boundary.
+
+# 2.0.0-beta.30.1.21
+
+- Documented the Gen1-only internal variable-width presentation layer, Gold hard exclusion, external kerning non-stacking behavior, and runtime-test boundary.
+- Synchronized current build identity to beta.30.1.20 without rewriting historical release entries.
+
 ## 2.0.0-beta.30.0.0.10
 
 Updated all existing release documentation for the compatibility/conflict-hardening pass. Clarified stored-vs-effective delegated state, granular randomizer ownership, unified public item/acquisition policy behavior, AutoCompat save ownership, Gold No Fishing handling, and the remaining runtime-test flags. No documentation files were added or removed.
@@ -464,3 +670,72 @@ Documented the third split update: multi-page NUZ INFO and Compatibility API 27.
 - Recorded Blue fresh NEW GAME bedroom entry as RUNTIME PASS.
 - Reclassified the prior fresh Setup CTD as repaired on the tested current-engine path.
 - Kept session-local Setup-profile persistence documented as a temporary limitation.
+
+## 2.0.0-beta.30.1.7
+- Added optional Pokegear Cards API v1 integration.
+- Added Gold NUZ card, MAP encounter overlay, and RADIO World Building overlay.
+- Documented stable IDs, active-provider detection, and explicit PHONE avoidance.
+- Added approved focused `pokegear_integration.lua`.
+
+## 2.0.0-beta.30.1.8
+- Fixed Trainer Money runtime enforcement ignoring economy-provider delegation.
+- Added generic numeric rule `neutral` support.
+- Set Trainer Money delegated neutral index to 4 / 100%.
+- Updated provider compatibility documentation.
+
+## 2.0.0-beta.30.1.9
+- Restored the previously intended Chuck -> Pryce -> Jasmine Gold cap-stage order.
+- Clarified that boss-cap ordering is separate from Gold badge slot identities.
+- Recorded monotonic fallback sequence validation.
+
+## 2.0.0-beta.30.1.10
+- Added per-call save-editor gating to recurring title-menu fallback wrappers.
+- Clarified that editor status is runtime/session state rather than an install-time invariant.
+
+## 2.0.0-beta.30.1.11
+- Fixed bare `forgivenessEnabled()` call in Gold Mart construction.
+- Fixed bare `forgivenessTokens()` call in Route Forgiveness status presentation.
+- Documented qualified `TrainerRewards` access as the required split-module boundary.
+
+## 2.0.0-beta.30.1.12
+- Fixed false successful-registration state in conflicting stored-location recovery.
+- Documented Legacy Recovery fallback for unresolved stored locations.
+
+## 2.0.0-beta.30.1.13
+- Added Solo Only enforcement to scripted NPC trades.
+- Documented shared gift/trade party-slot gating and reuse of the existing Solo Only denial message.
+
+## 2.0.0-beta.30.1.14
+- Moved First Rival Mercy durable one-shot consumption behind positive opening-Rival identification.
+- Documented old-save and reordered/rewound Rival behavior.
+- Added state-machine regression coverage for non-opening and opening Rival cases.
+
+## 2.0.0-beta.30.1.15
+- Added optional minimum-tier support to internal `worldOnce`.
+- Threaded `queueTrainerFlavor`'s minimum tier through the generic fallback.
+- Documented Tier 1 First Rival Mercy fallback behavior.
+
+## 2.0.0-beta.30.1.16
+- Added canonical FAIRY to Mono/Duo Type Locke.
+- Preserved RANDOM selector index 17 and appended FAIRY at index 18.
+- Documented sparse selector semantics for API consumers.
+- Added compatibility notes for merged-registry typing mods.
+- Added regression coverage for pure/dual Fairy legality and random viability.
+
+## 2.0.0-beta.30.1.17
+- Made R/B/Y No Buying / No Selling recognition localization-safe.
+- Added Finnish OSTA/MYY regression coverage.
+- Documented generic translated-string compatibility rather than package-specific hardcoding.
+
+## 2.0.0-beta.30.1.18
+- Added optional Gen1 Modern UI semantic adapter module.
+- Added stable screen IDs for Nuzlocke Tracker, NUZ INFO, Trainer Card, and future Config integration.
+- Kept Setup/Nuz Rules native and documented why.
+- Added fail-safe/provider lifecycle behavior and runtime test requirements.
+
+## 2.0.0-beta.30.1.21
+
+Documented the PokemonRecompRandomizer public active-run ownership adapter, Gen1-only scope, fishing composition exception, provider-owned learnset protection, and story-context Oak starter recognition. Runtime status remains TEST REQUIRED.
+
+## 2.1.24
+Documented the R/B/Y NUZ INFO migration to host-owned ListMenu after the Yellow 2.1.23 runtime crash.

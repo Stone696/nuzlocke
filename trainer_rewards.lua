@@ -83,8 +83,29 @@ local function trainerIdentityForReward(battle)
         or battle and (battle.trainerName or battle.opponentName)
     local class = battle
         and (battle.oppClass or battle.trainerClass or battle.opponentClass)
-    return tostring(id or "") .. "|" .. tostring(class or "")
-        .. "|" .. tostring(name or "")
+    -- Normalize semantic fields independently, then join them. The reward
+    -- ledger uses exact keys, so the boundaries must survive normalization.
+    return compactTrainerIdentity(id) .. ":"
+        .. compactTrainerIdentity(class) .. ":"
+        .. compactTrainerIdentity(name)
+end
+
+local function trainerMatchesLeader(battle, leader)
+    local leaderKey = compactTrainerIdentity(leader)
+    if leaderKey == "" then return false end
+    local trainer = battle and battle.trainer
+    local idKey = compactTrainerIdentity(
+        trainer and trainer.id
+            or battle and (battle.trainerId or battle.opponentId))
+    local classKey = compactTrainerIdentity(
+        battle and (battle.oppClass or battle.trainerClass
+            or battle.opponentClass))
+    local nameKey = compactTrainerIdentity(
+        trainer and trainer.name
+            or battle and (battle.trainerName or battle.opponentName))
+    return idKey:find(leaderKey, 1, true) ~= nil
+        or classKey:find(leaderKey, 1, true) ~= nil
+        or nameKey:find(leaderKey, 1, true) ~= nil
 end
 
 function M.forgivenessEnabled()
@@ -201,6 +222,14 @@ function M.scaleTrainerMoney(battle, result)
     local gained = math.max(0, now - start)
     if gained <= 0 then return false end
 
+    -- If an active economy provider owns Trainer Money, its final payout is
+    -- authoritative. Do not rewrite the wallet at all; this avoids stacking a
+    -- stale Nuzlocke multiplier on top of the provider's economy result.
+    if d.externalRuleDelegation
+        and d.externalRuleDelegation("trainer_money_multiplier", game) then
+        return false
+    end
+
     local idx = math.max(0, math.min(8,
         math.floor(tonumber(mod.save:get(
             "trainer_money_multiplier", 4)) or 4)))
@@ -217,7 +246,7 @@ function M.scaleTrainerMoney(battle, result)
     return true
 end
 
-function M.awardGymTrainerForgiveness(battle, result)
+function M.awardGymLeaderForgiveness(battle, result)
     if result ~= "win" or not M.forgivenessEnabled() or not battle
         or not d.isTrainerBattle(battle) then
         return false
@@ -230,22 +259,25 @@ function M.awardGymTrainerForgiveness(battle, result)
         and game.save.player.map
     local leader = d.gymLeaderForMap
         and d.gymLeaderForMap(mapId, game)
-    if not leader then return false end
 
-    local who = compactTrainerIdentity(trainerIdentityForReward(battle))
-    local leaderKey = tostring(leader):upper():gsub("[^A-Z0-9]", "")
-    if leaderKey ~= "" and who:find(leaderKey, 1, true) then
+    -- A Gym reward belongs to the Leader only. Ordinary Gym Trainers never
+    -- mint Forgiveness Tokens. Unknown/foreign Gym identity fails closed for
+    -- the reward rather than accidentally paying a normal trainer.
+    if not leader or not trainerMatchesLeader(battle, leader) then
         return false
     end
 
+    -- One award per defeated Gym Leader, permanently. Use a semantic leader
+    -- key instead of trainer party identity so rematches/providers cannot
+    -- generate a second reward for the same Gym.
     local ledger = mod.save:get(
-        "route_forgiveness_gym_trainers", {})
+        "route_forgiveness_gym_leaders", {})
     if type(ledger) ~= "table" then ledger = {} end
-    local key = tostring(mapId or "GYM") .. ":" .. who
-    if ledger[key] then return false end
+    local key = compactTrainerIdentity(leader)
+    if key == "" or ledger[key] then return false end
 
     ledger[key] = true
-    mod.save:set("route_forgiveness_gym_trainers", ledger)
+    mod.save:set("route_forgiveness_gym_leaders", ledger)
     M.setForgivenessTokens(M.forgivenessTokens() + 1)
     if game then
         pcall(d.pushWorldText, game,
@@ -294,7 +326,7 @@ function M.recordLeagueProgression(battle, result)
             or (leaderKey ~= "" and idKey:find(leaderKey, 1, true)) then
             gymProgressTable[gymLeader] = true
             mod.save:set(d.gymProgressKey, gymProgressTable)
-            break
+            return true
         end
     end
 
@@ -328,10 +360,11 @@ function M.install(ownerMod, supplied)
 
     for _, key in ipairs({
         "Strings", "active", "isTrainerBattle", "isSaveEditorSession",
-        "worldMechanic", "worldRuleTriplet", "pushWorldText",
+        "worldMechanic", "worldRuleTriplet", "externalRuleDelegation",
+        "pushWorldText",
         "worldRuleText", "getCurrentGame", "VersionCompat",
         "gscProgress", "gscStages", "levelCapGymLeaders",
-        "gymProgress", "eliteFourCaps", "eliteFourDefeated",
+        "gymProgress", "gymProgressKey", "eliteFourCaps", "eliteFourDefeated",
         "currentGymProgressCount", "nextEliteFourCapInfo",
     }) do
         assert(d[key] ~= nil, "trainer rewards missing dependency: " .. key)

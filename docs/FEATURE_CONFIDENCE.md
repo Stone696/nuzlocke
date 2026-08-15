@@ -1,3 +1,96 @@
+## 2.2.2 confidence update
+
+**Runtime PASS inherited from Yellow 2.1.24 save-game testing:** No Buying; No Selling; No Center Heal / Pokémon Center healing ban. These enforcement paths are protected and unchanged in 2.2.2.
+
+**Static/parser scope:** compact Trainer Money label only (`Trnr ¥` → `Btl. ¥`). No mechanics changed.
+
+## 2.2.1 confidence update
+
+**Runtime-confirmed defect entering this build:** Gold Setup/NUZ RULES values in 2.1.24 were positioned too close to the right border.
+
+**Static/parser PASS:** the Gold value anchor is moved exactly one native tile left while the ten-tile label field remains intact; no R/B/Y or rule-mechanics path changed.
+
+**Runtime RETEST REQUIRED:** Gold NEW GAME Setup and in-game NUZ RULES with short ON/OFF values plus longer money/type values.
+
+## 2.2.0 confidence update
+
+**Source/static PASS:** Gen1Recomp v0.1.94 tag audit; 10-commit v0.1.93→v0.1.94 comparison; Mod API remains 2; Nuzlocke save schema remains 4; no new permission required. 2.2.0 parser/static validation covers the NUZ INFO exception boundary, classic MOD COMPAT width fitting, NUZ ST. heading rows, Yellow Professor Oak direct-demo skip, and native Bryan rendering path.
+
+**Inherited runtime PASS evidence:** Yellow Setup appears; Type Locke selector visibility works; startup name skip works; PC Heal, Rare Candy, and Vitamin starter loadouts work; native Trainer Card opens; randomized-starter received text names the actual Pokémon; randomized starter is present in party; Trainer Money uses the money symbol.
+
+**Runtime TEST REQUIRED:** Gen1Recomp 0.1.94 boot/new-game/save-load; R/B/Y NUZ INFO with ordinary and randomized starters; MOD COMPAT with and without Gen1 Modern UI; NUZ ST. with and without Gen1 Modern UI; Yellow Professor Oak Pallet capture-demo skip and later Viridian tutorial skip; Bryan's T3 home/fan-club native appearance; T3 dialogue system regressions.
+
+## 2.1.23 confidence delta
+
+- **Confirmed runtime defect entering this build:** repeated stitched/continuation dialogue reports at Mom, Viridian tutorial, Oak's Lab and similar R/B/Y interactions while testing T3.
+- **Static/source-audited repair:** Red/Blue and Yellow both route their demonstration through `old_man_demo`; 2.1.23 skips only that command when the NEW GAME option is staged.
+- **Static validation:** shared T3 formatter is now used by Nuzlocke-owned world text and T3 ScriptRunner continuation dialogue.
+- **Runtime TEST REQUIRED:** actual dialogue appearance, catch-tutorial story completion, and Gold row spacing.
+
+## 2.1.22 runtime confidence
+
+Yellow 2.1.21: NUZ ST. FAIL/crash; MOD COMPAT FAIL/crash. 2.1.22 replaces both R/B/Y custom presentation states with host ListMenu surfaces. Static/parser validation PASS; runtime RETEST REQUIRED. Previously confirmed Yellow Setup/name-skip/startup-resource/native Trainer Card PASS behavior remains protected.
+
+## 2.1.21 runtime confidence update
+
+Gold rule-label/value spacing is static-implemented and parser-validated. Runtime visual confirmation is required in Gold NEW GAME Setup and Gold in-game NUZ RULES. All 2.1.19 Yellow PASS observations and 2.1.20 menu-recovery work remain inherited; this build does not alter those paths.
+
+**2.1.19 candidate / compatibility hardening:** parser/static validation covers generation-neutral kerning install retries, fail-closed Gen1 Modern UI registration, and reload-stable R/B/Y title SETUP dependency refresh/migration. These changes do not alter challenge-rule mechanics. Runtime remains **TEST REQUIRED** for R/B/Y title Setup, save-editor enter/leave in one process, hot reload/mod reload, Gen1 kerning after lifecycle transitions, and Modern UI present/absent/provider-refusal cases. The Yellow 2.1.16 PASS/FAIL evidence and 2.1.18 repair status below remain inherited.
+
+## 2.1.20 runtime confidence update
+
+Yellow 2.1.19 runtime PASS: NEW GAME Setup, Type Locke selector visibility/state presentation, automatic default names, PC Heal startup loadout, PC Rare Candy startup loadout, PC Vitamins startup loadout, and native Trainer Card opening. Yellow 2.1.19 runtime FAIL: entering a Nuzlocke-owned in-game menu can hard-crash. 2.1.20 changes the NUZ RULES and R/B/Y NUZ STATUS guards to defer stack mutation out of draw(); runtime retest is required to identify/confirm any underlying screen-specific exception. Type Locke acquisition enforcement is statically consistent but runtime TEST REQUIRED.
+
+**2.1.18 candidate / Yellow runtime evidence:** 2.1.16 default-name skip PASS; PC Vitamins fresh-save PC grant PASS; opening the Nuzlocke-hijacked Trainer Card FAIL/crash. The 2.1.18 response removes that hijack and uses a standalone `NUZ ST.` status surface; this repair is parser/static PASS and runtime TEST REQUIRED. Generic per-script Nuzlocke message ownership is parser/static PASS and runtime TEST REQUIRED. The bedroom SNES screenshots were source-audited as vanilla Gen1 `cont` scrolling, not duplicate World Building; no upstream dialogue rewrite is claimed. 2.1.17 Game Difficulty and PC Heal Itms remain runtime TEST REQUIRED.
+
+**2.1.16 candidate:** Trilocke, three-selector state normalization, menu relocation, and header micro-tracking are static-implemented. Type Locke legality remains centralized through `typeLockAllowedTypes()` / `typeLockAllowsSpecies()`: OFF produces no type restriction, MONO one active type, DUO two, TRI three. Runtime remains **TEST REQUIRED** on Gold and at least one R/B/Y game, including capture/gift/trade rejection and off-type encounter preservation.
+
+**2.1.15 candidate:** configuration UI/state cleanup. Type Locke OFF now clears/hides both type selectors; MONO keeps Type 1 only. Reversible Rule Lock is restored independently of the WIP Permanent Rule Seal. Section-header centering/bold-like emphasis and left-aligned rule rows are static-implemented; runtime remains **TEST REQUIRED**.
+
+**2.1.14 candidate:** Gold 2.1.12 runtime reproduction confirmed a presentation/state mismatch: Type Locke MONO still showed Type 2. Shared config logic now clears the secondary state and omits Type 2 while MONO is active, covering both R/B/Y and Gold Setup/Rules. Static/parser validation can be claimed after packaging; runtime remains **TEST REQUIRED**.
+
+**2.1.13 candidate:** Yellow/T3 repair paths are parser/static PASS and source-audited; runtime remains TEST REQUIRED. Upstream Gen1Recomp 0.1.93 confirms `pokemon.before_give` precedes `Pokemon.new`; the hook itself is therefore retained. Random Starter now rejects partial concrete species/move records that would be unsafe for `Pokemon.new`/SummaryMenu. Mom response ownership, Pallet TV pagination, and Bryan's real T3 home NPC are RUNTIME TEST REQUIRED. Required Yellow checks: Random Starter OFF → vanilla Pikachu + Party/Summary; Random Starter ON → randomized starter + immediate Party/Summary; blocked Mom heal exactly one response/no heal; allowed Mom heal one-time T3 flavor then vanilla; T3 TV clean pages/no `Rule watch:`; Bryan visible/talkable at home; Setup, NUZ RULES, MOD COMPAT, and Wide Menus classic coexistence regression checks. No runtime PASS is claimed by this entry.
+
+**2.1.12 candidate:** Gym-Leader-only Forgiveness reward logic is parser/static PASS and requires runtime confirmation on R/B/Y and Gold. Verify ordinary Gym Trainers give zero tokens, a Leader gives exactly one, and repeat/rematch paths do not pay again. Localization-safe `Nuz.`, `Dung.`, and `Itms` compact fallbacks are static PASS. Gen1Recomp 0.1.93 remains source-audited; runtime 0.1.93 is still TEST REQUIRED.
+
+**2.1.11 candidate:** localization-safe full/short label selection is parser/static PASS and requires visual testing with English plus at least one translation mod. Gen1Recomp 0.1.93 source audit PASS; runtime 0.1.93 remains TEST REQUIRED. Existing Yellow 0.1.92 Setup/boot, kerning, MOD COMPAT no-crash, Wide Menus classic-coexistence and marquee-cadence evidence remain inherited/protected unless a new regression is observed.
+
+**2.1.10 candidate / Yellow 0.1.92:** marquee cadence runtime-approved. Wide Menus no longer crashes fresh Setup under the 2.1.9 explicit-classic fallback; Nuzlocke remains native-width by design. 2.1.10 compact labels and simplified section headers are presentation-only and parser/static PASS; final visual confirmation is recommended.
+
+**2.1.9 candidate / Yellow 0.1.92:** conditional marquee speed runtime-approved. Wide Menus + fresh Setup remained FAIL/crash in 2.1.8 because opaque mod screens can be auto-widened even without an explicit claim. 2.1.9 explicit classic-layout markers are source/parser/static PASS and require runtime confirmation. Concise core-label changes are presentation-only.
+
+**2.1.8 candidate / Yellow 0.1.92:** presentation-only label refinement on top of the 2.1.7 compatibility fallback. Randomizer abbreviations are static/parser PASS; gameplay semantics are unchanged. Runtime visual confirmation is still recommended for the final rules-screen layout.
+
+**2.1.7 candidate / Yellow 0.1.92:** fresh Setup PASS; Setup-to-game PASS; Gen1 kerning PASS; MOD COMPAT no-crash PASS; Yellow Trainer Card/A:NUZ PASS. 2.1.6 with Wide Menus installed: FAIL/crash. 2.1.6 outline selection: FAIL/presentation. 2.1.7 Wide Menus coexistence fallback and native-cursor selection are parser/static PASS and require runtime confirmation.
+
+**2.1.6 candidate / Yellow 0.1.92:** fresh Setup PASS; Setup-to-game PASS; Gen1 variable-width/kerning PASS; MOD COMPAT crash repair PASS; Yellow Trainer Card/A:NUZ PASS. 2.1.5 conditional overflow logic was runtime-visible but marquee speed and filled selection readability failed presentation review. 2.1.6 slow cadence + outline selection are parser/static PASS and require runtime visual confirmation.
+
+**2.1.5 candidate / Yellow 0.1.92:** fresh Setup PASS; Setup-to-game PASS; Gen1 variable-width/kerning PASS; MOD COMPAT crash repair PASS; Yellow Trainer Card/A:NUZ PASS. 2.1.4 static pixel layout was runtime-visible, but long-label ellipsis was rejected on presentation grounds. 2.1.5 conditional marquee and reverse-video selection are parser/static PASS and require runtime visual confirmation.
+
+**2.1.4 candidate / Yellow 0.1.92:** fresh Setup PASS; Setup-to-game PASS; Gen1 variable-width/kerning PASS; MOD COMPAT crash repair PASS; Yellow Trainer Card/A:NUZ PASS. 2.1.4 pixel-aware rules presentation and MOD COMPAT non-overlap layout are parser/static PASS and require runtime visual confirmation.
+
+**2.1.3 candidate:** Yellow fresh NEW GAME Setup PASS and Setup-to-game boot PASS remain protected. MOD COMPAT repair, active Gen1 kerning, Gym Trainer Forgiveness structured dedup, and invalid-acquisition legality reporting are parser/static PASS and require focused runtime confirmation before promotion.
+
+**2.1.2 Yellow / Gen1Recomp 0.1.92:** fresh NEW GAME Setup PASS; Setup-to-game boot PASS. 2.1.1 MOD COMPAT crash has a static/parser repair in 2.1.2 and requires runtime retest. Gen1 kerning lifecycle retry is parser/static PASS and requires visible runtime confirmation.
+
+**2.1.1 engine compatibility:** Gen1Recomp 0.1.92 source/static review PASS. Manifest/parser checks PASS. 0.1.92 gameplay/runtime remains TEST REQUIRED on user hardware. 0.1.93–0.1.97 are forward-allowed only and must not be represented as runtime PASS before release-specific review.
+
+**2.1.0 version transition:** feature/runtime confidence is inherited unchanged from the former `2.0.0-beta.31.0.4` tree. Renumbering itself introduces no mechanical change.
+
+**31.0.4 Wide Menus:** public-API/static integration PASS for R/B/Y in-game Nuz Rules. Native fallback, fresh Setup exclusion, and Gold exclusion are statically protected. Visual/input behavior with Wide Menus V0.1.0 is RUNTIME TEST REQUIRED.
+
+**31.0.3 Dungeon Lock-In:** static/mock classifier PASS for real Mt. Moon floors vs Mt. Moon-prefixed Pokémon Center/Mart service interiors. User-reported Mt. Moon Center scenario is RUNTIME TEST REQUIRED.
+
+**31.0.2 / Gen1Recomp 0.1.90:** source/static compatibility review PASS. No Nuzlocke gameplay patch required. Gold field-move and save-slot behavior on 0.1.90 remains RUNTIME TEST REQUIRED.
+
+**31.0.1 review-fix note:** parser/static validation covers live difficulty staging, Modern UI generation/lifecycle guards, title Setup save-editor runtime gating, Trainer Rewards required dependency validation, R/B/Y Gym Leader return semantics, and independent leader-field matching. Runtime behavior remains TEST REQUIRED.
+
+**30.1.23 World Building note:** Bryan/Bois Club/home/TV additions are presentation-only and parser/static checked. Exact text dispatch, rotation, Mom dialogue timing, and Pallet TV behavior remain RUNTIME TEST REQUIRED. No achievement or Black Market mechanic is active.
+
+**30.1.22 intelligence note:** Lua parsing/static validation covers expanded MOD COMPAT ownership rows, spoiler-safe tracker provenance tagging, and read-only NUZ INFO legality/provenance. Exact screen spacing, translated labels, provider names, and mixed-mod runtime composition remain TEST REQUIRED. No prior runtime PASS is promoted or invalidated by this static evidence.
+
+**30.1.20 presentation note:** Gen1 variable-width tile-font integration passes Lua parser/static/mock validation, including generation gating and external-provider non-stacking. Exact R/B/Y visual quality, title Setup coverage, mixed font-mod behavior, and Gold no-effect behavior remain RUNTIME TEST REQUIRED. Challenge-rule confidence is unchanged because this delta is presentation-only.
+
 ## 2.0.0-beta.30.0.0.10
 
 **Static hardening complete / runtime proof pending:** delegated runtime suppression, dormant preset state, late-bound delegation API, unified external item policy, Acquisition Type Locke/special-acquisition reuse, authoritative AutoCompat save shape, stale-provider cleanup, granular randomizer delegation, Gold No Fishing presentation, and EDITED recovery de-duplication.
@@ -403,3 +496,184 @@ NUZ INFO Catch/Stat/Move page rendering and controls require runtime validation 
 | Yellow tested duplicate-dialogue NPC after guard | **RUNTIME PASS — PROTECTED CASE** |
 | Permanent Rule Seal | **WIP / UNSELECTABLE** |
 | Yellow `NUZ` vertical position | **KNOWN DEFERRED COSMETIC ISSUE** |
+
+## 2.0.0-beta.30.1.7
+
+| Feature/path | Status |
+|---|---|
+| Gold fresh NEW GAME -> SETUP | **RUNTIME PASS (30.1.6)** |
+| Yellow fresh NEW GAME -> SETUP | **RUNTIME PASS (30.1.6)** |
+| Blue fresh NEW GAME -> bedroom | **RUNTIME PASS (30.1.6)** |
+| Pokegear Cards API v1 detection | **STATIC/MOCK PASS; RUNTIME TEST** |
+| Gold NUZ Pokégear card | **STATIC/MOCK PASS; RUNTIME TEST** |
+| Gold MAP encounter overlay | **STATIC/MOCK PASS; RUNTIME TEST** |
+| Gold RADIO World Building overlay | **STATIC/MOCK PASS; RUNTIME TEST** |
+| PHONE integration | **INTENTIONALLY NONE** |
+| Pokegear Cards absent/disabled | **STATIC graceful no-op; RUNTIME TEST** |
+| Permanent Rule Seal | **WIP / UNSELECTABLE** |
+| Yellow `NUZ` position | **KNOWN DEFERRED COSMETIC ISSUE** |
+
+## 2.0.0-beta.30.1.8
+
+| Feature/path | Status |
+|---|---|
+| Trainer Money without external provider | **STATIC/MOCK PASS; prior behavior preserved** |
+| Trainer Money with `economy_provider` | **MOCK PASS — provider payout left untouched** |
+| Delegated Trainer Money UI neutral | **STATIC PASS — 100% / index 4** |
+| Gold fresh NEW GAME -> SETUP | **RUNTIME PASS (30.1.6)** |
+| Yellow fresh NEW GAME -> SETUP | **RUNTIME PASS (30.1.6)** |
+| Blue fresh NEW GAME -> bedroom | **RUNTIME PASS (30.1.6)** |
+| Gold NUZ Pokégear card | **STATIC/MOCK PASS; RUNTIME TEST** |
+| Gold MAP encounter overlay | **STATIC/MOCK PASS; RUNTIME TEST** |
+| Gold RADIO World Building overlay | **STATIC/MOCK PASS; RUNTIME TEST** |
+
+## 2.0.0-beta.30.1.9
+
+| Feature/path | Status |
+|---|---|
+| Johto fallback cap ordering | **STATIC PASS — monotonic** |
+| Chuck -> Pryce -> Jasmine mid-game order | **RESTORED** |
+| Gold badge identity/slot mappings | **UNCHANGED** |
+| Trainer Money external-provider delegation | **MOCK PASS (30.1.8)** |
+| Delegated Trainer Money UI neutral | **STATIC PASS — 100%** |
+| Gold fresh NEW GAME -> SETUP | **RUNTIME PASS (30.1.6)** |
+| Yellow fresh NEW GAME -> SETUP | **RUNTIME PASS (30.1.6)** |
+| Blue fresh NEW GAME -> bedroom | **RUNTIME PASS (30.1.6)** |
+| Gold NUZ Pokégear card | **STATIC/MOCK PASS; RUNTIME TEST** |
+| Gold MAP encounter overlay | **STATIC/MOCK PASS; RUNTIME TEST** |
+| Gold RADIO World Building overlay | **STATIC/MOCK PASS; RUNTIME TEST** |
+
+## 2.0.0-beta.30.1.10
+
+| Feature/path | Status |
+|---|---|
+| R/B/Y fallback title SETUP insertion | **STATIC PASS; prior runtime behavior protected** |
+| R/B/Y save-editor exclusion after wrapper install | **STATIC PASS; RUNTIME TEST** |
+| Gold fallback title save-editor exclusion | **STATIC PASS where wrapper active; RUNTIME TEST** |
+| Gold fresh NEW GAME -> SETUP | **RUNTIME PASS (30.1.6)** |
+| Yellow fresh NEW GAME -> SETUP | **RUNTIME PASS (30.1.6)** |
+| Blue fresh NEW GAME -> bedroom | **RUNTIME PASS (30.1.6)** |
+| Trainer Money provider delegation | **MOCK PASS (30.1.8)** |
+| Johto cap ordering | **STATIC PASS (30.1.9)** |
+
+## 2.0.0-beta.30.1.11
+
+| Feature/path | Status |
+|---|---|
+| Gold Standard Mart + Route Forgiveness | **STATIC PASS; RUNTIME TEST** |
+| Route Forgiveness token status label | **STATIC PASS; RUNTIME TEST** |
+| Bare Trainer Rewards helper globals in main.lua | **AUDIT PASS — NONE REMAIN** |
+| Trainer Money provider delegation | **MOCK PASS (30.1.8)** |
+| Johto cap ordering | **STATIC PASS (30.1.9)** |
+| R/B/Y title save-editor per-call guard | **STATIC PASS (30.1.10)** |
+| Gold NUZ Pokégear card | **STATIC/MOCK PASS; RUNTIME TEST** |
+
+## 2.0.0-beta.30.1.12
+
+| Feature/path | Status |
+|---|---|
+| Stored catch -> empty tracked area | **MOCK PASS** |
+| Stored catch -> matching entry | **MOCK PASS** |
+| Stored catch -> conflicting occupied area | **MOCK PASS — Legacy fallback** |
+| False tracker registration on conflict | **FIXED / STATIC PASS** |
+| Gold Standard Mart + Route Forgiveness | **STATIC PASS; RUNTIME TEST (30.1.11)** |
+| Trainer Money provider delegation | **MOCK PASS (30.1.8)** |
+| Johto cap ordering | **STATIC PASS (30.1.9)** |
+| R/B/Y title save-editor guard | **STATIC PASS (30.1.10)** |
+
+## 2.0.0-beta.30.1.13
+
+| Feature/path | Status |
+|---|---|
+| Solo Only + gift acquisition | **MOCK PASS** |
+| Solo Only + NPC trade acquisition | **MOCK PASS** |
+| Solo Only + wild catch | **Existing enforcement unchanged** |
+| Trade Solo rejection text | **Existing shared message path; RUNTIME TEST** |
+| Stored-location Legacy fallback | **MOCK PASS (30.1.12)** |
+| Gold Standard Mart + Route Forgiveness | **STATIC PASS; RUNTIME TEST (30.1.11)** |
+| Trainer Money provider delegation | **MOCK PASS (30.1.8)** |
+| Johto cap ordering | **STATIC PASS (30.1.9)** |
+
+## 2.0.0-beta.30.1.14
+
+| Feature/path | Status |
+|---|---|
+| Non-opening Rival before opener | **MOCK PASS — does not consume mercy slot** |
+| Opening Rival + Mercy ON | **MOCK PASS — consumes and arms** |
+| Opening Rival + Mercy OFF | **MOCK PASS — consumes without arming** |
+| Repeated opener after consumption | **MOCK PASS — cannot re-arm** |
+| Old-save later Rival protection | **Classifier behavior preserved; RUNTIME TEST** |
+| Solo Only + NPC trades | **MOCK PASS (30.1.13)** |
+| Stored-location Legacy fallback | **MOCK PASS (30.1.12)** |
+| Gold Mart + Route Forgiveness | **STATIC PASS; RUNTIME TEST (30.1.11)** |
+
+## 2.0.0-beta.30.1.15
+
+| Feature/path | Status |
+|---|---|
+| First Rival Mercy flavor via battle.say | **Existing path unchanged** |
+| First Rival Mercy flavor via battle.emit | **Existing path unchanged** |
+| First Rival Mercy Tier 1/2 generic fallback | **MOCK PASS** |
+| Default Tier 3 worldOnce behavior | **MOCK PASS** |
+| Once flag only after successful fallback push | **MOCK PASS** |
+| First Rival Mercy one-shot latch | **MOCK PASS (30.1.14)** |
+| Solo Only + NPC trades | **MOCK PASS (30.1.13)** |
+| Stored-location Legacy fallback | **MOCK PASS (30.1.12)** |
+
+## 2.0.0-beta.30.1.16
+
+| Feature/path | Status |
+|---|---|
+| Type Locke FAIRY recognition | **MOCK/STATIC PASS** |
+| Fairy Monolocke | **MOCK PASS; RUNTIME TEST** |
+| Fairy Duolocke | **MOCK PASS; RUNTIME TEST** |
+| Pure Fairy rejected by unrelated Mono type | **MOCK PASS** |
+| Water/Fairy dual-type matching | **MOCK PASS** |
+| RANDOM selector remains numeric 17 | **STATIC/MOCK PASS** |
+| FAIRY selector numeric 18 | **STATIC/MOCK PASS** |
+| RANDOM live-pool Fairy eligibility | **MOCK PASS** |
+| Unknown custom type fail-open | **Existing policy preserved** |
+| First Rival Mercy fallback tier | **MOCK PASS (30.1.15)** |
+| First Rival Mercy one-shot | **MOCK PASS (30.1.14)** |
+| Solo Only + NPC trades | **MOCK PASS (30.1.13)** |
+
+## 2.0.0-beta.30.1.17
+
+| Feature/path | Status |
+|---|---|
+| R/B/Y No Buying with English BUY | **MOCK PASS** |
+| R/B/Y No Selling with English SELL | **MOCK PASS** |
+| R/B/Y No Buying with Finnish OSTA | **MOCK PASS; RUNTIME TEST** |
+| R/B/Y No Selling with Finnish MYY | **MOCK PASS; RUNTIME TEST** |
+| Gold Mart No Buying / No Selling | **Semantic path unchanged** |
+| Type Locke FAIRY compatibility | **MOCK/STATIC PASS (30.1.16)** |
+| First Rival Mercy fallback tier | **MOCK PASS (30.1.15)** |
+
+## 2.0.0-beta.30.1.18
+
+| Feature/path | Status |
+|---|---|
+| Modern UI adapter registration | **MOCK/STATIC PASS; RUNTIME TEST** |
+| Modern Encounter Tracker | **MOCK PASS; RUNTIME TEST** |
+| Modern Area Guide page | **MOCK PASS; RUNTIME TEST** |
+| Modern NUZ INFO Catch page | **MOCK PASS; RUNTIME TEST** |
+| Modern NUZ INFO Stat/Move pages | **MOCK PASS; RUNTIME TEST** |
+| Modern Trainer Card / Nuz status | **MOCK PASS; RUNTIME TEST** |
+| Native fallback without Modern UI | **STATIC PASS; existing native paths retained** |
+| Nuz Rules / fresh Setup | **Native/protected; no presenter change** |
+| Localized R/B/Y Mart enforcement | **MOCK PASS (30.1.17)** |
+
+## 2.0.0-beta.30.1.21
+
+| Surface | Confidence | Evidence |
+| --- | --- | --- |
+| PokemonRecompRandomizer contract-v1 detection | Static/mock PASS | Public `contractVersion` + read-only `save.activeRun()` adapter |
+| Per-surface randomizer ownership | Static/mock PASS | Starter/wild/learnset ownership matrix |
+| Fishing-only composition | Static/mock PASS | Fishing does not claim encounter-table transform |
+| Provider-owned learnset stale-restore protection | Static/mock PASS | Delegation resolves before snapshot/restore |
+| Arbitrary Oak starter with Gift Pokemon OFF | Static/mock PASS | Opening story-context exemption |
+| Gold exclusion | Static/mock PASS | Adapter generation guard |
+| Combined in-game behavior | TEST REQUIRED | Requires both mods in Gen1Recomp runtime |
+
+## 2.1.24 confidence update
+Yellow 2.1.23 runtime PASS: randomized-starter received-name, party presence, Trainer Money symbol. Yellow 2.1.23 runtime FAIL: party NUZ INFO crash. 2.1.24 native-list repair is parser/static validated; runtime TEST REQUIRED.
