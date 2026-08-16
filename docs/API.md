@@ -1,3 +1,233 @@
+# Nuzlocke 2.4.0 API status
+
+2.4.0 keeps the established public compatibility numbering:
+
+- **Compatibility API:** 27
+- **Save schema:** 4
+- **Mod API:** 2
+- **Engine range:** `>=0.1.86 <0.1.99`
+
+No public API number was bumped during the 2.4.0 promotion from 2.3.35 RC.
+
+## Additive compatibility surfaces introduced since 2.3.12
+
+The 2.3.13–2.3.35 line added or hardened the following additive semantics:
+
+- trainer-capture acquisition provenance (`trainer_capture` aliases including SNAG-style contexts);
+- semantic custom-Ball classification through live item metadata / Gold Ball pocket / registered item effects;
+- provider-safe learnset ownership/delegation;
+- storage transaction policy API 2: WITHDRAW / DEPOSIT / RELEASE / SWAP;
+- final composed encounter registry and encounter-information reveal policy;
+- raw vs effective dependent-rule reads through `getEffectiveRuleValue(...)`;
+- semantic translation source/catalog exports;
+- generic `nuzlocke_ui` screen ownership metadata;
+- MOD COMPAT semantic model detail paging;
+- Gym Team Size exact next-Leader battle-context helpers;
+- direct built-in Difficulty composition for cap projection while retaining generic external `trainer.party` composition.
+
+All new surfaces are additive; existing 2.3.12 compatibility consumers should continue to degrade safely when they do not use them.
+
+---
+
+## 2.3.35 RC API status
+
+No API changes. Compatibility API remains **27** and save schema remains **4**.
+
+MOVE INFO still consumes the same read-only move fields; only its native presentation layout changed.
+
+## 2.3.34 RC API status
+
+Compatibility API remains **27** and save schema remains **4**.
+
+MOD COMPAT's semantic model now includes `detailPage` and advertises Select/Tab detail paging. R/B/Y MOVE INFO keeps the same read-only Pokémon/move data and only changes its native presentation layout.
+
+## 2.3.33 RC API status
+
+Compatibility API remains **27** and save schema remains **4**.
+
+No public contract was removed or version-bumped. Built-in Difficulty cap previews now call the existing internal `Difficulty.composeParty()` transformation directly; external trainer providers remain composed through the public `trainer.party` hook.
+
+## 2.3.32 RC API status
+
+Compatibility API remains **27** and save schema remains **4**.
+
+Additive semantic helpers:
+
+- `nuzlocke_compat.isNextGymLeaderBattleContext(game, context)`
+- `nuzlocke_compat.gymTeamSizeRejectionText(game, info, partyCount)`
+
+Gym Team Size now composes with Gen1Recomp's public `trainer.before_battle` preparation seam for standard trainer interactions while retaining the scripted command compatibility gate.
+
+## 2.3.31 RC API status
+
+No API-number changes. Compatibility API remains **27**, `nuzlocke_ui.api` remains **1**, `nuzlocke_translation.api` remains **1**, `pcPolicy.api` remains **2**, and save schema remains **4**.
+
+The R/B/Y NUZ INFO semantic model now exposes the currently selected Catch/Stat/Move page and page count while retaining the same underlying read-only Pokémon information.
+
+## 2.3.30 RC API status
+
+No API changes. Compatibility API remains **27** and save schema remains **4**.
+
+Difficulty provider discovery now requires `mod.find(providerId)` to resolve a real loaded provider before a historical provider ID is returned by `detectDifficultyProviders()`.
+
+## 2.3.29 RC API additions
+
+Compatibility API remains **27** and save schema remains **4**.
+
+New effective-policy helpers:
+
+- `__beta26.effectiveRandomSpeciesGeneration()`
+- `__beta26.effectiveRandomLearnsetGeneration()`
+- `nuzlocke_compat.getEffectiveRuleValue(key, fallback)`
+
+Raw stored preferences remain available through `getRuleValue`. Effective reads return AUTO/0 for Species Pool or Learnset Gen whenever their owning randomizer is OFF.
+
+## 2.3.28 RC API status
+
+No compatibility-policy API-number change. Compatibility API remains **27** and save schema remains **4**.
+
+`nuzlocke_ui.screens` now also describes `NuzlockeModCompatScreen` as a `compatibility_status` presentation with Nuzlocke-owned state and wide preferred layout.
+
+The MOD COMPAT semantic presentation model includes:
+- `columns`
+- `rows`
+- selected `index`
+- `scroll`
+- plain-language `details`
+- `footer`
+
+This is presentation metadata only.
+
+## 2.3.27 RC API status
+
+No API-number changes. Compatibility API remains **27**, `nuzlocke_ui.api` remains **1**, `nuzlocke_translation.api` remains **1**, `pcPolicy.api` remains **2**, and save schema remains **4**.
+
+`getPokemonNuzInfo()` keeps the same return shape; its read-only shiny field no longer depends on a later lexical module.
+
+## 2.3.26 RC API status
+
+No API changes. Compatibility API remains **27**, `nuzlocke_ui.api` remains **1**, `nuzlocke_translation.api` remains **1**, `pcPolicy.api` remains **2**, and save schema remains **4**.
+
+ENC TRACKER still publishes generic presentation metadata, but its Gen 1 dimensions are no longer delegated by detecting Wide Menus.
+
+## 2.3.25 RC API additions
+
+Compatibility API remains **27** and save schema remains **4**.
+
+### Storage transactions
+
+`nuzlocke.pcPolicy.api = 2`
+
+- `pcPolicy.describe(context)`
+- `pcPolicy.evaluate(context)` / `evaluateTransaction(context)`
+- `pcPolicy.can(context)` / `canTransaction(context)`
+- `pcPolicy.begin(context)`
+- `pcPolicy.commit(context)`
+
+Recognized semantic actions: `WITHDRAW`, `DEPOSIT`, `RELEASE`, `SWAP`.
+
+For SWAP, providers should identify the box Pokémon entering the party as `incoming` / `toParty` / `boxMon`, and the party Pokémon leaving as `outgoing` / `fromParty` / `partyMon`.
+
+Events:
+
+- `storage_transaction_begin`
+- `storage_transaction_commit`
+
+### Encounter information
+
+The gameplay registry remains:
+
+- `nuzlocke.registry.effectiveEncounters(game)`
+
+Information consumers may use:
+
+- `registry.encounterInformationPolicy(game)`
+- `registry.canRevealEncounterInformation(context)`
+- `registry.encounterInformation(context)`
+
+`randomizer_info_policy`: `0 = OPEN INFO`, `1 = BLIND INFO`.
+
+BLIND INFO is a cooperative presentation contract; it never returns a modified registry to encounter-generating gameplay code.
+
+## 2.3.24 RC API status
+
+No API changes. Compatibility API remains **27**, `nuzlocke_ui.api` remains **1**, `nuzlocke_translation.api` remains **1**, and save schema remains **4**.
+
+The existing historical `ironmon_ultimate` difficulty-provider recognition is intentionally preserved for backwards compatibility.
+
+## 2.3.23 RC API status
+
+No API changes. Compatibility API remains **27**, `nuzlocke_ui.api` remains **1**, `nuzlocke_translation.api` remains **1**, and save schema remains **4**.
+
+## 2.3.22 RC — `nuzlocke_ui` API 1
+
+New additive export:
+
+- `nuzlocke_ui.api = 1`
+- `nuzlocke_ui.stateOwner = "nuzlocke"`
+- `nuzlocke_ui.screens`
+- `nuzlocke_ui.describeScreen(screenOrId)`
+
+Screen metadata may include `role`, `stateOwner`, `preferredLayout`, `nativeFallback`, and `semanticAdapterSafe`.
+
+This API is presentation-only. It does not transfer Nuzlocke rule, tracker, save, or action ownership to the presenter. Compatibility API remains **27** and save schema remains **4**.
+
+## 2.3.21 RC compatibility helper
+
+Compatibility API remains **27** and save schema remains **4**.
+
+Existing compatibility surface adds:
+
+- `nuzlocke_compat.reconcileDungeonLockState(game, mapId)`
+
+The helper clears transient Dungeon Lock-In state when the actual current map no longer belongs to the owning dungeon family or when the rule is disabled.
+
+## 2.3.20 RC translation API additions
+
+`nuzlocke_translation.api` remains **1** and Compatibility API remains **27**.
+
+Additive helpers:
+
+- `nuzlocke_translation.sources()` → array of `{ source, kind, key }`
+- `nuzlocke_translation.catalog()` → source-string to currently resolved translation map
+
+The source list is generated from canonical live rule-category definitions rather than a duplicate table.
+
+## 2.3.19 RC API additions
+
+Compatibility API remains **27**; these are additive values inside existing API tables.
+
+- `nuzlocke.acquisition.KINDS.trainer_capture = true`
+- acquisition aliases `TRAINER_CAPTURE`, `TRAINER_CATCH`, and `SNAG`
+- `trainerCapture`, `trainer_capture`, or `snag` context booleans classify as `trainer_capture`
+- public Item API `classify()` now uses dynamic Ball metadata rather than the vanilla Ball ID list
+
+Existing callers remain compatible.
+
+## 2.3.18 RC API status
+
+Compatibility API remains **27** and save schema remains **4**. This pass changes presentation fitting only; no public API behavior changed.
+
+## 2.3.17 RC API status
+
+Compatibility API remains **27** and save schema remains **4**. No public API behavior changed in this small pass.
+
+## 2.3.16 RC API status
+
+Compatibility API remains **27** and save schema remains **4**. No public contract changed. Provider acquisition provenance receives stricter precedence, and Gold damage overrides are now scoped to copied call data.
+
+## 2.3.15 RC API status
+
+Compatibility API remains **27**, `battle_classifier.api` remains 1, and save schema remains 4. No public API number changes. Internal learnset ownership now treats every delegated provider as authoritative.
+
+## 2.3.14 RC API status
+
+No public API number changes. Compatibility API remains 27 and save schema remains 4. This candidate changes tracker layout ownership, Running Shoes input gating, and internal numeric config persistence only.
+
+## 2.3.13 RC current API status
+
+2.3.13 RC is a presentation-surface hotfix candidate only. **Compatibility API remains 27**, `battle_classifier.api` remains 1, and save schema remains 4. No provider contract or rule semantic is intentionally changed from 2.3.12.
+
 ## 2.3.12 current API status
 
 2.3.12 is the final release child of 2.3.11 RC and preserves the complete restored API/provider surface without an API-number change. **Compatibility API remains 27**, `battle_classifier.api` remains 1, and save schema remains 4. The 2.3.0 battle snapshot/contextual-field compatibility additions, Skip Opening Intro delegation surface, and Quick Nuzlocke Start delegation surface remain active.

@@ -1,3 +1,405 @@
+# Nuzlocke 2.4.0
+
+**2.4.0 is the published release promoted directly from 2.3.35 RC.**  
+The last published release was **2.3.12**.
+
+No additional gameplay behavior was introduced during the promotion; this release packages and documents the stabilized 2.3.13–2.3.35 development line.
+
+## What changed since 2.3.12
+
+### Better Nuzlocke information screens
+R/B/Y NUZ INFO now has separate **Catch**, **Stat**, and **Move** pages. Ordinary Pokémon no longer fall into DETAIL SAFE MODE because of the old information-model forward-reference failure. Titles are centered and emphasized, long values use safe fitting/marquee behavior, and MOVE INFO uses compact move cards rather than overlapping columns.
+
+MOD COMPAT now explains **what system is being discussed and who owns it**, with a bottom plain-language explanation. Long explanations can be paged with **Select / Tab**.
+
+ENC TRACKER went through a focused Wide Menus/native-surface stabilization cycle. The final release uses the runtime-tested native-size presentation rather than the development-only oversized surface that caused a shrink regression.
+
+### Randomizer controls are more predictable
+Random Seed, Starter Style, Encounter Balance, Gold Egg Encounter, Bug Contest, and RNG Info selector bugs were repaired.
+
+Dependent settings now appear only when their parent randomizer is active:
+- **Random Starter** -> **Starter Style**
+- **Random Encounters** -> **Encounter Balance**, **Randomizer Info**, **Species Pool**
+- **Random Learnsets** -> **Learnset Gen**
+
+Hidden child selections are remembered, but they have no effect while their parent is OFF.
+
+Species Pool now affects randomized wild encounters only; Random Starter uses its own Starter Style over the full legal live species pool.
+
+**Randomizer Info** adds **OPEN INFO** and **BLIND INFO** policy for compatible encounter-information tools.
+
+### Difficulty and cap handling
+Historical provider names such as IronMON and Indigo Conference no longer create false multi-mod warnings unless a real provider is loaded.
+
+Built-in Difficulty profiles now project NUZ STATUS boss caps through the same composed trainer roster used by the actual battle. External providers continue through the generic trainer composition seam.
+
+### Gym and dungeon rules
+Dungeon Lock-In received transition-state reconciliation so compatible teleport/map changes cannot leave stale lock state behind. Yellow runtime testing confirms Gym Lock-In works.
+
+Gym Team Size was moved to the real Gen1Recomp pre-trainer-battle seam used by normal R/B/Y Gym Leaders. Oversized parties are refused before battle creation with tiered world-building dialogue. Every carried non-Egg Pokémon counts toward the Leader team-size restriction.
+
+### Compatibility work
+2.4.0 adds generalized compatibility improvements rather than hardcoding behavior for individual mods:
+- trainer-capture / Snag-style acquisition provenance;
+- semantic custom-Ball detection;
+- provider-safe learnset delegation;
+- area-less compatible capture enforcement;
+- corrected starter/gift/trade provenance;
+- storage transaction API 2 with SWAP legality parity;
+- final composed encounter registry + reveal policy helpers;
+- translation source/catalog exports;
+- generic UI ownership metadata for compatible presentation mods.
+
+Compatibility documentation was refreshed around current Pokémon Snag, Too Many Balls, Translation Generator, Shiny Pokémon, Weather FX, Gen 3 Inspired UI, Advanced Box System, Pokédex Plus, and the unresolved historical IronMON / Enemy HP evidence.
+
+### Gold beta improvements
+Gold received selector fixes, Physical/Special Split state isolation, egg provenance cleanup, and safer status/rule text fitting. Gold remains **beta support**.
+
+### Smaller polish and confirmed behavior
+- `F. TOKEN` now fits the mart display and uses the authoritative item name.
+- `Random Seed` -> `Rndm Seed`
+- `Random Starter` -> `Rndm Strtr`
+- `Starter Style` -> `Strtr Style`
+- R/B/Y START menu `NUZ ST.` -> `NUZ STS.`
+- No Fishing moved to GENERAL below No Static Enc.
+- NUZ STATUS uses `ACTIVE RULES:`.
+
+Yellow runtime tests also confirmed:
+- Route Forgiveness Token remains retriable when the bag is full.
+- No Rare Candy correctly refuses Rare Candy use with explanatory dialogue.
+- MOD COMPAT and ENC TRACKER no longer show the development shrink regression.
+- NUZ INFO page switching works.
+- Forgiveness Token shows as `F. TOKEN`.
+
+## Known / continuing validation
+MOVE INFO is much more readable in 2.4.0 and is acceptable for release, though more cosmetic refinement is planned. Gym Team Size should continue to be sampled across later Leaders and all supported Gen 1 versions. Gold remains beta.
+
+---
+
+# Nuzlocke 2.3.35 RC — cleaner MOVE INFO
+
+Direct child of **2.3.34 RC**.
+
+MOVE INFO now renders each move as:
+
+- move number + name
+- TYPE + type
+- `Pxx  Axx  PPxx/xx`
+
+The old split columns are gone, so long move/type names and 3-digit values no longer compete for the same pixels.
+
+Two moves remain visible at once; use Up/Down for moves 3-4.
+
+# Nuzlocke 2.3.34 RC — Pokémon info and compatibility-page polish
+
+Direct child of **2.3.33 RC**.
+
+- **MOD COMPAT:** press **Select / Tab** to page long bottom explanations.
+- **NUZ INFO:** title and page title stay centered/bold with slightly looser pixel tracking.
+- Catch/Stat left labels return to normal weight.
+- **MOVE INFO:** two moves at a time, each using separate name, TYPE/PWR, and ACC/PP lines so long names cannot overlap their stats.
+- Up/Down reaches moves 3–4; A/Left/Right still switches Catch/Stat/Move pages.
+
+Runtime-confirmed from 2.3.32: tracker size fixed, MOD COMPAT size fixed, F. TOKEN fixed, and NUZ INFO page switching works.
+
+# Nuzlocke 2.3.33 RC — Yellow runtime follow-up
+
+Direct child of **2.3.32 RC**.
+
+Yellow 2.3.30 confirmed:
+- Route Forgiveness Token reward retries correctly after a full bag prevents receipt.
+- No Rare Candy correctly blocks candy use with explanatory rule dialogue.
+
+Changes:
+- **No Fishing** now appears under **GENERAL**, immediately below **No Static Enc.**
+- Yellow/R/B/Y START menu now says **NUZ STS.**
+- Switching VANILLA / NUZ MEDIUM / built-in historical Difficulty profiles now makes NUZ STATUS calculate the next cap from the same composed trainer roster the selected profile will actually battle with.
+
+The 2.3.32 Brock Gym Team Size fix is preserved and still needs runtime retest.
+
+# Nuzlocke 2.3.32 RC — Gym Team Size pre-battle fix
+
+Direct child of **2.3.31 RC**.
+
+Yellow Brock could still begin battle with more than two Pokémon because normal Gym Leader dialogue bypasses the scripted battle-command seam. Nuzlocke now gates the engine's actual `trainer.before_battle` transaction.
+
+If your carried non-Egg party is larger than the next Leader's live composed team, the Leader refuses the match with world-building dialogue and the battle never starts. Box the extras and talk to the Leader again.
+
+Ordinary Gym Trainers are unaffected. Gym Lock-In is unchanged.
+
+# Nuzlocke 2.3.31 RC — runtime UI stabilization
+
+Direct child of **2.3.30 RC**.
+
+- NUZ INFO: Catch/Stat/Move are real pages again. Use **A or Left/Right** to switch.
+- NUZ INFO and page titles are centered/bold; left labels are bold, values are not.
+- ENC TRACKER and MOD COMPAT no longer use the oversized logical surface that made them appear shrunken.
+- RNG Info now toggles **OPEN INFO / BLIND INFO** correctly.
+- Randomizer labels use **Rndm Seed / Rndm Strtr / Strtr Style**.
+- The shop's actual Forgiveness Token item definition is now **F. TOKEN**.
+
+The already-improved Difficulty provider detection and dependent Randomizer-row behavior are preserved.
+
+# Nuzlocke 2.3.30 RC — cleaner dependent controls and accurate provider warnings
+
+Direct child of **2.3.29 RC**.
+
+## Difficulty
+
+IronMON Ultimate, Indigo Conference, and other historical provider IDs no longer generate warnings simply because Nuzlocke recognizes their names. The provider must actually be loaded.
+
+## Randomizer dependencies
+
+- Random Starter OFF hides Starter Style.
+- Random Encounters OFF hides Encounter Balance, Randomizer Info, and Species Pool.
+- Random Learnsets OFF hides Learnset Gen.
+
+Selections are remembered while hidden.
+
+# Nuzlocke 2.3.29 RC — cleaner Randomizer dependencies
+
+Direct child of **2.3.28 RC**.
+
+## Randomizer UI
+
+- **Species Pool** appears only while **Random Encounters** is ON.
+- **Learnset Gen** appears only while **Random Learnsets** is ON.
+
+Turning either parent OFF disables the child behavior without deleting the saved child choice. Turn the parent back ON and the previous selector value returns.
+
+Species Pool no longer influences Random Starter; Random Starter keeps its own Starter Style behavior.
+
+## NUZ STATUS
+
+`ACTIVE RULES` is now bold-emphasized and displayed as **ACTIVE RULES:**.
+
+# Nuzlocke 2.3.28 RC — clearer MOD COMPAT
+
+Direct child of **2.3.27 RC**.
+
+R/B/Y MOD COMPAT now uses a wider, structured ownership table:
+
+- centered title;
+- RULE / SYSTEM and OWNER headers;
+- bold rule/system names;
+- native arrow cursor;
+- full-width scrolling/marquee-safe owner names;
+- bottom plain-language explanation for the highlighted row.
+
+Use Up/Down to inspect individual rows and Left/Right to move a page at a time.
+
+The underlying provider ownership logic is unchanged.
+
+# Nuzlocke 2.3.27 RC — NUZ INFO stabilization
+
+Direct child of **2.3.26 RC**.
+
+## DETAIL SAFE MODE
+
+Ordinary Pokémon should no longer enter DETAIL SAFE MODE simply by opening NUZ INFO. The rich compatibility model had a lexical forward-reference bug in its shiny lookup; that dependency is now removed.
+
+SAFE MODE still exists as an emergency fallback if the richer information model genuinely fails.
+
+## Catch Info layout
+
+The constrained native R/B/Y location label is now **LOC.**, and right-column text is glyph-fitted to avoid collisions such as `LOCATION` overlapping `Pallet Town`.
+
+No gameplay rules changed.
+
+# Nuzlocke 2.3.26 RC — tracker + shop stabilization
+
+Direct child of **2.3.25 RC**.
+
+## ENC TRACKER
+
+The Wide Menus-specific layout handoff and 20-column draw path have been removed. R/B/Y ENC TRACKER always owns the same 304x144, 38-column surface and opts out of external auto-widening.
+
+Runtime retest is required before the Wide Menus combination can be marked PASS.
+
+## Forgiveness Token
+
+The mart purchase row now uses **F. TOKEN** to avoid name/price/quantity overlap. Mechanics are unchanged.
+
+# Nuzlocke 2.3.25 RC — storage transactions + randomizer information policy
+
+Direct child of **2.3.24 RC**.
+
+## Storage interoperability
+
+Alternate PC implementations can evaluate WITHDRAW, DEPOSIT, RELEASE and SWAP as semantic storage transactions. A direct SWAP that brings a dead Pokémon into the party is treated the same as withdrawing that Pokémon.
+
+## Randomizer information
+
+New `Randomizer Info` selector:
+
+- **OPEN INFO** — compatible information tools may display final randomized encounter tables.
+- **BLIND INFO** — compatible information tools should conceal undiscovered randomized encounter tables.
+
+The actual final encounter registry is unchanged in either mode and remains authoritative for gameplay/DexNav-style encounter generation.
+
+Runtime combination tests are still required.
+
+# Nuzlocke 2.3.24 RC — compatibility provenance cleanup
+
+Direct child of **2.3.23 RC**.
+
+A fresh search could not reliably resolve current canonical Gen1Recomp upstreams for the historical IronMON Ultimate 0.4.20 package or Enemy HP test archive. Their historical evidence remains documented, but it is no longer ambiguous with a current-version compatibility claim.
+
+No gameplay changes.
+
+# Nuzlocke 2.3.23 RC — compatibility ledger cleanup
+
+Direct child of **2.3.22 RC**.
+
+The compatibility list has been consolidated and normalized after the recent review sequence. Current reviewed versions, unresolved historical targets, and confidence levels are now explicit in one canonical table.
+
+No runtime/gameplay changes are included.
+
+# Nuzlocke 2.3.22 RC — presentation-owner interoperability
+
+Direct child of **2.3.21 RC**.
+
+## UI compatibility
+
+A new additive `nuzlocke_ui` API exposes metadata for Nuzlocke-owned custom screens. UI overhauls can present those screens without assuming ownership of their challenge state/actions.
+
+Current screen roles:
+
+- `NuzlockeConfigScreen`: rules, classic layout preference.
+- `NuzlockeTrackerScreen`: tracker, adaptive layout preference.
+
+Both retain a native fallback.
+
+No gameplay or save behavior changed.
+
+# Nuzlocke 2.3.21 RC — transient world-state hardening
+
+Direct child of **2.3.20 RC**.
+
+Weather FX 2.6.0 fixed stale indoor/outdoor state persisting across map changes. Nuzlocke's review found a parallel compatibility edge: a third-party map transition that bypassed `warp.destination` could leave the transient Dungeon Lock-In record persisted after the player had already left its dungeon family.
+
+2.3.21 validates Dungeon Lock-In state on `map.entered` using the actual current map and clears stale ownership immediately.
+
+No new rules or Weather-FX-specific patches were added.
+
+# Nuzlocke 2.3.20 RC — translation + presentation architecture pass
+
+Direct child of **2.3.19 RC**.
+
+## Translation tooling
+
+Nuzlocke's public translation API can enumerate canonical section/rule source strings from the live build: section titles, rule names, short names, and descriptions.
+
+## ENC TRACKER
+
+Tracker projection, cleanup, and row construction now occur once per refresh. Native R/B/Y, Gold, and Modern UI presentations consume the same row snapshot. Modern UI model queries are read-only instead of performing save/projection maintenance.
+
+No gameplay-rule/API-number/schema/package-tree changes.
+
+# Nuzlocke 2.3.19 RC — compatibility learning pass
+
+Direct child of **2.3.18 RC**.
+
+## Reviewed current mods
+
+- Pokemon Snag 0.15.9 — now supports Gold and trainer-Pokemon capture with persistent snag provenance.
+- Too Many Balls 0.6.1 — now supports both generations, publishes Ball ownership, and retains its purchase event contract after folding Shop Events into the main mod.
+
+## General improvements
+
+- `trainer_capture` is now a first-class acquisition kind.
+- Cooperative No Catching evaluation covers trainer captures.
+- Tracker records trainer-battle captures with accurate provenance.
+- Public item classification recognizes provider-added Balls semantically.
+
+No runtime PASS claim is made until the combinations are tested.
+
+# Nuzlocke 2.3.18 RC — low-risk presentation stability
+
+Direct child of **2.3.17 RC**.
+
+## Fixed
+
+- An unset R/B/Y Difficulty profile now visually falls back to VANILLA rather than the second profile.
+- Shared scrolling menu/tracker labels use glyph spans instead of raw byte offsets.
+- Recover Catches no longer raw-truncates localized route names.
+- MOD COMPAT fails open rather than splitting a translated character if font span utilities are unavailable.
+
+No gameplay, rules, saves, battle math, provider ownership, startup lifecycle, API, schema, or package-tree changes.
+
+# Nuzlocke 2.3.17 RC — small stability pass
+
+Direct child of **2.3.16 RC**.
+
+## Fixed
+
+- Gold status labels no longer truncate translated text by raw bytes.
+- Egg creation/hatch provenance no longer creates a fake `UNKNOWN` visited/registered area when no map can be resolved.
+- Removed a redundant learnset-delegation condition that was unreachable after the provider-ownership early return.
+
+No gameplay-rule, API, schema, or package-tree changes.
+
+# Nuzlocke 2.3.16 RC — medium-risk stabilization
+
+Direct child of **2.3.15 RC**.
+
+## Fixed
+
+- Area-less compatible encounters no longer pass a nil route into Town Catch classification.
+- Explicit gift/trade/prize acquisition provenance now prevents false starter classification when location metadata is missing.
+- The second starter catch fallback was unreachable after the first OAK/LAB branch returned; no-battle starter compatibility events can now reuse the Pallet starter slot.
+- Gold Physical/Special Split no longer mutates the incoming damage options table for its temporary move-category override.
+
+No feature additions and no API/save-schema/package-tree changes.
+
+# Nuzlocke 2.3.15 RC — stabilization candidate
+
+Direct child of **2.3.14 RC**.
+
+This pass fixes source-confirmed defects across configuration, randomizer ownership, and capture policy while preserving the stabilized boot/tracker paths.
+
+## Fixed
+
+- Manual RNG Seed values could not persist because they fell through boolean normalization.
+- Live seed edits did not rebuild active Nuzlocke encounter/learnset projections.
+- Gold Egg Encounter and Bug Contest enum rows had the same boolean-coercion class of bug.
+- Delegated Random Learnsets protected only one provider id; other external owners could be overwritten by an older Nuzlocke snapshot.
+- Missing encounter-area metadata could bypass unrelated absolute/species capture restrictions.
+
+No API/schema/package-tree change.
+
+# Nuzlocke 2.3.13 RC — ENC TRACKER stability hotfix candidate
+
+Direct child of **2.3.12 final**.
+
+## Fix candidate
+
+Runtime follow-up disproved the initial Modern UI-specific diagnosis: the Gen 1 ENC TRACKER also crashes with Modern UI disabled, while installing Wide Menus prevents the crash.
+
+Wide Menus' relevant behavior is to give unknown opaque Gen 1 mod screens a **304x144** UI surface and expand a 20-tile full-screen box to the 38-tile width. 2.3.13 RC now gives Nuzlocke's R/B/Y ENC TRACKER that same surface directly instead of relying on Wide Menus to provide it.
+
+Gold's native 20x18 / 160x144 tracker path is unchanged.
+
+## Scope
+
+- No Nuzlocke rule changes.
+- No save-schema change.
+- No Compatibility API change.
+- No boot/startup initialization change.
+- No encounter-data or tracker-input logic change.
+- No file additions or removals.
+
+## Runtime test required
+
+Test ENC TRACKER on R/B/Y:
+
+1. Nuzlocke only.
+2. Nuzlocke + Wide Menus.
+3. Nuzlocke + Modern UI.
+
+The prior statement that Modern UI itself was the confirmed cause is retracted.
+
+
 # Nuzlocke 2.3.12 — final 2.3 release
 
 Direct child of **2.3.11 RC**. This is a release promotion of the runtime-tested 2.3.11 code path; no gameplay feature, rule, save schema, compatibility API, or initialization behavior is intentionally changed.
@@ -17,6 +419,10 @@ Confirmed on **Gen1Recomp 0.1.98** during the 2.3.7–2.3.11 boot-repair sequenc
 The 2.3.x Yellow pre-title freeze was isolated through staged startup probes. The final restored runtime keeps the full 2.3.0 feature surface while avoiding the unsafe eager startup pattern: the first heavy runtime phase activates at `game.ready`, optional Modern UI/Pokégear adapters do not perform eager first-pass installation, Stats/Growth remain lazy, and the legacy title fallback remains dormant on current public title-hook engines.
 
 The later Gold trainer-battle Ball-policy scoping fix is retained.
+
+## Known issue
+
+- **Corrected after release:** ENC TRACKER can crash with Modern UI disabled. Wide Menus was observed to mask the native crash; Modern UI is not established as the cause.
 
 ## Release contract
 

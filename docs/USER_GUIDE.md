@@ -1,8 +1,225 @@
+# Nuzlocke 2.4.0 User Guide — release update
+
+This section summarizes user-visible behavior added or changed since 2.3.12.
+
+## Pokémon NUZ INFO
+
+R/B/Y Pokémon details are split into:
+- **CATCH INFO**
+- **STAT INFO**
+- **MOVE INFO**
+
+Use **A / Left / Right** to change pages. MOVE INFO shows two moves at once and uses Up/Down for moves 3–4.
+
+## Randomizer dependencies
+
+Child settings appear only while their parent is active:
+- Random Starter -> Starter Style
+- Random Encounters -> Encounter Balance / Randomizer Info / Species Pool
+- Random Learnsets -> Learnset Gen
+
+Turning a parent OFF hides the child and makes it inactive without erasing the saved choice.
+
+Randomizer Info:
+- **OPEN INFO**: compatible tools may reveal randomized encounter tables normally.
+- **BLIND INFO**: compatible tools should hide undiscovered randomized encounter information.
+
+## Difficulty / caps
+
+Changing a built-in Game Difficulty profile updates the composed trainer roster used for cap projection. Historical provider names are not considered installed unless a real provider is loaded.
+
+## Gym Team Size
+
+Gym Team Size limits the party carried into the actual Gym Leader battle. Every carried non-Egg Pokémon counts, even if fainted/dead. If over the Leader's team size, the Leader refuses the battle with world-building dialogue.
+
+## MOD COMPAT
+
+MOD COMPAT shows the relevant rule/system and its current owner. The bottom box explains the selected relationship in plain language. Use **Select / Tab** to page long explanations.
+
+## Small UI changes
+
+- `F. TOKEN` is used in the mart.
+- `Rndm Seed`, `Rndm Strtr`, and `Strtr Style` use shorter labels.
+- R/B/Y uses `NUZ STS.` on the START menu.
+- No Fishing is under GENERAL below No Static Enc.
+- NUZ STATUS uses `ACTIVE RULES:`.
+
+Gold remains beta support.
+
+---
+
+## 2.3.35 RC — MOVE INFO
+
+Each move now uses three lines:
+
+1. move number and name
+2. type
+3. Power / Accuracy / PP
+
+Example: `P40  A100  PP30/30`.
+
+Two moves are shown at once. Use Up/Down to view moves 3-4.
+
+## 2.3.34 RC UI notes
+
+On **MOD COMPAT**, use **Select / Tab** to page through a long explanation in the bottom box.
+
+On Pokémon **NUZ INFO**, use **A / Left / Right** to switch Catch, Stat, and Move pages. Titles are bold; information labels are normal weight.
+
+**MOVE INFO** shows two moves at a time:
+1. move number/name
+2. Type + Power
+3. Accuracy + PP
+
+Use Up/Down to reach moves 3–4.
+
+## 2.3.33 RC UI notes
+
+- **No Fishing** is in **GENERAL**, directly below **No Static Enc.**
+- On R/B/Y the START-menu run-status shortcut is labeled **NUZ STS.**
+- The **NEXT CAP** line on NUZ STATUS follows the currently selected built-in Game Difficulty profile and should change immediately when the selected profile changes the next boss's ace level.
+
+## 2.3.32 RC — Gym Team Size
+
+**Gym Team Size** limits what you may bring into the actual Gym Leader match.
+
+If your active party contains more non-Egg Pokémon than the next Leader's live team, the Leader refuses to start the battle. Box enough Pokémon to reach the limit and talk to the Leader again.
+
+Fainted or Nuzlocke-dead Pokémon still occupy a carried party slot and count toward this rule. Ordinary Gym Trainers do not use the Leader cap.
+
+## 2.3.31 RC UI notes
+
+Pokémon **NUZ INFO** now has separate **CATCH INFO**, **STAT INFO**, and **MOVE INFO** pages. Press **A**, **Left**, or **Right** to switch pages; B returns.
+
+Randomizer labels are shortened to **Rndm Seed**, **Rndm Strtr**, and **Strtr Style**.
+
+**RNG Info** can now be changed between **OPEN INFO** and **BLIND INFO** while Random Encounters is enabled.
+
+The Forgiveness Token mart row now uses **F. TOKEN** from the actual item-data source.
+
+## 2.3.30 RC — dependent Randomizer rows
+
+The Randomizer menu now hides configuration rows when their owning randomizer is OFF:
+
+- **Random Starter** owns **Starter Style**.
+- **Random Encounters** owns **Encounter Balance**, **Randomizer Info**, and **Species Pool**.
+- **Random Learnsets** owns **Learnset Gen**.
+
+Your child selections are remembered while hidden.
+
+The Game Difficulty description also no longer warns about known historical trainer mods unless that provider is actually loaded.
+
+## 2.3.29 RC — dependent Randomizer options
+
+Two Randomizer selectors now appear only when they can actually do something:
+
+- **Species Pool** is shown only when **Random Encounters** is ON.
+- **Learnset Gen** is shown only when **Random Learnsets** is ON.
+
+Turning a parent OFF does not erase your child selection. If you turn it back ON later, your previous choice returns.
+
+Species Pool controls randomized wild encounter species only. Random Starter uses Starter Style and the full legal live species pool.
+
+The NUZ STATUS rule section is now labeled **ACTIVE RULES:** for clearer separation.
+
+## 2.3.28 RC — MOD COMPAT
+
+MOD COMPAT is now an ownership table.
+
+**RULE / SYSTEM** tells you what part of the game or Nuzlocke rules is being discussed.  
+**OWNER** tells you which mod, provider, registry, or engine layer currently supplies that behavior.
+
+Move the native arrow cursor with **Up/Down**. The box at the bottom explains the highlighted ownership relationship in plain language. **Left/Right** moves by a page and **B** returns.
+
+Examples:
+- **Nuzlocke**: Nuzlocke applies that challenge rule.
+- **External Owner**: another mod controls it, so Nuzlocke does not double-apply it.
+- **Shared Provider**: both participate and their responsibilities are composed.
+- **Merged Registry**: Nuzlocke reads the final combined game/mod data.
+- **Engine**: Gen1Recomp owns the system and Nuzlocke observes or consumes its result.
+
+## 2.3.27 RC note
+
+If ordinary Pokémon were showing **DETAIL SAFE MODE** every time you opened NUZ INFO, that was a bug. This build fixes the information-model failure that caused the fallback.
+
+`DETAIL SAFE MODE` now remains only as an emergency fallback for a genuine information-provider/model error.
+
+The Catch Info location row is also compacted to **LOC.** to prevent text overlap.
+
+## 2.3.26 RC note
+
+ENC TRACKER no longer hands its Gen 1 layout to Wide Menus. It keeps one fixed Nuzlocke-owned presentation and asks external auto-widening providers to leave it untouched.
+
+The Forgiveness Token appears as **F. TOKEN** only on the constrained shop purchase row.
+
+## 2.3.25 RC — Randomizer Info
+
+The Randomizer section now includes **Randomizer Info**:
+
+- **OPEN INFO** lets compatible Pokédex/guide tools display the shuffled encounter tables.
+- **BLIND INFO** asks compatible information tools to hide undiscovered randomized encounter tables.
+
+BLIND INFO does not change which Pokémon can actually appear. Encounter-generating mods still use the same final composed gameplay table.
+
+PC/storage compatibility is also improved: compatible direct box/party SWAP operations are treated like withdrawals when a Pokémon enters the active party.
+
+## 2.3.24 RC note
+
+No player-facing rules or options changed. Compatibility documentation now more clearly distinguishes historical IronMON Ultimate / Enemy HP test evidence from verified current releases.
+
+## 2.3.23 RC note
+
+No player-facing rules or options changed. Compatibility documentation has been consolidated so reviewed versions and runtime confidence are easier to interpret.
+
+## 2.3.22 RC note
+
+No rules or options changed. This build improves cooperation with presentation-overhaul mods by explicitly describing the NUZ RULES and ENC TRACKER screens while keeping Nuzlocke in control of their state/actions.
+
+## 2.3.21 RC note
+
+No player-facing option changed. Dungeon Lock-In now self-cleans stale transient ownership after compatible mods or other map systems move the player outside the dungeon without using the normal warp path.
+
+## 2.3.20 RC note
+
+No rules or options changed. Translation tooling has a better discovery surface, and ENC TRACKER avoids rebuilding the same presentation data multiple times per frame.
+
+## 2.3.19 RC compatibility note
+
+Trainer-Pokemon captures performed by compatible mods can now be described as `trainer_capture` instead of ordinary wild catches. Custom Balls are recognized from their live item metadata, so provider-added Ball families participate in Nuzlocke's public item classification correctly.
+
+## 2.3.18 RC note
+
+No rules or options changed. Long translated menu/tracker labels and Recover Catches route names are handled more safely, and the Difficulty row's temporary unset-state display correctly falls back to VANILLA.
+
+## 2.3.17 RC note
+
+No rules or options changed. Gold status text is safer for translations, and unresolved egg provenance no longer appears as a fake visited `UNKNOWN` area.
+
+## 2.3.16 RC test notice
+
+No user-facing rules were added or removed. This candidate hardens existing provider-driven capture/starter behavior and Gold Physical/Special Split state handling while preserving the 2.3.15 randomizer/config fixes.
+
+## 2.3.15 RC test notice
+
+Random Seed is now a true 8-digit numeric field. Starter Style and Encounter Balance keep all four choices. Gold Egg Encounter cycles OFF / RECEIVED / HATCHED / GIFT and Bug Contest cycles NORMAL / EXEMPT / SLOT.
+
+Running Shoes remain hold-to-run through the mapped B action.
+
+## 2.3.14 RC test notice
+
+Running Shoes are hold-to-run: enable the rule and hold the mapped B action while walking. Starter Style and Encounter Balance are four-way selectors; use LEFT/RIGHT to cycle either direction or A to move forward.
+
+## 2.3.13 RC test notice
+
+This candidate changes only the R/B/Y ENC TRACKER presentation surface to 304x144, matching the Wide Menus path that was observed to avoid the 2.3.12 crash. Gold remains on its native tracker layout. Runtime confirmation is required before treating the tracker fix as PASS.
+
 ## 2.3.12 current-release notice
 
 2.3.12 is the final 2.3 release. It uses the full Nuzlocke implementation restored in 2.3.11 with the boot-safe initialization changes unchanged.
 
 On a fresh R/B/Y or supported Gold start, use the Nuzlocke **SETUP** flow before NEW GAME. On an existing valid Yellow save, the fresh-game SETUP entry remains hidden. Yellow 0.1.98 fresh NEW GAME, existing SAVE GAME, and Gold NEW GAME were runtime-confirmed on the promoted code path.
+
+**Corrected 2.3.12 issue:** ENC TRACKER can crash even with Modern UI disabled. Wide Menus was observed to mask the crash; Modern UI is not established as the cause.
 
 The complete rules/setup/tracking/randomizer/QoL/compatibility surface remains present. Gold support remains beta, and historical TEST REQUIRED notes for individual features still apply where no newer runtime confirmation exists.
 

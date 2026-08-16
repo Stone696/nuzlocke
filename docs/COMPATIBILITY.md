@@ -1,5 +1,388 @@
+# Nuzlocke 2.4.0 compatibility summary
+
+2.4.0 consolidates the compatibility work performed after the 2.3.12 public release.
+
+## Compatibility policy
+
+Documentation distinguishes:
+- **source-reviewed**: current source/package inspected;
+- **release-reviewed**: release behavior/notes reviewed but source identity or package could not be fully validated;
+- **runtime PASS**: actually confirmed during play;
+- **historical evidence**: older package/integration evidence retained without claiming a current upstream.
+
+Historical provider IDs are never treated as proof that a mod is installed. A real loaded provider must resolve before it can enter the live Difficulty/provider stack.
+
+## Major generalized compatibility improvements
+
+- trainer captures are a first-class acquisition kind;
+- custom Ball detection uses semantics rather than fixed hardcoded IDs;
+- learnset ownership is provider-agnostic;
+- area-less compatible battles still pass through capture legality;
+- storage legality follows the final incoming/outgoing transaction, including SWAP;
+- encounter-information tools can request the final composed registry and honor OPEN/BLIND reveal policy;
+- translation tools can enumerate Nuzlocke-owned semantic source strings;
+- presentation mods can query screen ownership/role/fallback metadata;
+- Dungeon Lock-In reconciles against the actual entered map after compatible teleports/map changes;
+- built-in Difficulty previews use the same composed party transform as real trainer battles;
+- external trainer providers remain on generic public hook composition.
+
+## Reviewed compatibility set during this release line
+
+Current/recent review work covered:
+- Pokémon Snag 0.15.9
+- Too Many Balls 0.6.1
+- Translation Generator 0.7.0
+- Shiny Pokémon 1.0.1
+- Weather FX 2.6.0
+- Gen 3 Inspired UI Overhaul canonical 2.0.0
+- Advanced Box System 1.1.0
+- Pokédex Plus 1.3.4
+
+Historical/unresolved source identity is still documented for:
+- IronMON Ultimate (historical 0.4.20 package evidence)
+- Enemy HP (historical compatible test archive)
+
+Do not treat a source/release review as runtime PASS unless explicitly marked.
+
+---
+
+## 2.3.35 RC — MOVE INFO presentation
+
+No compatibility ownership changes.
+
+MOVE INFO now uses one horizontal text lane per line instead of paired left/right stat columns. This is intentionally presentation-only and remains compatible with provider-supplied move names/types/stats because long lines use the existing marquee-safe renderer.
+
+## 2.3.34 RC — MOD COMPAT detail paging
+
+The R/B/Y MOD COMPAT screen keeps Gen1Recomp's host ListMenu as state/input owner. Long plain-language ownership descriptions are wrapped in full and displayed three lines at a time.
+
+`select` advances the detail page; on default desktop bindings this corresponds to Tab. Changing the highlighted compatibility row resets the explanation to page 1.
+
+Yellow 2.3.32 runtime confirms the native-size MOD COMPAT and ENC TRACKER presentations no longer show the previous shrunken-surface regression.
+
+## 2.3.33 RC — Difficulty cap projection ownership
+
+Nuzlocke-owned built-in Difficulty profiles now project boss levels directly with the same immutable-copy `Difficulty.composeParty()` transformation used by real trainer battles. This avoids a stale vanilla NUZ STATUS cap after an in-game profile change.
+
+External trainer/difficulty providers are still previewed through Gen1Recomp's generic `trainer.party` composition seam. Nuzlocke does not call or assume an external provider's private implementation.
+
+Runtime retest required in Yellow:
+- VANILLA -> NUZ MEDIUM should update NEXT CAP immediately.
+- NUZ MEDIUM -> YELLOW LEGACY* / SHIN-STYLE* should update again when the rounded live ace differs.
+- returning to VANILLA should restore the live vanilla/provider cap.
+- starting the battle should match the cap projection.
+
+# Current Compatibility Ledger — 2.3.23 RC
+
+This table is the canonical compatibility ledger for the current build. Older review notes remain below for historical detail, but the rows here are the current source of truth.
+
+| Mod | Current reviewed version/status | Gen 1 | Gold | Confidence / notes |
+|---|---:|---:|---:|---|
+| **Pokemon Snag** (`mistermiracle3036/Pokemon-Snag`) | **0.15.9 source-reviewed** | Expected compatible | Expected compatible | Trainer-Pokemon capture and persistent snag provenance reviewed. Nuzlocke supports `trainer_capture` acquisition/provenance. Runtime combination test still required. |
+| **Too Many Balls** (`mistermiracle3036/Too-Many-Balls`) | **0.6.1 source-reviewed** | Expected compatible | Expected compatible | Current mod publishes custom-Ball ownership and keeps purchase-event semantics. Nuzlocke uses semantic Ball detection in the public Item API. Runtime combination test still required. |
+| **Gen1Recomp Translation Mod Generator** | **0.7.0 source-reviewed** | Expected compatible | Expected compatible | Gold translation pipeline reviewed. Nuzlocke exposes enumerable translation sources/catalog and UTF-8-safe presentation paths. Runtime combination test still required. |
+| **Shiny Pokemon** | **1.0.1 source-reviewed** | Expected compatible | Expected compatible where supported | Current lifecycle/cache architecture reviewed. No ownership conflict found; Nuzlocke tracker presentation work is now snapshot-based. Runtime combination test still required. |
+| **Weather FX** (`MrKrisSatan/Weather-fx`) | **2.6.0 release-reviewed** | Expected compatible | Unknown / not claimed | Release fixes stale indoor/outdoor state. Nuzlocke adopted generalized transient-map-state reconciliation. Tagged source packaging is irregular, so this remains release-reviewed rather than full source-reviewed. |
+| **Gen 3 Inspired UI Overhaul** (`HighDrexler/Gen-3-inspired-UI-overhaul-for-Gen1Recomp`) | **2.0.0 source-reviewed** | Expected compatible | Expected compatible | Canonical parent reviewed. Presentation-only ownership model aligns with Nuzlocke's new `nuzlocke_ui` API 1. Linked `absol89` fork is older at 1.4.1. Runtime combination test still required. |
+| **IronMON Ultimate** | **historical 0.4.20 package only; upstream resolution attempted 2026-08-16** | Historical compatibility evidence only | Unverified | GitHub repository search, public web search, and project File Library search did not identify a trustworthy canonical Gen1Recomp upstream. Historical evaluation covered shared trainer/item/rule surfaces. The separately maintained IronMON Ultimate community challenge rules are not treated as the mod upstream. |
+| **Enemy HP** | **historical test archive only; upstream resolution attempted 2026-08-16** | Historical runtime evidence only | Unverified | GitHub repository search, public web search, and project File Library search did not identify the exact current Gen1Recomp mod/repository. Surviving records say the uploaded build appeared runtime-compatible, but archive version and tested game were not preserved. |
+
+## Compatibility ledger policy
+
+- A row marked **source-reviewed** means the named version's current source was inspected.
+- A row marked **release-reviewed** means release metadata/packaging was reviewed, but complete current source was not reliably available from the tagged repository.
+- **Expected compatible** is not a runtime PASS.
+- Runtime PASS claims require an actual tested combination and should name the game/version tested.
+- Historical package evidence never automatically transfers to a newer release.
+- When a repository/fork changes canonical ownership, the ledger records the canonical upstream and keeps fork-specific notes separately.
+- New compatibility lessons should be generalized into provider/ownership/state contracts where possible instead of hardcoded mod-ID behavior.
+
+## 2.3.32 RC — Yellow Gym Team Size pre-battle fix
+
+### Runtime evidence
+
+Yellow runtime test on 2.3.30:
+
+- **Gym Lock-In: PASS**
+- **Brock Gym Team Size: FAIL** — Brock allowed battle with more than his two-Pokémon team.
+
+### Root cause
+
+Gen1Recomp's normal R/B/Y Gym Leader dialogue calls `OverworldState:engageTrainer(...)` directly. That path enters the engine's `trainer.before_battle` preparation hook immediately before trainer battle creation. The existing Nuzlocke gate primarily covered scripted `start_battle trainer ...` commands, so Yellow Brock's ordinary leader interaction could bypass it.
+
+### 2.3.32 behavior
+
+`trainer.before_battle` is now the primary Gym Team Size enforcement seam:
+
+- verifies exact next-Leader trainer class + party index;
+- leaves ordinary Gym Trainers and unrelated trainer battles untouched;
+- counts every carried non-Egg Pokémon as a party slot;
+- if over cap, defers battle creation, shows tiered world-building refusal text, then cleanly cancels the pending trainer battle;
+- if at or below cap, delegates normally;
+- retains the existing scripted command gate for compatible scripted/provider battles.
+
+Gym Lock-In code was not changed.
+
+**Runtime retest required:** Yellow Brock with 3+ Pokémon must refuse; with 1–2 Pokémon must battle normally.
+
+
+## 2.3.31 RC — runtime-feedback stabilization pass
+
+Built directly from the runtime-tested 2.3.30 RC.
+
+### Confirmed runtime results carried forward
+
+- dependent Randomizer rows hide/show correctly;
+- Difficulty selector no longer reports uninstalled Indigo Conference / IronMON providers;
+- NUZ STATUS presentation is improved;
+- Rules selection/toggle behavior is improved.
+
+### Fixes
+
+- R/B/Y ENC TRACKER no longer requests a 304×144 logical surface; it returns to a native 160×144 / 20-column presentation to prevent the physically shrunken viewport regression.
+- R/B/Y MOD COMPAT likewise returns to native 160×144 while preserving the stable host ListMenu state/input lifecycle, explicit RULE/OWNER columns, bold rule labels, and bottom ownership explanation.
+- R/B/Y NUZ INFO is now genuinely paged: Catch / Stat / Move pages switch with A or Left/Right, with page count shown in the footer.
+- `NUZ INFO` and the current page title are centered and native-bold; only the left data column receives bold emphasis.
+- `Randomizer Info` now correctly cycles OPEN INFO / BLIND INFO; it had been missing from the numeric setter and was coerced as a boolean.
+- Randomizer row labels shortened to `Rndm Seed`, `Rndm Strtr`, and `Strtr Style`.
+- The authoritative Forgiveness Token item definition in `trainer_rewards.lua` now uses `F. TOKEN`, matching the already-shortened injected mart row.
+
+Runtime retest is required for the tracker native-surface change because older development history had a tracker crash on one 160×144 path; this build removes only the newer shrink-causing oversized-surface override while retaining current tracker state/model hardening.
+
+
+## 2.3.30 RC — difficulty-provider presence fix + additional dependent controls
+
+### Phantom difficulty-provider warnings
+
+Fixed a false-positive provider detector. Historical IDs such as `ironmon_ultimate`, `indigo_conference`, and `stronger_trainers` are recognition hints only. They no longer count as active merely because Nuzlocke knows their IDs.
+
+A historical provider is now exposed in Game Difficulty / stack warnings only when `mod.find(id)` resolves an actually loaded provider. This removes Indigo Conference / IronMON multi-mod warnings on installations where those mods are absent.
+
+### Additional parent/child Randomizer rows
+
+The Setup and in-game NUZ RULES UI now treats these as true dependent rows:
+
+- `Random Starter` → `Starter Style`
+- `Random Encounters` → `Encounter Balance`, `Randomizer Info`, `Species Pool`
+- `Random Learnsets` → `Learnset Gen`
+
+Child selections remain saved while hidden and return when the parent is re-enabled.
+
+`Failed Encounters` under `One Per Area` remains a candidate for a later dependency pass, but it was not changed here because its encounter-consumption semantics need a dedicated interaction audit first.
+
+
+## 2.3.29 RC — dependent randomizer selectors + NUZ STATUS polish
+
+### Dependent randomizer controls
+
+`Species Pool` is now a true child of `Random Encounters`, and `Learnset Gen` is a true child of `Random Learnsets`.
+
+- When the parent toggle is OFF, the child row is hidden from both fresh-game Setup and in-game NUZ RULES.
+- The saved child selection is preserved while hidden.
+- The hidden child has no runtime effect while its parent is OFF.
+- Re-enabling the parent immediately restores the child row and its previous selection.
+- Species Pool no longer affects Random Starter; starter generation continues to use Starter Style over the full legal live species pool.
+- Learnset Gen continues to affect only Random Learnsets.
+
+Compatibility consumers that need effective behavior can use `getEffectiveRuleValue(...)`; raw saved preferences remain available through `getRuleValue(...)`.
+
+### NUZ STATUS
+
+The section label is now `ACTIVE RULES:` and receives native-style bold emphasis without replacing the host ListMenu lifecycle.
+
+
+## 2.3.28 RC — MOD COMPAT readability / ownership-help pass
+
+R/B/Y MOD COMPAT keeps Gen1Recomp's stable host `ListMenu` as the real state/input owner, but now uses a Nuzlocke-owned 304×144 presentation layer.
+
+Improvements:
+
+- centered `MOD COMPAT` title;
+- explicit `RULE / SYSTEM` and `OWNER` column headers;
+- five visible compatibility rows with scrolling;
+- native cursor glyph on the highlighted row;
+- bold-emphasis rule/system labels;
+- marquee-safe full-width rule and owner fields instead of the previous aggressive abbreviations;
+- bottom hover panel explaining the selected ownership relationship in plain language;
+- left/right page movement in addition to up/down row movement;
+- generic `nuzlocke_ui` metadata for the MOD COMPAT screen;
+- semantic model carries columns, selected row, and explanatory detail for compatible UI presenters.
+
+Ownership help distinguishes Nuzlocke-owned, external-owner, shared-provider, merged-registry, engine/native, difficulty-profile, translation, and presentation-bridge relationships.
+
+This is presentation/diagnostic only. It does not change compatibility negotiation or which provider actually owns a rule.
+
+
+## 2.3.27 RC — NUZ INFO safe-mode + row-layout stabilization
+
+Runtime feedback confirmed that ordinary R/B/Y Pokémon were repeatedly displaying **DETAIL SAFE MODE**.
+
+Root cause: the public `getPokemonNuzInfo()` compatibility model is created before the later local `Identity` module exists in lexical scope, but its shiny lookup called `Identity.isShiny`. Lua therefore resolved a nil global before `pcall` could protect the call, causing the rich read-only model to fail and the native NUZ INFO screen to fall back to its emergency direct reader.
+
+2.3.27 removes that forward dependency. The early public model now resolves shiny state locally from the Pokémon's explicit shiny flags or, when available, the engine Stats shiny predicate over DVs.
+
+The R/B/Y native CATCH INFO list also shortens the constrained `LOCATION` row label to `LOC.` and glyph-fits right-column values so translated/long location text cannot collide with the left column.
+
+No Pokémon legality, encounter, shiny determination used by gameplay, or tracker behavior is changed.
+
+
+## 2.3.26 RC — Wide Menus tracker stabilization + shop-label cleanup
+
+### ENC TRACKER / Wide Menus
+
+New runtime feedback isolated the ENC TRACKER crash to the Wide Menus integration path rather than the old Modern UI path.
+
+Earlier builds detected `wide-menus`, delegated the tracker surface to it, and also changed the native tracker box between 20 and 38 columns based on that external owner. 2.3.26 removes both branches.
+
+For R/B/Y, ENC TRACKER now has one invariant presentation contract:
+
+- Nuzlocke owns the **304×144** surface.
+- Nuzlocke owns the **38-column × 18-row** box.
+- The screen advertises `uiModLayout = "classic"` / `keepClassicUi = true`, asking auto-widening providers to leave it untouched.
+
+Gold keeps its existing native Gen 2 tracker path.
+
+**Status:** targeted fix; runtime confirmation still required for no UI companion, old Modern UI, Wide Menus, and Gold.
+
+### Forgiveness Token shop row
+
+The constrained mart row now displays **`F. TOKEN`** instead of `FORGIVE TOKEN`. Full Forgiveness Token wording remains in descriptive UI, dialogue, rules, and documentation. Price, quantity, purchase behavior, and token mechanics are unchanged.
+
+
+## 2.3.25 RC — Advanced Box System 1.1.0 + Pokédex Plus 1.3.4
+
+Reviewed the current FAFF0x mod-index metadata/documentation and live repository packages for **Advanced Box System 1.1.0** and **Pokédex Plus 1.3.4**.
+
+### Advanced Box System 1.1.0
+
+The current storage mod adds direct party/box SWAP plus alternate WITHDRAW, DEPOSIT and RELEASE flows while continuing to use Gen1Recomp's real `save.party`, `save.boxes`, `save.currentBox` and stock stat/happiness semantics.
+
+Nuzlocke 2.3.25 therefore upgrades its provider-neutral PC policy into a storage-transaction contract. WITHDRAW and SWAP are judged by the Pokémon entering the active party, so a dead/unusable Pokémon cannot bypass Nuzlocke simply because a third-party PC calls the operation SWAP. DEPOSIT and RELEASE remain navigation/storage-provider-owned unless a separate challenge rule explicitly restricts them.
+
+### Pokédex Plus 1.3.4
+
+Pokédex Plus consumes habitat/encounter, evolution and learnset information. Nuzlocke now explicitly separates:
+
+- the **final composed gameplay encounter registry**, which remains authoritative for encounter-generating providers; and
+- an **information/reveal policy** for guide/Pokédex/DexNav-style presentation tools.
+
+`Randomizer Info` has two modes:
+
+- **OPEN INFO** — compatible tools may expose the final randomized encounter tables.
+- **BLIND INFO** — compatible tools should conceal undiscovered randomized tables while gameplay providers continue using the same final registry.
+
+The default is OPEN INFO for backwards compatibility. BLIND INFO is cooperative and does not monkey-patch another mod's UI.
+
+Both current FAFF0x versions are source/package reviewed; combined runtime testing is still required.
+
+
+## 2.3.24 RC — IronMON Ultimate / Enemy HP upstream-resolution pass
+
+A fresh upstream-resolution pass was performed for the two remaining historical compatibility entries.
+
+### IronMON Ultimate
+
+- Surviving Nuzlocke records confirm an **0.4.20 package** was evaluated.
+- The historical integration ID `ironmon_ultimate` remains recognized by Nuzlocke's difficulty-provider discovery for backwards compatibility.
+- GitHub repository search, public web search, and File Library search did **not** produce a trustworthy canonical Gen1Recomp repository for that package.
+- Current public IronMON Ultimate challenge rules were located, but they are a community ruleset and are **not evidence of the Gen1Recomp mod's repository or code lineage**.
+- No current-version compatibility claim is made.
+
+### Enemy HP
+
+- Surviving Nuzlocke records confirm an uploaded Enemy HP build received runtime testing and appeared compatible.
+- The exact archive version, tested game, mod ID, and canonical repository were not preserved.
+- GitHub repository search, public web search, and File Library search did not resolve a trustworthy current upstream.
+- No current-version compatibility claim is made.
+
+### Code decision
+
+No Nuzlocke runtime change is justified from unresolved source identity. Existing generalized compatibility surfaces already cover the interaction classes represented by these historical tests: composed trainer parties/difficulty ownership, final battle-state observation, provider-safe hook chaining, and presentation-only UI ownership.
+
+This pass therefore updates provenance/confidence documentation only.
+
+
+## 2.3.22 RC — Gen 3 Inspired UI Overhaul review
+
+Reviewed the linked **absol89 fork (v1.4.1)** and its newer canonical parent **HighDrexler Gen 3 Inspired UI Overhaul 2.0.0**.
+
+The current 2.0.0 architecture is explicitly presentation-only: engine/native systems retain battle state, Pokémon/storage state, progression, move learning, item semantics and other gameplay ownership while the UI mod owns layout/rendering. It supports both Gen I and Gen II and preserves active sprite-provider ownership.
+
+Nuzlocke 2.3.22 adds a provider-neutral `nuzlocke_ui` presentation contract:
+
+- Nuzlocke custom screens declare their semantic role and that Nuzlocke owns state/actions.
+- Rules screen advertises a classic preferred layout.
+- ENC TRACKER advertises adaptive presentation.
+- Both advertise a native fallback and semantic-adapter safety.
+- Presentation mods may query `nuzlocke_ui.describeScreen(...)` instead of guessing from screen names.
+
+No Gen-3-UI-specific enforcement or rendering branch is added. The linked fork remains older than the current canonical 2.0.0 parent, so compatibility claims are source-reviewed rather than runtime-PASS.
+
+## 2.3.21 RC — Weather FX 2.6.0 learning pass
+
+Reviewed the **Weather FX 2.6.0** release metadata. Its headline bug fix is a stale indoor/outdoor classification that remained latched after entering a building, suppressing some weather on later outdoor routes. The release also adds a CYCLE weather option and configurable rare-weather weighting.
+
+Nuzlocke does not currently need a Weather-FX-specific ownership hook: Weather FX operates on environmental presentation/state rather than Nuzlocke's capture, trainer, item, or difficulty ownership surfaces.
+
+The review did expose the same general stale-transition risk in Nuzlocke's transient Dungeon Lock-In record. 2.3.21 now reconciles that record on `map.entered` against the actual engine map. If a map/teleport provider moved the player outside the owning dungeon family without traversing `warp.destination`, the stale lock is cleared immediately.
+
+**Weather FX 2.6.0 status:** release-reviewed / expected compatible; combined runtime test still required.
+
+## 2.3.20 RC — Translation Generator + Shiny Pokemon learning pass
+
+Reviewed **gen1recomp-translation-mod-generator 0.7.0** and **Shiny Pokemon 1.0.1**.
+
+- Translation Generator 0.7.0 adds a separate Gold pipeline and localizes public Gold UI-hook labels by semantic English source text. Nuzlocke now exposes enumerable live section/rule sources through `nuzlocke_translation.sources()` and `catalog()`.
+- Shiny Pokemon 1.0.1 amortizes expensive overworld image work and reuses cached presentation assets. Nuzlocke now prepares ENC TRACKER projection/cleanup/row sorting once per update and shares that read-only snapshot across classic, Gold, and Modern UI presenters.
+
+No runtime PASS claim is added until combinations are tested.
+
+## 2.3.19 RC — current compatibility review
+
+Reviewed **Pokemon Snag 0.15.9** and **Too Many Balls 0.6.1** against the 2.3.18 parent.
+
+Generalized changes taken from that review:
+
+- Acquisition API recognizes `trainer_capture` / `trainer_catch` / `snag` as one semantic capture family.
+- No Catching applies to cooperative trainer-capture attempts.
+- Successful captures from trainer battles are recorded as `trainer_capture` provenance instead of ordinary wild captures.
+- Public Item API uses the same dynamic Ball classifier as enforcement, so custom Balls with `ball` metadata, `BALL` pocket metadata, or ItemEffects registration classify correctly.
+- Legacy auto-compat can describe trainer-capture/custom-Ball providers without mod-specific enforcement branches.
+
+No runtime PASS claim is made for either current combination yet.
+
+## 2.3.18 RC compatibility notes
+
+No provider or ownership behavior changed. Shared Nuzlocke presentation text now uses the engine font's glyph spans for marquee/truncation safety where applicable.
+
+## 2.3.17 RC compatibility notes
+
+Gold translated status text now uses font-aware clipping rather than raw byte truncation. Unresolved egg provenance remains recorded without advertising `UNKNOWN` as a real visited area.
+
+## 2.3.16 RC compatibility notes
+
+Provider-driven acquisition events now honor explicit source metadata before starter heuristics. Area-less capture calls are guarded correctly, and Gold Physical/Special Split no longer writes temporary category state into provider/engine-owned damage options.
+
+## 2.3.15 RC compatibility notes
+
+Delegated learnset ownership is now provider-agnostic: while an external provider owns Random Learnsets, Nuzlocke forgets its local snapshot and does not touch that registry. Capture policy also keeps location-independent restrictions active when a compatible battle omits an encounter-area key.
+
+The 2.3.14 ENC TRACKER/Wide Menus ownership behavior is preserved.
+
+## 2.3.14 RC compatibility status
+
+ENC TRACKER now avoids duplicate layout ownership with Wide Menus: Wide Menus owns its widening when active; otherwise Nuzlocke supplies the proven 304x144 R/B/Y tracker surface. Modern UI remains a separate presentation adapter. Engine support remains `>=0.1.86 <0.1.99`.
+
+## 2.3.13 RC compatibility status
+
+R/B/Y ENC TRACKER now owns a 304x144 UI surface directly, matching the Wide Menus path that was observed not to crash. This candidate specifically needs runtime checks with no UI companion, Wide Menus, and Modern UI. Gold's native tracker presentation is unchanged.
+
+Engine support remains **Gen1Recomp >=0.1.86 <0.1.99**.
+
 ## 2.3.12 final compatibility status
 
+
+**Corrected 2.3.12 finding:** ENC TRACKER can crash with Modern UI disabled. Wide Menus was observed to mask the native crash, so Modern UI is not established as the cause.
 2.3.12 is the final release child of 2.3.11 RC. Engine support remains **Gen1Recomp >=0.1.86 <0.1.99**, with 0.1.98 specifically exercised during the Yellow boot-repair sequence.
 
 Runtime-confirmed on the release-candidate code path: Yellow title boot, fresh-game SETUP, SETUP → NEW GAME, existing SAVE GAME load with correct SETUP suppression, and Gold NEW GAME boot. The boot-safe lifecycle changes from 2.3.11 are unchanged in 2.3.12.
@@ -509,8 +892,8 @@ Only identifiable projects with preserved evidence are listed as named entries. 
 | Project | Canonical repository | Latest verified | Exact reviewed/tested version | Red | Blue | Yellow | Gold | Evidence / known boundary |
 |---|---|---:|---:|---:|---:|---:|---:|---|
 | **Shiny Pokemon** | `masterwebx/gen1recomp-shiny-pokemon` | **1.0.1** | **1.0.1** | 96% | 96% | 97% | 0%* | The 1.0.1 combination received runtime testing and compatibility evaluation; no direct Nuzlocke gameplay-hook collision was observed. *Its manifest does not declare Gold, so Gold is not scored as a supported combination. |
-| **Pokemon Snag** | `mistermiracle3036/Pokemon-Snag` | **0.14.11** | Historical Nuzlocke compatibility evidence predates the preserved exact Snag version | 79% | 79% | 79% | 0%* | Nuzlocke exposes `canCapture`; a trainer-capture path that bypasses the normal throw transaction needs cooperative policy use. *Current published Snag release states R/B/Y support. Re-audit 0.14.11 before raising confidence. |
-| **Too Many Balls** *(formerly Kanto Balls)* | `mistermiracle3036/Too-Many-Balls` | **0.4.7** | Historical **Kanto Balls** review version not preserved | 82% | 82% | 82% | N/E | The project was renamed/moved while keeping the `kanto_balls` release asset identity. Nuzlocke's historical custom-Ball compatibility evidence predates the preserved exact version, so 0.4.7 does **not** inherit that confidence automatically; re-audit the current release before raising or extending the claim to Gold. |
+| **Pokemon Snag** | `mistermiracle3036/Pokemon-Snag` | **0.15.9 reviewed** | Current source reviewed 2026-08-16 | 82% | 82% | 82% | 76%* | 0.15.9 now targets Gen 1 + Gold and implements trainer-Pokemon capture plus persistent snag provenance. Nuzlocke 2.3.19 adds first-class `trainer_capture` acquisition semantics and tracker provenance. *Gold remains runtime-unverified together. |
+| **Too Many Balls** *(formerly Kanto Balls)* | `mistermiracle3036/Too-Many-Balls` | **0.6.1 reviewed** | Current source reviewed 2026-08-16 | 88% | 88% | 88% | 84%* | 0.6.1 supports both generations, publishes Ball ownership, and folds Shop Events into the main mod while preserving the `shop.purchased` event contract. Nuzlocke 2.3.19 now reports provider-added Balls through the public Item API using semantic Ball metadata instead of the vanilla-ID list. *Gold remains runtime-unverified. |
 | **IronMON Ultimate** | canonical repository not yet verified | unknown | **0.4.20** package evaluated | 84% | 84% | 86% | 72% | Compatibility evaluation covered broad shared rule/trainer/item surfaces; exact game-specific runtime evidence is not preserved in the current ledger. |
 | **Enemy HP** | canonical repository/version not yet verified | unknown | uploaded test archive | 90% | 90% | 90% | N/E | The uploaded build received runtime testing and appeared compatible; exact archive version and tested game were not preserved, so confidence is capped. |
 | **Gen1Recomp Translation Mod Generator** | `thibautbus/gen1recomp-translation-mod-generator` | **0.6.0** | **0.6.0** tooling evaluation | Tool | Tool | Tool | Tool | Development/tooling compatibility evidence; not a gameplay mod combination. Nuzlocke exposes a translation API with stable English source strings. |

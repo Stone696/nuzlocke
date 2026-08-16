@@ -171,7 +171,7 @@ local function withForgivenessTokenStock(game, stock)
         game.data.items = game.data.items or {}
         game.data.items[mod.exports.__beta26.forgivenessTokenShopId] = {
             id = mod.exports.__beta26.forgivenessTokenShopId,
-            name = d.Strings("FORGIVE TOKEN"),
+            name = d.Strings("F. TOKEN"),
             price = mod.exports.__beta26.forgivenessTokenShopPrice,
             description = d.Strings(
                 "Restores one failed area's encounter chance. Gym Leaders award these normally."),

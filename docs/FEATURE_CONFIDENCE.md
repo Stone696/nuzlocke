@@ -1,3 +1,248 @@
+# Feature Confidence — Nuzlocke 2.4.0
+
+## Runtime-confirmed / protected results
+
+- Yellow title boot / fresh setup / existing-save flow inherited from 2.3.12: protected.
+- Gold NEW GAME boot path inherited from 2.3.12: protected.
+- Yellow Gym Lock-In: **PASS**.
+- Dependent Randomizer child-row hiding/restoration: **PASS**.
+- Phantom historical Difficulty warnings: **FIXED in runtime**.
+- NUZ STATUS presentation improvements: **runtime improved**.
+- R/B/Y MOD COMPAT physical sizing: **PASS**.
+- R/B/Y ENC TRACKER physical sizing: **PASS**.
+- R/B/Y NUZ INFO page switching: **PASS**.
+- `F. TOKEN` mart presentation: **PASS**.
+- Route Forgiveness Token full-bag retry: **PASS**.
+- No Rare Candy rule enforcement + explanatory dialogue: **PASS**.
+- MOVE INFO: **substantially improved / accepted for release**, with additional cosmetic polish deferred.
+
+## High-priority continued validation
+
+- Gym Team Size 2.3.32+ exact-Leader refusal across multiple Leaders and Red/Blue/Yellow.
+- Built-in Difficulty -> NUZ STATUS cap refresh across several profiles/gyms.
+- Broad Red / Blue / Yellow regression matrix.
+- Gold gameplay adapters and UI remain beta and need continued validation.
+- Current compatibility combinations should not be upgraded to runtime PASS without explicit play confirmation.
+
+---
+
+## 2.3.35 RC confidence
+
+**MOVE INFO presentation retest required.**
+
+Check:
+- THUNDERSHOCK / ELECTRIC no longer overlaps Power.
+- QUICK ATTACK / NORMAL no longer overlaps Power.
+- 3-digit Accuracy and PP values remain readable.
+- Up/Down reaches move slots 3-4.
+- Catch/Stat pages remain unchanged from the improved 2.3.34 behavior.
+
+## 2.3.34 RC confidence
+
+### Newly confirmed from Yellow 2.3.32
+
+- MOD COMPAT physical size: **PASS**
+- ENC TRACKER physical size: **PASS**
+- F. TOKEN mart label: **PASS**
+- NUZ INFO Catch/Stat/Move page switching: **PASS**
+
+### Runtime retest required
+
+- MOD COMPAT Select/Tab pages long explanation text and resets on row change.
+- Catch/Stat left labels are normal weight while both title lines remain bold.
+- Title tracking is visible but subtle.
+- MOVE INFO never overlaps on THUNDERSHOCK/other long names.
+- Up/Down reaches move slots 3–4 cleanly.
+
+## 2.3.33 RC confidence
+
+### Newly confirmed from Yellow 2.3.30
+
+- Route Forgiveness Token Leader reward: **PASS** when bag is full; reward remains retriable.
+- No Rare Candy: **PASS**; use is vetoed and explanatory dialogue is shown.
+- Gym Lock-In: **PASS** (carried forward from 2.3.32 documentation).
+
+### Runtime retest required
+
+- Built-in Difficulty profile -> NUZ STATUS NEXT CAP refresh.
+- 2.3.32 Gym Team Size Brock refusal path.
+- `NUZ STS.` and No Fishing placement are static/UI changes and should be visually checked.
+
+## 2.3.32 RC confidence
+
+**CONFIRMED BUG / TARGETED GAMEPLAY FIX; RUNTIME RETEST REQUIRED.**
+
+Protected runtime result:
+- Yellow Gym Lock-In: PASS — implementation unchanged.
+
+Required Yellow Brock checks:
+- 3+ carried non-Egg Pokémon + Gym Team Size ON: Brock refuses; no battle transition.
+- refusal uses selected World Building tier.
+- 1–2 Pokémon: Brock battle starts normally.
+- Pewter Gym Trainer / unrelated trainer: unaffected.
+- Gym Team Size OFF: Brock battle starts regardless of party count.
+
+Later Gym Leaders should use the same exact trainer-class/party-index gate and should be sampled after Brock passes.
+
+## 2.3.31 RC confidence
+
+**TARGETED RUNTIME-FEEDBACK FIXES; RETEST REQUIRED.**
+
+Preserved confirmed 2.3.30 behavior:
+- dependent Randomizer visibility works;
+- phantom Difficulty warnings are fixed;
+- NUZ STATUS improved.
+
+Priority retests:
+- ENC TRACKER opens at normal physical size and does not crash.
+- MOD COMPAT opens at normal physical size; cursor/help remain synchronized.
+- NUZ INFO A/Left/Right cycles Catch/Stat/Move.
+- NUZ INFO titles are centered/bold and only left labels are bold.
+- RNG Info changes OPEN <-> BLIND.
+- Mart displays F. TOKEN without price overlap.
+
+## 2.3.30 RC confidence
+
+**TARGETED STABILIZATION FIX; RUNTIME SMOKE TEST RECOMMENDED.**
+
+Checks:
+- With IronMON/Indigo Conference absent, Game Difficulty shows no warning naming either.
+- With a real supported external trainer provider loaded, its provider entry/warning still appears.
+- Random Starter OFF/ON hides/restores Starter Style.
+- Random Encounters OFF/ON hides/restores Encounter Balance, Randomizer Info, and Species Pool.
+- Random Learnsets OFF/ON continues to hide/restore Learnset Gen.
+
+## 2.3.29 RC confidence
+
+**TARGETED UI/RANDOMIZER DEPENDENCY CHANGE; RUNTIME SMOKE TEST RECOMMENDED.**
+
+Recommended checks:
+- Setup: Random Encounters OFF hides Species Pool.
+- Setup: Random Encounters ON restores Species Pool and its previous value.
+- Rules: same behavior mid-game.
+- Random Starter result does not change when only Species Pool changes.
+- Random Learnsets OFF hides Learnset Gen and restores native learnsets.
+- Random Learnsets ON restores Learnset Gen selection and applies it.
+- NUZ STATUS shows `ACTIVE RULES:` with bold emphasis.
+
+## 2.3.28 RC confidence
+
+**PRESENTATION-ONLY CHANGE; RUNTIME UI RETEST RECOMMENDED.**
+
+The underlying R/B/Y screen remains a host ListMenu, preserving the stable input/state lifecycle that replaced the old crash-prone custom screen. Only its draw/model presentation is specialized.
+
+Recommended checks:
+- Yellow opens MOD COMPAT without crash.
+- Red/Blue MOD COMPAT title is centered.
+- Up/Down cursor and bottom explanation stay synchronized.
+- Left/Right pages correctly.
+- Long external provider names marquee instead of truncating/overlapping.
+- Modern UI can still consume the semantic model.
+- Wide Menus does not double-own the 304x144 surface.
+
+## 2.3.27 RC confidence
+
+**TARGETED STABILIZATION FIX; RUNTIME RETEST REQUIRED.**
+
+Recommended checks:
+- R/B/Y ordinary party Pokémon opens NUZ INFO without DETAIL SAFE MODE.
+- Shiny and non-shiny Pokémon still report correctly.
+- CATCH INFO location row no longer overlaps for Pallet Town / longer route labels.
+- STAT and MOVE pages still populate.
+- Genuine model failure still falls back safely instead of crashing.
+
+## 2.3.26 RC confidence
+
+**STABILIZATION FIX; RUNTIME RETEST REQUIRED.**
+
+The implicated Wide Menus-specific tracker branches are removed. R/B/Y uses the same Nuzlocke-owned 304x144 / 38-column layout that previously passed without Wide Menus.
+
+Required tracker matrix:
+- R/B/Y no UI mod
+- R/B/Y old Modern UI
+- R/B/Y Wide Menus
+- Gold native tracker
+
+The `F. TOKEN` change is presentation-only.
+
+## 2.3.25 RC confidence
+
+**SOURCE/PACKAGE-REVIEWED; RUNTIME COMBINATION TEST REQUIRED.**
+
+Storage changes generalize an existing dead-Pokémon WITHDRAW veto to semantically equivalent incoming SWAP transactions. Randomizer Info defaults to OPEN and therefore preserves previous behavior unless the player explicitly chooses BLIND INFO.
+
+Recommended smoke tests: vanilla PC withdraw/deposit; Advanced Box direct swap; Random Encounters with OPEN INFO; Random Encounters with BLIND INFO; Pokédex Plus/DexNav behavior where they adopt the cooperative information seam.
+
+## 2.3.24 RC confidence
+
+**DOCUMENTATION/PROVENANCE-ONLY BUILD.**
+
+Runtime behavior is unchanged from 2.3.23 RC. IronMON Ultimate and Enemy HP remain historical compatibility entries until exact current upstreams can be identified.
+
+## 2.3.23 RC confidence
+
+**DOCUMENTATION-ONLY BUILD.**
+
+Runtime behavior is unchanged from 2.3.22 RC. This build only reconciles compatibility documentation and confidence labels.
+
+## 2.3.22 RC confidence
+
+**ADDITIVE PRESENTATION METADATA; LOW RISK / RUNTIME COMBINATION TEST RECOMMENDED.**
+
+No existing Nuzlocke screen renderer or input path was replaced. The new contract only publishes metadata and stamps the same metadata on live Rules/Tracker screen instances. Gen 3 Inspired UI 2.0.0 is source-reviewed, not runtime-PASS with Nuzlocke yet.
+
+## 2.3.21 RC confidence
+
+**LOW/MEDIUM-RISK TRANSITION-STATE HARDENING; SMOKE TEST RECOMMENDED.**
+
+Normal dungeon entry/exit behavior is unchanged. The new path only clears a persisted transient lock when `map.entered` proves the player is no longer in its owning dungeon family, or when the governing rule is disabled. This specifically protects out-of-band map/teleport composition.
+
+## 2.3.20 RC confidence
+
+**SOURCE-REVIEWED; RUNTIME SMOKE TEST RECOMMENDED.**
+
+Translation API changes are additive. ENC TRACKER retains its existing data builders but runs maintenance once per refresh and presents a shared snapshot. Test tracker alone, with Modern UI, with Wide Menus, and once on Gold when convenient.
+
+## 2.3.19 RC confidence
+
+**SOURCE-REVIEWED; RUNTIME COMBINATION TEST STILL REQUIRED.**
+
+Pokemon Snag 0.15.9 and Too Many Balls 0.6.1 were reviewed at source level. The resulting Nuzlocke changes are generic acquisition/item-classification improvements rather than mod-ID-specific patches. Test both current mods on R/B/Y and Gold before promoting their compatibility rows to runtime PASS.
+
+## 2.3.18 RC confidence
+
+**LOW-RISK PRESENTATION-ONLY SOURCE FIXES.**
+
+2.3.17 RC remains the functional gameplay baseline. This child changes only display fallback and text clipping/scrolling behavior. Smoke testing is still recommended when time permits.
+
+## 2.3.17 RC confidence
+
+**LOW-RISK SOURCE FIXES; SMOKE TEST RECOMMENDED.**
+
+The functional parent is 2.3.16 RC. This child changes only Gold status text clipping, unresolved egg-area bookkeeping, and a dead learnset condition.
+
+## 2.3.16 RC confidence
+
+**MEDIUM-RISK SOURCE FIXES; RUNTIME REGRESSION TEST REQUIRED.**
+
+Prioritize custom/area-less capture providers, Yellow gift/starter provenance, duplicate starter tracking, and Gold Physical/Special Split damage/screen behavior.
+
+## 2.3.15 RC confidence
+
+**SOURCE-CONFIRMED FIXES; RUNTIME REGRESSION TEST REQUIRED.**
+
+Static tracing repaired manual RNG Seed coercion, Gold Egg/Bug Contest enum coercion, delegated learnset snapshot overwrite risk, and area-less capture-policy bypass.
+
+Recommended runtime matrix: Yellow boot/new/save; ENC TRACKER alone + Modern UI + Wide Menus; Running Shoes B released/held; all Starter Style/Encounter Balance values; manual RNG Seed persistence; Gold Egg/Bug Contest selector cycling.
+
+## 2.3.14 RC confidence
+
+**TEST REQUIRED:** Wide Menus tracker compatibility, strict B-held Running Shoes behavior, and all four Starter Style / Encounter Balance selector values. The 2.3.13 native tracker and Modern UI paths were runtime-reported PASS before this child.
+
+## 2.3.13 RC confidence
+
+**SOURCE/INTERACTION FIX; RUNTIME TEST REQUIRED:** R/B/Y ENC TRACKER now requests the same 304x144 UI surface observed to work when Wide Menus is installed. Test Nuzlocke-only, Wide Menus, and Modern UI combinations before promotion. Gold tracker behavior is intentionally unchanged.
+
 ## 2.3.12 release confidence
 
 **Runtime-confirmed on the 2.3.11 code path promoted unchanged into 2.3.12:**
@@ -8,6 +253,8 @@
 - Yellow existing SAVE GAME load: **PASS**.
 - Existing Yellow save fresh-game SETUP suppression: **PASS**.
 - Gold NEW GAME boot: **PASS**.
+
+**Corrected runtime defect:** ENC TRACKER can crash with Modern UI disabled. Wide Menus was observed to mask the crash; Modern UI is not established as the cause.
 
 2.3.12 intentionally changes only version/release documentation from 2.3.11, so these startup/title-flow results apply directly to the promoted runtime code. They do **not** convert every individual rule, Gold adapter, or third-party-mod interaction into a newly runtime-confirmed PASS. Historical protected PASS behavior and TEST REQUIRED labels below remain authoritative for those narrower systems.
 

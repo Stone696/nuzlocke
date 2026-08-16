@@ -1,3 +1,183 @@
+# Documentation Changelog
+
+## 2.4.0
+
+- Promoted 2.3.35 RC directly to the published 2.4.0 release.
+- Rewrote top-level release documentation to summarize all material changes since the last published 2.3.12.
+- Consolidated runtime-confirmed Yellow results from the 2.3.13–2.3.35 development line.
+- Updated API/compatibility documentation for additive trainer-capture, custom-Ball, storage transaction, encounter information, translation, UI ownership, Difficulty, and Gym Team Size semantics.
+- Clarified that Gold remains beta.
+- Documented MOVE INFO as substantially improved/acceptable for release with further cosmetic polish deferred.
+- No package files added or removed.
+
+---
+
+## 2.3.35 RC
+
+- Documented the remaining MOVE INFO overlap from 2.3.34 runtime testing.
+- Documented the single-column three-line move-card fix.
+- No files added or removed.
+
+## 2.3.34 RC
+
+- Logged Yellow 2.3.32 MOD COMPAT sizing PASS.
+- Logged Yellow 2.3.32 ENC TRACKER sizing PASS.
+- Logged Yellow 2.3.32 F. TOKEN label PASS.
+- Logged NUZ INFO page switching PASS.
+- Documented Select/Tab MOD COMPAT help paging.
+- Documented title-only NUZ INFO bolding and tracked titles.
+- Documented dedicated MOVE INFO card layout.
+- No files added or removed.
+
+## 2.3.33 RC
+
+- Logged Yellow Route Forgiveness Token full-bag retry PASS.
+- Logged Yellow No Rare Candy dialogue/enforcement PASS.
+- Documented No Fishing move to GENERAL.
+- Documented R/B/Y `NUZ STS.` START-menu label.
+- Documented direct built-in Difficulty cap projection fix.
+- No files added or removed.
+
+## 2.3.32 RC
+
+- Recorded Yellow 2.3.30 Gym Lock-In PASS.
+- Recorded Yellow 2.3.30 Brock Gym Team Size FAIL.
+- Documented standard Gym Leader `trainer.before_battle` enforcement fix.
+- Clarified that carried non-Egg party slots count toward Gym Team Size.
+- No files added or removed.
+
+## 2.3.31 RC
+
+- Recorded runtime-tested 2.3.30 successes and remaining UI regressions.
+- Documented native-size tracker/MOD COMPAT restoration.
+- Documented paged R/B/Y NUZ INFO and title/column emphasis.
+- Documented RNG Info numeric-selector fix and compact Randomizer labels.
+- Documented authoritative F. TOKEN item-data fix.
+- No files added or removed.
+
+## 2.3.30 RC
+
+- Documented/fixed phantom historical difficulty-provider warnings.
+- Documented Starter Style as a Random Starter child.
+- Documented Encounter Balance / Randomizer Info / Species Pool as Random Encounters children.
+- Preserved Learnset Gen as a Random Learnsets child.
+- No files added or removed.
+
+## 2.3.29 RC
+
+- Documented Species Pool as a Random Encounters-only child.
+- Documented Learnset Gen as a Random Learnsets-only child.
+- Documented dynamic Setup/Rules hiding and saved-value restoration.
+- Documented `ACTIVE RULES:` status presentation polish.
+- No files added or removed.
+
+## 2.3.28 RC
+
+- Documented clearer R/B/Y MOD COMPAT ownership table.
+- Added plain-language ownership relationship help descriptions.
+- Documented native cursor, explicit columns, scrolling, and wide presentation surface.
+- No files added or removed.
+
+## 2.3.27 RC
+
+- Documented/fixed recurring ordinary-Pokémon DETAIL SAFE MODE.
+- Documented lexical forward-reference root cause in the NUZ INFO model.
+- Documented `LOC.` constrained row label and glyph-safe right-value fitting.
+- No files added or removed.
+
+## 2.3.26 RC
+
+- Recorded runtime isolation of ENC TRACKER crash to Wide Menus integration.
+- Documented the invariant Nuzlocke-owned 304x144 / 38-column Gen 1 tracker surface.
+- Documented compact `F. TOKEN` mart-row label.
+- No files added or removed.
+
+## 2.3.25 RC
+
+- Reviewed Advanced Box System 1.1.0 and Pokédex Plus 1.3.4 from FAFF0x's current synchronized mod index/repository.
+- Documented storage transaction API 2.
+- Documented OPEN INFO / BLIND INFO randomized encounter visibility.
+- Added both reviewed versions to the current compatibility narrative.
+- No files added or removed.
+
+## 2.3.24 RC
+
+- Recorded fresh upstream-resolution attempts for IronMON Ultimate and Enemy HP.
+- Clarified that the public IronMON Ultimate challenge ruleset is not evidence of the old Gen1Recomp mod's code lineage.
+- Preserved historical compatibility evidence without promoting it to current-version confidence.
+- No files added or removed.
+
+## 2.3.23 RC
+
+- Consolidated current compatibility status into one canonical ledger.
+- Normalized reviewed versions/status for Snag, Too Many Balls, Translation Generator, Shiny Pokemon, Weather FX, and Gen 3 Inspired UI.
+- Marked IronMON Ultimate and Enemy HP as historical/upstream-unresolved instead of implying current compatibility.
+- Added explicit compatibility confidence terminology/policy.
+
+## 2.3.22 RC
+
+- Reviewed the Gen 3 Inspired UI Overhaul fork and current canonical 2.0.0 parent.
+- Documented new provider-neutral Nuzlocke presentation contract.
+- No files added or removed.
+
+## 2.3.21 RC
+
+- Reviewed Weather FX 2.6.0 release behavior.
+- Documented transient Dungeon Lock-In reconciliation on actual map entry.
+- Marked Weather FX 2.6.0 release-reviewed / runtime combination test required.
+- No files added or removed.
+
+## 2.3.20 RC
+
+- Reviewed Translation Generator 0.7.0 and Shiny Pokemon 1.0.1.
+- Documented enumerable Nuzlocke translation-source API.
+- Documented single-refresh ENC TRACKER presentation snapshots.
+- No files added or removed.
+
+## 2.3.19 RC
+
+- Re-audited Pokemon Snag at 0.15.9 and Too Many Balls at 0.6.1.
+- Updated compatibility rows to current source-reviewed versions.
+- Documented generalized trainer-capture and custom-Ball improvements.
+- No files added or removed.
+
+## 2.3.18 RC
+
+- Documented the smaller-risk presentation pass.
+- Added Difficulty fallback and UTF-8-safe marquee/route/compat fitting fixes.
+- No files added or removed.
+
+## 2.3.17 RC
+
+- Documented the small follow-up bug-fix pass.
+- Added UTF-8-safe Gold status clipping and UNKNOWN egg-area bookkeeping correction.
+- No files added or removed.
+
+## 2.3.16 RC
+
+- Documented the medium-risk stabilization pass.
+- Added area-less capture, starter provenance/duplicate, and Gold Physical/Special Split state-isolation fixes.
+- No files added or removed.
+
+## 2.3.15 RC
+
+- Documented RNG Seed, Gold enum-selector, delegated learnset ownership, and area-less capture-policy fixes.
+- Preserved 2.3.14 tracker/Running Shoes/randomizer-selector behavior.
+- No files added or removed.
+
+## 2.3.14 RC
+
+- Documented Wide Menus tracker ownership fix.
+- Documented strict B-held Running Shoes behavior.
+- Documented four-way Starter Style and Encounter Balance selector fix.
+
+## 2.3.13 RC
+
+- Corrected the ENC TRACKER crash diagnosis: it reproduces with Modern UI disabled, while Wide Menus was observed to prevent it.
+- Documented the R/B/Y 304x144 tracker-surface hotfix candidate.
+- Retracted the claim that Modern UI itself was the confirmed cause.
+- No files added or removed.
+
 ## 2.3.12
 
 - Promoted 2.3.11 RC to the final 2.3.12 release with no intentional gameplay/API/save behavior change.
@@ -6,6 +186,7 @@
 - Documented the retained lifecycle-safe startup architecture.
 - Corrected the 2.3.11 lineage typo: 2.3.11 is the direct child of 2.3.10, not 2.3.9.
 - Kept the existing 15-file package tree unchanged.
+- Documented the confirmed 2.3.12 Modern UI + ENC TRACKER crash as a known issue.
 
 ## 2.3.11
 

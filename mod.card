@@ -1,4 +1,4 @@
-2.3.12: final 2.3 release; promotes the boot-safe full-feature 2.3.11 code path unchanged after Yellow 0.1.98 and Gold NEW GAME runtime validation.
+2.4.0: published release promoted directly from 2.3.35 RC; consolidates stabilization, compatibility, Randomizer, NUZ INFO, MOD COMPAT, tracker, difficulty, Gym Team Size, and Gold fixes since 2.3.12.
 return {
   summary = "Configurable Nuzlocke rules, tracking, status, and challenge options for R/B/Y and Gold.",
   author = "bryanthaboi (updated by Stone696)",
@@ -15,6 +15,8 @@ return {
       "presets, area splits, starter randomization, challenge restrictions, and compatibility APIs",
     },
     known = {
+      "2.3.15 RC: regression-test tracker UI combinations, hold-B Running Shoes, randomizer selectors/manual seed, and Gold Egg/Bug Contest modes.",
+      "2.3.13 RC: R/B/Y ENC TRACKER uses a native 304x144 surface; test Nuzlocke-only, Wide Menus, and Modern UI. Gold tracker unchanged.",
       "2.3.12: final release; Yellow 0.1.98 boot, fresh SETUP, NEW GAME, existing SAVE GAME, and SETUP suppression are runtime PASS; Gold NEW GAME boot is runtime PASS.",
       "2.3.1 RC: Gen1Recomp 0.1.98 is source-audited; battle snapshot interop, public-field-action fishing guards, Gold item coverage, and native starter nickname composition require runtime validation.",
       "2.2.21 RC: Quick Nuzlocke Start is source-complete; all four games, nickname/randomizer interactions, Gold progression/whiteout state, and provider composition require runtime validation.",
