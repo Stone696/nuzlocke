@@ -257,6 +257,12 @@ return function(mod, opts)
     end
 
     local function radioLine(gear)
+        if mod.save:get("gold_radio_world_building", false) ~= true then return nil end
+        local beta = mod.exports and mod.exports.__beta26
+        if beta and type(beta.goldRadioLine) == "function" then
+            local ok, line = pcall(beta.goldRadioLine, gear and gear.game)
+            if ok and line ~= nil then return tostring(line) end
+        end
         if mod.save:get("nuzlocke_enabled", true) ~= true then return nil end
         local tier = math.max(0, math.min(3, math.floor(tonumber(
             mod.save:get("world_building_tier", 0)) or 0)))
@@ -447,6 +453,7 @@ return function(mod, opts)
             owner = mod.id,
             visible = function(gear)
                 return isGold(gear and gear.game)
+                    and mod.save:get("gold_radio_world_building", false) == true
                     and (tonumber(mod.save:get("world_building_tier", 0)) or 0) > 0
             end,
             draw = function(gear) drawRadioOverlay(api, gear) end,
@@ -478,7 +485,7 @@ return function(mod, opts)
         return true
     end
 
-    pcall(tryInstall)
+    -- 2.3.12: optional provider discovery begins at lifecycle events below.
     if mod.events and type(mod.events.on) == "function" then
         mod.events:on("mods.loaded", function() pcall(tryInstall) end)
         mod.events:on("game.ready", function() pcall(tryInstall) end)

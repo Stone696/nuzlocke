@@ -1,3 +1,141 @@
+## 2.3.12 current API status
+
+2.3.12 is the final release child of 2.3.11 RC and preserves the complete restored API/provider surface without an API-number change. **Compatibility API remains 27**, `battle_classifier.api` remains 1, and save schema remains 4. The 2.3.0 battle snapshot/contextual-field compatibility additions, Skip Opening Intro delegation surface, and Quick Nuzlocke Start delegation surface remain active.
+
+The 2.3.12 promotion changes release/version metadata only; it does not intentionally alter provider contracts or rule semantics.
+
+## 2.3.11 current API status
+
+2.3.11 restores the protected full API/provider surface from the original 2.3.0 RC through the 2.3.10 → 2.3.11 sequential lineage. Historical 2.3.4–2.3.9 diagnostic/removal notes below describe those older builds and do **not** describe the active 2.3.11 surface.
+
+Compatibility API remains 27 and `battle_classifier.api` remains 1. The 2.3.0 battle snapshot/contextual-field compatibility additions are restored. Skip Opening Intro and Quick Nuzlocke Start provider/delegation surfaces are active again. No API number was changed by the boot-safety initialization changes.
+
+## 2.3.9 diagnostic status
+
+2.3.9 is a diagnostic-only build. The normal gameplay/provider API described below is **not active** in this build. Only static diagnostic exports, `src.core.Strings`, the minimal `NuzlockeConfigScreen`, and the public `ui.title_menu.items` SETUP insertion path execute. API behavior below remains documentation for the protected full implementation and must not be treated as runtime-validated by 2.3.9.
+
+## 2.3.4 startup API note
+
+Nuzlocke no longer wraps `intro.oak_speech.build` for an opening-intro skip, and it no longer exposes or runs the internal Quick Nuzlocke Start progression transaction. No public API version was increased for their removal because neither shortcut was a stable public provider contract.
+
+## 2.3.2 Wide Menus interop note
+
+No `mod.find("wide-menus")` lookup is expected. The supported interop is the screen-instance contract `uiModLayout = "classic"` plus `keepClassicUi = true`; Wide Menus reads those fields. The manifest optional dependency expresses that passive coexistence/load-order relationship, not ownership of Nuzlocke state or a request for a wide canvas.
+
+## 2.3.2 API/interop note
+
+No public API version changes.
+
+Compatibility seam metadata now labels `mod.world:availableFieldActions/useFieldAction` as `transitive_native_guard`: the public facade is observed, while enforcement occurs at the native execution seams it delegates to. This is intentionally distinct from directly composed hooks such as `script.command`.
+
+## 2.3.1 API note — Gen1Recomp 0.1.98 public facades
+
+**2.3.1 startup-safety note:** compatibility feature reporting no longer materializes `mod.battle` or `mod.world` during title/New Game construction; it only reports already-materialized facades.
+
+No existing Nuzlocke public API number is bumped. Compatibility API remains **27** and `battle_classifier.api` remains **1**; the additions are backward-compatible fields/functions.
+
+### `mod.exports.battle_classifier.snapshot()`
+
+On Gen1Recomp 0.1.98+, returns the detached record from `mod.battle:snapshot()` or `nil` outside battle. The record is the engine's generation-neutral view (`revision`, `kind`, `catchable`, `prompt`, messages, battlers, party, moves, and supported items). Mutating it cannot mutate the live battle. Nuzlocke does **not** submit battle intents through this export.
+
+`battle_classifier.classify(game, battle, species)` remains the provenance-aware Nuzlocke classifier for callers that already possess a real battle object/event context.
+
+### Compatibility report
+
+`getCompatibilityReport()` adds `engine_features` booleans:
+- `battle_snapshot`
+- `battle_submit`
+- `contextual_field_actions`
+
+These report facade availability only; they do not imply Nuzlocke has delegated rule ownership.
+
+The audited engine marker is now **0.1.98**.
+
+## 2.2.21 API note — Quick Start
+
+No existing public API number changes. Quick Start is implemented as a one-shot fresh-save reconciliation after the native world exists. The setup surface can delegate the whole shortcut through capability names:
+
+- `quick_start_provider`
+- `new_game_progression_provider`
+
+When either resolves to an external provider, Nuzlocke clears its local one-shot request and does not mutate the provider-owned progression transaction. The internal diagnostic/apply seam is `mod.exports.__beta26.applyQuickNuzlockeStart(game)`; it is intentionally under `__beta26` and is **not** promoted as a stable public compatibility contract.
+
+The public randomizer/starter-randomizer contracts are unchanged. Nuzlocke-owned Quick Start calls the existing seeded starter `select`/`commit` path, so no RNG API bump is needed. External starter randomizers that rely only on the native gift transaction do not automatically receive that transaction when Quick Start bypasses it; combined runtime validation is required unless the provider also owns Quick Start.
+
+## 2.2.20 API note
+
+No public Nuzlocke API version changes. The new QoL path consumes Gen1Recomp's existing composable `intro.oak_speech.build` hook. External ownership may advertise `opening_intro_skip_provider` or the broader `tutorial_qol_provider`; when delegated, Nuzlocke does not remove Oak-speech steps.
+
+All existing randomizer, starter-randomizer, battle-classifier, translation, interop, and compatibility API numbers remain unchanged; their build stamps report 2.2.20.
+
+## 2.2.19 API note
+
+The built-in `mod.exports.randomizer` surface remains **API 1** and gains additive fields without breaking the existing contract:
+
+- `build = "2.2.19"`
+- `rngVersion = 1`
+- `seed(create)` returns the persisted 8-digit seed; with `create == true`, AUTO/0 generates and stores one.
+- `apply`, `applyEncounters`, and `applyLearnsets` remain available.
+
+Internal compatibility helpers also expose `mod.exports.__beta26.randomizerSeed(profile, create)` and `randomizerAlgorithmVersion()`. Deterministic slot selection uses separate `STARTER`, `ENCOUNTERS`, and `LEARNSETS` streams. No compatibility API, Mod API, permission, engine-range, or save-schema version changes.
+
+## 2.2.18 API note
+
+No compatibility API version or save schema changes. Public build stamps for `nuzlocke_translation`, `randomizer`, `starter_randomizer`, and `battle_classifier` are synchronized to 2.2.18. Existing delegation APIs now also govern Automatic Default Names, Skip Catch Tutorial, and fresh-save PC kit execution, not only UI ownership.
+
+## 2.2.17 API note
+
+`mod.exports.__beta26.difficultyStackWarning(selectedId)` returns the current human-readable external-provider composition warning for the supplied stable Difficulty id, or `nil` when no warning is needed. This is an internal compatibility/UI surface; provider selection itself remains stable-id based and manual.
+
+## 2.2.16 API note
+
+Compatibility API version is unchanged. Two read-only compatibility surfaces are added/clarified:
+
+- `mod.exports.nuzlocke_compat.getNextGymTeamInfo(save)` returns the next Gym Leader identity plus the live composed `teamSize`/`limit`, class/party identifiers when available, and `source = "LIVE_COMPOSED_TRAINER_PARTY"`.
+- `mod.exports.nuzlocke_translation.detect()` reports reviewed translation companions and diagnostic state such as PT-BR native Trainer Card / inventory-list layout overrides. Translation companions remain localization owners; this is detection only.
+
+`gym_team_size_source` is `live_composed_trainer_party`. No save-schema, Mod API, permission, dependency, conflict, or engine-range change.
+
+## 2.2.15 API note
+
+No public Compatibility API, Mod API, save-schema, permission, or engine-range change. Save schema remains 4. Internally, `mod.exports.__beta26.saveUpgrade` now owns the ordered save-upgrade plan (`schema`, `semantic`, `reconstruction`, `projection`) and exposes transient `lastRun` diagnostics. `registerSaveUpgradeStep` and the coordinator are internal beta scaffolding, not a stable provider contract. Existing persisted migration markers and rule keys are preserved. Legacy Level Cap and Rule Lock reconciliation now register into the same internal plan; the Difficulty provider-ID bootstrap remains intentionally lazy because it depends on the live provider list.
+
+## 2.2.12 API note
+
+No public Compatibility API, Mod API, save-schema, permission, or engine-range change. Built-in Game Difficulty remains internal configuration. Its party transformations consume the existing `trainer.party` composition seam and live merged species/move data; Gen 1 AI uses the existing native trainer-AI layers and Gold AI is applied to a per-battle copy of TrainerClassAttributes. Selected external difficulty providers are not transformed.
+
+The Gold badge-boost suppression used by selected built-in profiles is internal and battle-scoped. No new hook contract is introduced.
+
+## 2.2.10
+No public API version change. Internally, Random Starter and Random Encounters share a generation-aware live-species filter, and the optional Physical/Special Split composes through the existing `battle.damage` hook rather than introducing a new hook contract. Provider-owned move/type records are not mutated.
+
+## 2.2.9
+No public API change. Native vitamin IDs are centralized internally on the existing beta namespace.
+
+## 2.2.8 API note
+
+No public API change. Internal live cap preview now recognizes Nuzlocke's own active non-Vanilla Difficulty profile as a reason to preview `trainer.party`. Vanilla ScriptRunner text is no longer globally rewritten by the T3 presentation hook.
+
+## 2.2.7 API note
+
+No public API change. Internal late-runtime initialization now executes in two temporary closures instead of one oversized closure in order to remain below Lua 5.1's 60-upvalue limit. The temporary `_lateRuntimeInit` export remains an implementation detail and is cleared immediately after each phase.
+
+## 2.2.6 API note
+
+No public API change. `skipCatchTutorialRequested` is now stored on the existing internal `mod.exports.__beta26` namespace to reduce Lua local-variable pressure. This is an implementation detail, not a new supported compatibility surface.
+
+## 2.2.5 API note
+
+No public API change. Internal Pokémon Bois Club renderer ownership state now lives on the NPC object instead of an additional file-scope weak table. This reduces active-local pressure in `main.lua`.
+
+## 2.2.4 API note
+
+No public API, save-schema, permission, or compatibility-contract change. The Pokémon Bois Club chairman's Tier-3 presentation now builds a replacement through the engine's existing `src.render.SpriteRenderer.new(spriteDef, seed)` contract instead of retaining the obsolete custom in-memory renderer implementation. Existing Nuzlocke Compatibility API remains 27.
+
+## 2.2.3 API note
+
+Compatibility API remains 27 with no signature changes. `getNuzInfoPages()` and `getPokemonNuzInfo(game, mon)` retain their existing contracts. The R/B/Y native consumer now renders more of the already-exposed model (including `catch.shiny`, `catch.cause`, `catch.provenance`, legality BST fields, and move `accuracy`) and reconstructs equivalent direct-Pokémon data when the optional rich model fails. Skip Catch Demo hardening is internal and does not add a public API.
+
 ## 2.2.2 API note
 
 No API, save-schema, permission, or compatibility-contract changes. 2.2.2 only changes the compact Trainer Money presentation label to `Btl. ¥` and records Yellow runtime PASS evidence for shop and Pokémon Center enforcement. Compatibility API remains 27 and audited Gen1Recomp remains 0.1.94.

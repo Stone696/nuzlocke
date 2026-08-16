@@ -1,3 +1,318 @@
+# Nuzlocke 2.3.12
+
+**2.3.12 is the final 2.3 release and the direct child of 2.3.11 RC.** It promotes the same boot-safe full-feature implementation that was runtime-validated on Yellow/Gen1Recomp 0.1.98 and Gold NEW GAME. No gameplay feature, rule, save schema, Compatibility API, or startup behavior is intentionally changed from 2.3.11.
+
+### Runtime-confirmed release path
+
+- Yellow title boot: **PASS**
+- Yellow fresh NEW GAME → normal Nuzlocke SETUP: **PASS**
+- Yellow SETUP → NEW GAME: **PASS**
+- Yellow existing SAVE GAME load: **PASS**
+- Existing Yellow save does not expose fresh-game SETUP: **PASS**
+- Gold NEW GAME boot: **PASS**
+
+### Boot-safe initialization retained
+
+- `src.core.Strings` is the only eager engine import required by the main initializer.
+- `src.pokemon.Stats` and `src.pokemon.Growth` are resolved lazily.
+- the public `ui.title_menu.items` SETUP seam remains authoritative;
+- the legacy `title_setup_compat.lua` fallback stays packaged but dormant on current engines;
+- the first heavy runtime phase waits for `game.ready`;
+- optional Modern UI and Pokégear integrations wait for lifecycle retry points instead of eager first-pass installation;
+- Default Names installs at NEW GAME/lifecycle time rather than by pre-title OakSpeech/Gold World imports;
+- Gold title dispatch is not probed on R/B/Y startup.
+
+### Release surface
+
+The complete restored 2.3 feature surface remains active: rules, setup/profile handling, encounter/death tracking, status and info screens, world-building, randomizer/QoL systems, compatibility/provider APIs, R/B/Y enforcement, Gold beta adapters, Skip Opening Intro, Quick Nuzlocke Start, Default Names, Skip Catch Demo, and the later Gold trainer-battle Ball scoping repair.
+
+Gold remains beta and not every individual rule combination has new 2.3.12 runtime coverage; protected historical PASS behavior remains protected.
+
+
+# Nuzlocke 2.3.11 RC — full feature restoration / Yellow boot test
+
+> **2.3.11 RC compatibility note:** this build is the direct child of 2.3.10 and keeps the restored full RC feature set while deferring the first heavy runtime phase and optional presentation/provider first-pass installs until Gen1Recomp lifecycle events. Yellow 0.1.98 validation is required.
+
+
+**2.3.11 is the direct child of 2.3.10 RC.** The diagnostic-only reduction is over: this candidate restores the full feature surface that existed in the original 2.3.0 RC while retaining the boot-safe boundaries learned from 2.3.7–2.3.9.
+
+The original 2.3.0 package was used only as a comparison/reference source. Missing behavior was ported forward through the sequential 2.3.10 → 2.3.11 lineage rather than replacing the current tree with an old branch.
+
+### Boot hardening carried into the restored build
+
+- `src.core.Strings` remains the only eager engine module imported by the main initializer.
+- `src.pokemon.Stats` and `src.pokemon.Growth` are resolved lazily when a rule actually needs them.
+- the public `ui.title_menu.items` setup seam remains authoritative;
+- the legacy engine-internal `title_setup_compat.lua` fallback remains packaged but dormant at startup;
+- engine-internal gameplay adapters that are unnecessary before title now install from their existing lifecycle retry points;
+- Default Names installs when NEW GAME is selected instead of eagerly importing OakSpeech/Gold World modules;
+- Gold-specific title dispatch is not probed on R/B/Y startup.
+
+### Restored surface
+
+The full 2.3.0 RC rules, setup, tracking, status screens, randomizer/QoL systems, compatibility APIs, Skip Opening Intro, Quick Nuzlocke Start, Default Names, Skip Catch Demo, and Gold beta integrations are active again. The later Gold trainer-battle Ball scoping fix is retained.
+
+**Immediate validation target:** Yellow + Gen1Recomp 0.1.98 with only Nuzlocke enabled. Confirm title boot, correct fresh-save-only SETUP visibility, full setup menu rendering, NEW GAME entry, and early gameplay before expanding the regression pass.
+
+# Nuzlocke 2.3.9 RC — DIAGNOSTIC ONLY
+
+**2.3.9 is not a playable Nuzlocke build.**
+
+Yellow + Gen1Recomp 0.1.98 successfully reached the title screen with 2.3.8, proving the normal returned initializer itself is boot-safe. The missing Nuzlocke Setup row in 2.3.8 was intentional.
+
+2.3.9 is the direct child of **2.3.8 RC**. It restores only the minimum public title/setup UI path: `src.core.Strings`, a minimal custom setup screen, and the public `ui.title_menu.items` hook. No real rules or setup-profile persistence are active.
+
+Immediate test: launch a fresh Yellow title on Gen1Recomp 0.1.98 with only Nuzlocke 2.3.9 enabled. Confirm **SETUP** appears before **NEW GAME**, opens a diagnostic Nuzlocke Setup screen, accepts basic input, and returns with B.
+
+# Nuzlocke 2.3.8 RC — DIAGNOSTIC ONLY
+
+**2.3.8 is not a playable Nuzlocke build.**
+
+Yellow + Gen1Recomp 0.1.98 successfully reached the title screen with 2.3.7 as the only enabled mod. That runtime PASS clears the package tree, manifest, and inert top-level loader path as the cause of the earlier pre-title crashes.
+
+2.3.8 is the direct child of **2.3.7 RC** and restores exactly one execution boundary from 2.3.6: the normal returned `function(mod) ... end` initializer. Inside it, only static export metadata is assigned. No engine modules are required and no gameplay/UI/event/save/hook integration is installed.
+
+Immediate test: launch Yellow on Gen1Recomp 0.1.98 with only Nuzlocke 2.3.8 enabled and report whether the title screen appears.
+
+# Nuzlocke 2.3.7 RC — DIAGNOSTIC ONLY
+
+**2.3.7 is not a playable Nuzlocke build.**
+
+It exists solely to isolate the Yellow pre-title crash on Gen1Recomp 0.1.98. The package still contains the normal 15 files, but the entry file does not load or execute gameplay code. Only inert export metadata is registered.
+
+Immediate test: launch Yellow with only Nuzlocke 2.3.7 enabled and report whether the title screen appears.
+
+# Release candidate — 2.3.6
+
+2.3.6 is the direct child of **2.3.5 RC**. It restores the remaining pre-2.3 installer behavior after direct comparison while keeping the two deferred startup shortcuts absent. The immediate validation target is Yellow boot-to-title on Gen1Recomp 0.1.98 with every other mod disabled.
+
+# Release candidate — 2.3.5
+
+2.3.5 is the direct child of **2.3.4 RC** and is a Yellow/Gen1Recomp 0.1.98 boot bisect. The experimental startup shortcuts remain removed. This build temporarily disables the executable 0.1.98-specific integrations added during 2.3.x while still allowing 0.1.98 in the manifest, so we can distinguish a new compatibility regression from an older Nuzlocke boot path that was never previously exercised on 0.1.98.
+
+# Release candidate — 2.3.4
+
+2.3.4 is the direct child of **2.3.3 RC**. It removes the experimental **Skip Opening Intro** and **Quick Nuzlocke Start** implementations from the active code path to isolate the Yellow pre-title crash on Gen1Recomp 0.1.98.
+
+Those two features are deferred for a later build and redesign. **Default Names** and **Skip Catch Demo** are not part of this rollback and remain available.
+
+No older branch was restored; only the specific 2.2.20/2.2.21 shortcut changes were reversed after comparison. All unrelated 2.3.x compatibility fixes remain.
+
+# Release candidate — 2.3.3
+
+2.3.3 is the direct child of **2.3.2 RC**. It is a Yellow pre-title boot-safety isolation build for Gen1Recomp 0.1.98.
+
+## Yellow boot-safety isolation
+
+- 2.3.0, 2.3.1, and 2.3.2 are recorded as Yellow **pre-title runtime FAIL** with other mods disabled.
+- The public `ui.title_menu.items` hook remains the only title Setup integration on current engines. The old 0.1.86 `TitleState.openMenu` fallback is no longer invoked at boot.
+- Non-title engine-internal monkey patches (item policy, day care, stat rules, field commands, Center, Game Corner, shops, Gold difficulty mechanics) are deferred until `map.entered`/`save.loaded`/`battle.started` as appropriate.
+- No gameplay rule is intentionally removed; this changes installation timing only.
+
+# Release candidate — 2.3.2
+
+2.3.2 is the direct child of **2.3.1 RC**. It fixes Gold battle-item policy scoping on Gen1Recomp 0.1.98 and corrects contextual-field-action compatibility metadata. Save schema remains 4 and the package tree is unchanged.
+
+## 2.3.2 compatibility hotfix
+
+## Wide Menus optional dependency
+
+`wide-menus` remains an intentional **optional dependency**, but the current integration is passive coexistence rather than a `mod.find()`/provider call. Nuzlocke marks every `NuzlockeConfigScreen` with `uiModLayout = "classic"` and `keepClassicUi = true`; Wide Menus reads those public instance markers and leaves Setup/NUZ RULES on the validated native-width path. This is the safety adapter introduced after the earlier claimed-wide Yellow crash. The old 304px Nuzlocke-owned wide layout remains disabled.
+
+
+Gold's general battle-item policy pass now handles non-Ball items only. Ball/capture rules run only when the battle is actually catchable (wild or recognized static), so trainer-battle Ball attempts retain Gen1Recomp's native behavior rather than receiving a Nuzlocke `No Catching` denial.
+
+`mod.world:useFieldAction` is not directly wrapped by Nuzlocke. No Fishing is enforced transitively because Gen1Recomp 0.1.98 delegates fishing through the guarded native R/B/Y `Overworld.useFishingRod` and Gold `World.useFieldItem` seams.
+
+# Release candidate — 2.3.1
+
+2.3.1 is the direct child of **2.2.21 RC** and the compatibility release for **Gen1Recomp 0.1.98**. The manifest now accepts `>=0.1.86 <0.1.99`; 0.1.98 is source-audited while runtime confirmation remains required. Save schema remains 4 and the package tree is unchanged.
+
+## Gen1Recomp 0.1.98 integration
+
+- **Public battle snapshots:** Nuzlocke's additive `battle_classifier.snapshot()` now forwards the engine's detached `mod.battle:snapshot()` view when available. This is read-only interop for companion/status mods; Nuzlocke rule enforcement continues to use its established battle hooks/events.
+- **Contextual field actions:** 0.1.98 exposes `mod.world:availableFieldActions()` / `useFieldAction()` across R/B/Y and Gold. Nuzlocke now guards the underlying fishing execution seam too, so **No Fishing** cannot be bypassed by a companion UI calling the public field-action API instead of opening the Bag/Pack.
+- **Gold item coverage:** **No Field Heal** now classifies `BERRY_JUICE`, `RAGECANDYBAR`, and `SACRED_ASH` as native Gen II healing items. The normal Pack gate retains tiered Nuzlocke feedback; the deeper Gold world guard prevents registered/public field-action bypasses.
+- **Gold battle items:** the 0.1.98 Gold battle Pack routes balls, stat/X items, healing/status/revive items, and PP recovery through one native `BattleState:useItem` path. Any authoritative Nuzlocke item-policy denial now stops there instead of only special-casing No Catching/No PP Items, covering **No Healing Items** and **No X Items** consistently.
+- **Gold starter nickname path:** 0.1.98 supplies the native Gold starter nickname transaction. Nuzlocke keeps its force-YES/nonblank nickname gate and retains the separate deferred gift-nickname path for scripted gifts.
+- **Gold encounter fixes upstream:** 0.1.98 contains Gold encounter/fishing/time-routing corrections. Nuzlocke keeps Time Split restricted to grass/time-of-day tables; water/fishing remain unsplit.
+
+## Compatibility boundary
+
+2.3.1 deliberately stops at `<0.1.99`. Post-0.1.98 `dev` changes are not treated as release contracts. No new permission is required: Mod API remains 2 and Nuzlocke still uses only `engine_internals`.
+
+# Release candidate — 2.2.21
+
+2.2.21 is the direct child of **2.2.20 RC**. It adds a NEW GAME-only **Quick Nuzlocke Start** that advances the mandatory pre-capture opening to the first safe, capture-enabled hometown checkpoint while preserving Nuzlocke rules, starter provenance, and optional early content. Save schema remains 4 and the package tree is unchanged.
+
+## Quick Nuzlocke Start
+
+- **Separate from Skip Opening Intro:** Skip Opening Intro removes only Oak's presentation. Quick Nuzlocke Start additionally reconciles the mandatory early story state needed for a legal starter, Pokédex access, and Poké Balls. It defaults OFF and is setup-only.
+- **R/B/Y:** begins outside the player's Pallet house at the Route 1 side of town with a level-5 starter, Pokédex, and at least 5 Poké Balls in the Bag. A larger configured R/B/Y **Start Balls** value is preserved. Oak's Parcel/lab handoff is complete, the Viridian old-man gate is in its post-Pokédex state, and the optional first Route 22 rival remains available. Quick Start does **not** mark that optional rival as beaten.
+- **Yellow:** uses the normal Pikachu starter anchor (or Nuzlocke's selected Random Starter), activates Pikachu-follower state when Pikachu is actually the starter, and leaves the optional Route 22 battle available. Because the skipped lab Rival battle has no win/loss result, Yellow keeps the pre-battle baseline Rival evolution state rather than inventing an outcome.
+- **Gold:** keeps the required InitClock hour/minute step, resolves the skipped mandatory Mom/Elm/Mr. Pokémon/Cherrygrove Rival/police/Mystery Egg return milestones, then begins at New Bark's Route 29 exit with a level-5 starter, Pokégear/Phone, Pokédex, the mandatory Potion, and 5 Poké Balls. The skipped Mom weekday prompt is anchored to the host's current weekday. The native post-Mr.-Pokémon whiteout destination remains Cherrygrove until a later Pokémon Center updates it.
+- **Optional Gold content remains optional:** Guide Gent/Map Card, Mom's money-saving conversation, Route 29 encounters, and the Route 29 catch tutorial are not consumed. The tutorial remains armed unless **Skip Catch Demo** is also selected.
+- **Nickname Rule is preserved:** Quick Start does not silently bypass a required starter nickname. If Nickname Rule is active, the only retained opening interaction is the starter nickname screen; the shortcut finishes after a valid nickname is entered.
+- **Built-in Random Starter is preserved:** the story uses a canonical starter anchor while the actual level-5 starter is selected through the existing seeded Random Starter system, then registered in the normal Pallet/New Bark starter slot. External starter-randomizer composition remains runtime TEST REQUIRED because Quick Start bypasses the native gift transaction; an external provider that owns **Quick Start itself** takes full ownership and suppresses Nuzlocke's local shortcut.
+- **Challenge rules still win:** Quick Start supplies the normal capture-ready resources but does not disable No Catching, Type Locks, species/BST restrictions, or any other selected challenge rule.
+
+# Release candidate — 2.2.20
+
+2.2.20 is the direct child of **2.2.19 RC**. It adds a fresh-game **Skip Opening Intro** QoL path using Gen1Recomp's named Oak-speech hook rather than bypassing New Game itself. Save schema remains 4 and the package tree is unchanged.
+
+## Skip Opening Intro
+
+- **R/B/Y:** skips Oak's welcome/demo/world speech, visible naming presentation, legend text, and shrink. The existing canonical-name adapter resolves the hidden player/Rival name steps, then Gen1Recomp's ordinary intro-finished callback begins the normal Pallet bedroom start.
+- **Gold:** skips the visible Oak/Marill/world/name/legend presentation but deliberately preserves Gold's `init_clock` step before invisibly resolving the player name. The normal Johto fresh-game continuation follows; the later ???/SILVER Rival naming story is untouched.
+- **No story-state fabrication:** the option does not set badges, Oak/Elm Lab flags, starter flags, parcel/Pokedex flags, tutorial flags, or map progression. It only removes the opening presentation.
+- **Provider-aware:** an external opening-intro-skip provider can own the feature; Nuzlocke then yields its local shortcut.
+
+## Seeded structured randomizer
+
+- **Shareable seed:** `Random Seed` is an 8-digit decimal seed. `00000000` means AUTO; enabling a Nuzlocke-owned randomizer generates and stores a seed. The active seed is shown in NUZ RULES and as `RNG ######## v1` on run-status rule lists while a built-in randomizer is active.
+- **Independent deterministic streams:** STARTER, ENCOUNTERS, and LEARNSETS hash the same seed through separate semantic streams. Turning Random Learnsets on later cannot perturb encounter-table choices, and inspecting starter balls in a different order cannot change seeded starter results.
+- **Starter Style:** ANY / 3-STAGE / BASE / SIM BST. 3-STAGE uses the live merged evolution graph and requires a base form with an evolution followed by another evolution. BASE accepts species with no pre-evolution, including single-stage species. SIM BST targets roughly the original starter's live BST. If a structured style leaves no legal candidate, the mandatory starter falls back to the broader legal pool rather than blocking progression.
+- **Encounter Balance:** CHAOS / SIM BST / EVO / BALANCED. SIM BST targets roughly ±15% of the original slot's live BST with a minimum tolerance of 25. EVO preserves broad evolution position (`single/base/middle/final`). BALANCED requires both when possible, then relaxes stage-only, BST-only, and finally full-pool only when necessary. Native encounter levels, rates, time blocks, fishing/tree methods, and map structure stay unchanged.
+- **Legacy preservation:** already-persisted pre-seed randomizer choices from upgraded saves are preserved when valid instead of silently rerolling the existing run. Fresh 2.2.19+ generated choices are seed-reproducible.
+- **Provider ownership is unchanged:** an external starter/encounter/learnset randomizer still owns that mechanic when delegated; Nuzlocke does not repaint provider-owned registries.
+
+### Seed editing
+
+Select **RNG Seed**, press A (or Left/Right) to enter digit editing, use Left/Right to choose one of eight digits, Up/Down to change it, and A to confirm. Setting all digits to `00000000` regenerates AUTO when a Nuzlocke randomizer is active.
+
+## Inherited 2.2.18 rule-interaction hardening
+
+- **Failed Encounters now reuses authoritative capture legality before arming a failure transaction.** Encounters already forbidden by No Catching, Type Lock, glitch restrictions, Static Encounter bans, Overworld/Town policy, Legendary/Mythical/Pseudo bans, Maximum BST, Solo Only, Dupes, or an already-consumed area cannot burn the area as a failed encounter. Shiny Clause only keeps its intended exceptions for area/Dupes policy; it no longer changes the outcome of an otherwise absolute ban.
+- **Gold Time Split now distinguishes grass from water and fishing.** Successful fishing rolls receive explicit fishing provenance; ordinary surf encounters receive water provenance; ordinary land encounters receive grass provenance. Only grass (plus legacy records already stored as `wild`) participates in morning/day/night Time Split projection. Historical records that lack enough provenance are preserved rather than guessed.
+- **Random Starter now respects run-wide species legality** for Type Locks, glitch restrictions, Legendary/Mythical/Pseudo bans, and Maximum BST. No Catching intentionally does not ban the required received starter.
+- **Delegated non-core NEW GAME QoL now truly yields ownership.** Automatic Default Names, Skip Catch Tutorial, and fresh-save PC kits cannot execute from stale local state while another provider owns the capability.
+- Public translation/randomizer/starter-randomizer/battle-classifier build stamps are synchronized to 2.2.18, and Forgiveness Token help text now correctly says Gym Leaders award them.
+
+### Audit coverage
+
+The source/model pass covered **89 unique rule/control keys**, verified all **35 preset-managed keys** across all four presets, and exercised **348 source-derived interaction combinations**. This is static/model validation only; it is not runtime PASS.
+
+### Remaining policy/runtime gaps
+
+Egg hatches can currently be tracked by the Gold Egg Encounter rule without a destructive answer for an off-type/otherwise banned hatchling. 2.2.18 deliberately does not invent deletion or rollback semantics; that interaction remains a documented policy decision. Gold encounter records created before explicit method provenance may remain legacy `wild` records because water/fishing cannot be reconstructed safely after the fact. All changed paths remain runtime TEST REQUIRED.
+
+# Release candidate — 2.2.17
+
+2.2.17 is the direct child of **2.2.16 RC**. It adds explicit external-trainer-mod stacking warnings to **Game Difficulty** without changing save schema 4 or automatically changing the player's selected Difficulty.
+
+## External Difficulty stacking warning
+
+When a loaded external trainer/difficulty provider such as **Stronger Trainers** is active, the Game Difficulty description now warns immediately if the current selection does not fully represent exclusive ownership:
+
+- **VANILLA + active trainer mod:** warns that VANILLA only disables Nuzlocke's built-in Difficulty transforms; it does not disable the external mod.
+- **Built-in profile + active trainer mod:** shows **STACK WARNING** because the provider's composed trainer party can remain underneath the selected built-in Nuzlocke transforms.
+- **One external provider selected while another is active:** shows **MULTI-MOD WARNING** because Nuzlocke can choose its authoritative provider but cannot disable another mod's own hooks.
+- Selecting the active provider's own **[MOD]** entry removes that provider from the warning. No automatic takeover occurs.
+
+Known historical trainer providers are now queried directly through `mod.find` as well as mod-status/discovery surfaces, improving detection on runtimes where the status tree does not enumerate every loaded companion.
+
+# Release candidate — 2.2.16
+
+2.2.16 is the direct child of **2.2.15 RC**. It adds the optional **Gym Team Size** challenge rule and hardens compatibility with the translation companions previously reviewed. Save schema remains 4; no package files are added or removed.
+
+## Gym Team Size
+
+Under **BATTLE MECHANICS**, **Gym Team Size** limits the player's active usable roster at the actual next Gym Leader battle to that Leader's **live composed party size**. Fewer Pokémon are allowed; the rule never forces catches, revives, or automatic boxing. If the player carries too many eligible Pokémon, the Leader battle is refused before it starts and the player can box extras and challenge again. Ordinary Gym Trainers are unaffected.
+
+The limit comes from the same merged/composed trainer-party path used for compatibility-aware boss information, so trainer-party providers can change the Leader's roster size without a hardcoded Nuzlocke table becoming stale. Gold includes the Johto leaders and the Kanto Gym leaders after Lance; Red at Mt. Silver is not treated as a Gym Leader. The option defaults **OFF**. The HARDCORE and IRONMON Nuzlocke presets enable it; standard NUZLOCKE and SOLO do not.
+
+## Translation compatibility
+
+The reviewed translation companions are now known to Nuzlocke diagnostics: **(PT-BR) Versão Brasileira 0.1.4** (`gen1_pt-br`) and **Suomi 0.1.0** (`finnish`). Translation mods remain localization owners; Nuzlocke does not rewrite their catalogs, native Trainer Card layout, fonts, or language-specific UI. Shop blocking remains semantic/`Strings()`-aware rather than hardcoding translated BUY/SELL words. MOD COMPAT can report an active translation companion and PT-BR's optional native Trainer Card / inventory-list layout overrides. Full translated labels are retained when available before compact English fallbacks are considered.
+
+PT-BR 0.1.4 directly wraps native `TrainerCard.draw`, `BattleState.drawTextArea`, and `ListMenu.draw`, so combined runtime smoke testing is still required for native-list presentation. Finnish remains unchanged at 0.1.0 since the earlier review.
+
+# Release candidate — 2.2.15
+
+
+2.2.15 is a save-upgrade architecture hardening build directly from **2.2.14 RC**. It does not bump save schema 4 or change Nuzlocke gameplay semantics. Numbered schema migrations, semantic one-off corrections, tracker/Pokémon-identity reconstruction, and encounter reprojection now execute through one deterministic coordinator in that order. Every schema destination version has an explicit migrator entry (including marker-only steps), so a future schema bump without a migration fails visibly instead of being skipped. Route Split migration no longer hides inside encounter reprojection; legacy Level Cap and Rule Lock reconciliation are also named semantic steps, and migration diagnostics identify the exact phase/step that failed.
+
+
+## Gold-native encounter and radio features — 2.2.13
+
+Gold now adds six optional, independently changeable features:
+
+- **Time Split** — morning/day/night encounter projections with immutable time provenance; changing the toggle reprojects tracked history instead of granting duplicate historical catches.
+- **Roamer Clause** — Raikou/Entei use persistent species-specific slots. Failed roamer meetings do not burn the current route or the roamer slot; a successful catch closes the roamer slot.
+- **Egg Encounter** — OFF / RECEIVED / HATCHED / GIFT policies use Gold egg creation/hatch provenance and mark a hatchling invalid when its selected encounter slot was already consumed.
+- **Bug Contest** — NORMAL / EXEMPT / SLOT. The judged final contest Pokemon is authoritative; SLOT uses a dedicated National Park Contest encounter slot.
+- **Headbutt Split** — Headbutt encounters can use a per-map slot separate from ordinary encounters.
+- **Radio Nuzlocke** — optional Pokegear Radio status/world-building lines gated by World Building T1-T3. Native radio station ownership is preserved.
+
+All six default to OFF/NORMAL and are Gold-only. R/B/Y behavior is unchanged.
+
+2.2.12 is a Game Difficulty completion build directly from **2.2.11 RC**. Built-in transformations operate on a copied party, fixing the 2.2.11 in-place level-scaling path. Built-in profiles now transform the live composed trainer party across the dimensions the current engine can cleanly own: ordinary/boss levels, deterministic type-compatible roster strengthening, live-data movesets, native AI, profile Stat EXP/DVs, and Gold held items. SHIN-derived profiles and POLISHED* can also suppress player badge battle boosts without deleting badges. Rival species remain fixed, and selected external Difficulty providers are never run through Nuzlocke's built-in transformations. Historical names marked `*` are inspired profiles rather than exact ROM-hack trainer-table reproductions.
+
+Physical/Special Split remains an independent **BATTLE MECHANICS** option. Species Pool / cross-generation randomizer support from 2.2.10 is inherited unchanged.
+
+# Release candidate — 2.2.11
+
+2.2.11 is the direct child of **2.2.10 RC** that audited built-in Game Difficulty, made profile Trainer Stat EXP/perfect-DV settings real, and removed inert AI labels pending the complete native-AI work delivered in 2.2.12.
+
+# Release candidate — 2.2.10
+
+2.2.10 is a feature build directly from 2.2.9 RC. It adds a provider-aware cross-generation Species Pool selector for Random Starter/Random Encounters and an optional modern per-move Physical/Special Split for R/B/Y and Gold. AUTO keeps 2.2.9 randomizer behavior; BOTH targets complete Generation 1 + 2 records available in the active merged registry. Gold natively supplies all 251 species. R/B/Y can use Gen 2 species when a compatible content provider supplies complete live records/assets; Nuzlocke does not fabricate unavailable ROM-derived species data.
+
+Gold Random Encounters now uses the live `gen2Encounters` registry. The Physical/Special Split is OFF by default, leaves the shared move/type registries untouched, and composes through Gen1Recomp's `battle.damage` hook. Gold additionally realigns Reflect/Light Screen and Counter/Mirror Coat damage identity.
+
+# Release candidate — 2.2.9
+
+2.2.9 is a hardening build directly from 2.2.8. It deliberately stays below project-defined Lua compiler budgets rather than waiting for Lua 5.1's real ceilings, guards the post-wipe empty-party menu crash path, hardens Dungeon Lock-In transitions, and corrects Gold vitamin data.
+
+# Release candidate — 2.2.8
+
+## 2.2.8 RC — vanilla dialogue ownership + live Difficulty cap repair
+
+Direct child of 2.2.7 RC.
+
+Two runtime issues are fixed:
+
+- **T3 vanilla dialogue:** the global T3 ScriptRunner normalizer was rewriting Gen1's native `\v` continuation markers through Nuzlocke's paginator. This could make ordinary vanilla interactions replay/overlap text, reproduced in Yellow's bedroom SNES interaction. 2.2.8 removes only that over-broad vanilla-text rewrite. Nuzlocke-authored T3/world-building text still uses the shared formatter and ownership path.
+- **NUZ STATUS Next Cap:** built-in Game Difficulty profiles modify trainer levels through the `trainer.party` composition hook, but the live cap preview previously invoked that hook only for a specifically detected external trainer mod. 2.2.8 also previews the hook for an active built-in non-Vanilla Difficulty profile and clears stale observed boss levels when Difficulty changes mid-game.
+
+The 2.2.7 two-phase startup repair is retained.
+
+# Release candidate — 2.2.7
+
+## 2.2.7 RC — confirmed Lua 5.1 upvalue-limit startup repair
+
+Direct child of 2.2.6 RC. Runtime exposed the complete loader error: the former `_lateRuntimeInit` function had **more than 60 upvalues**, exceeding Lua 5.1's per-function upvalue limit and preventing the entire mod from compiling/loading.
+
+2.2.7 keeps the same initialization order and behavior but splits that oversized late-runtime function into two sequential closures: common/RBY runtime installation first, then Gold/compatibility installation. Each phase captures only the outer state it actually uses. The temporary internal export slot is reused and cleared between phases, so no new long-lived main-scope local is introduced.
+
+No rule, Setup option, save schema, API, engine range, permission, or package file-tree change is intended.
+
+# Release candidate — 2.2.6
+
+## 2.2.6 RC — Lua local-limit startup repair
+
+Direct child of 2.2.5 RC. Runtime exposed the full Gen1Recomp loader error: `main.lua` was being rejected by the Lua compiler because the large mod entry function exceeded Lua 5.1's local-variable limit. 2.2.5 removed the extra renderer table introduced by 2.2.4, but 2.2.3 had already added one additional long-lived local helper for Skip Catch Tutorial.
+
+2.2.6 preserves the helper's behavior but moves it onto the existing internal `mod.exports.__beta26` namespace instead of consuming another local slot in the giant entry function. No Nuzlocke Setup option or rule is intentionally changed.
+
+# Release candidate — 2.2.5
+
+## 2.2.5 RC — startup regression repair
+
+Direct child of 2.2.4 RC. 2.2.4's Pokémon Bois Club native-walker repair introduced one additional long-lived local in `main.lua`. This file has previously reached Lua 5.1's 200 active-local ceiling, so the extra local could prevent the mod from loading and make New Game Nuzlocke Setup disappear. 2.2.5 removes that extra file-scope local and stores the temporary chairman renderer ownership directly on the NPC object instead. Intended 2.2.4 sprite behavior is preserved with no setup or gameplay-rule redesign.
+
+# Release candidate — 2.2.4
+
+## 2.2.4 RC — native Pokémon Bois Club tribute walker
+
+Direct child of 2.2.3 RC. This focused cleanup fixes the dormant Tier-3 Pokémon Bois Club chairman tribute without reviving the retired hand-painted sprite renderer. At World Building Tier 3 the chairman now swaps to a genuine engine `SpriteRenderer`, preferring the same native Gambler / Black Hair Boy sprite family used by Bryan-at-Home and falling back to another valid native map sprite when needed. The exact original chairman renderer is cached and restored when the world-building tier drops below 3. Restoration is ownership-safe: if another mod replaces the chairman after Nuzlocke, Nuzlocke does not overwrite that third-party sprite. The obsolete pixel-by-pixel `makeBryanBoiRenderer` implementation and unrelated Bryan-at-Home Fan Club flag assignment are removed. No asset or repository file is added.
+
+# Release candidate — 2.2.3
+
+## 2.2.3 RC — Yellow catch-demo hardening + complete native NUZ INFO
+
+Direct child of the published 2.2.2 RC. This focused pass leaves the recently improved T3 dialogue ownership system unchanged and concentrates on two follow-ups. Yellow Skip Catch Demo is hardened against the exact current Gen1Recomp Pallet flow (`makeOldManDemo("PROF.OAK")` → `Commands.pushBattle`) while preserving Oak's normal post-demo callback and lab escort. The skip choice is now read consistently from the staged NEW GAME profile, mod save, or the legacy transient save field. R/B/Y NUZ INFO keeps the crash-safe host `ListMenu`, but now displays the complete enabled Catch/Stat/Move model, including shiny/death details, provenance/provider information, BST legality details, and move accuracy. If the richer compatibility model fails, SAFE MODE now reconstructs all enabled pages directly from the selected Pokémon instead of collapsing to a minimal Catch-only view. Runtime confirmation is required.
+
 # Release candidate — 2.2.2
 
 ## 2.2.2 RC — battle-money label + Yellow enforcement runtime ledger
@@ -900,3 +1215,32 @@ Nuzlocke now exposes responsive semantic models for:
 The integration is optional and Gen1-only. Native screens remain the fallback.
 
 The rule editor and fresh Setup remain native in this build to protect their more complex interaction/state paths.
+
+
+### Game Difficulty audit history — 2.2.11
+2.2.11 established real trainer level/Stat EXP/DV ownership but intentionally stopped short of claiming teams, movesets, or AI. That audit state is superseded by the 2.2.12 implementation below; the historical `*` profiles remain inspired approximations rather than exact ROM-hack trainer-table reproductions.
+
+
+### Built-in difficulty profiles — 2.2.12
+Built-in profiles now transform the **live composed trainer party** rather than replacing trainer registries. Depending on profile, they can scale ordinary and boss levels separately, deterministically strengthen/diversify team species within the original species' type family, rebuild stronger movesets from the active merged level-up/TM move data, enable native trainer-AI layers, apply profile Stat EXP/perfect DVs, and add Gold held items only when another provider did not already assign one. SHIN-derived profiles and POLISHED* also disable player badge battle boosts, matching that difficulty characteristic without deleting owned badges. Rival species are preserved so starter/story identity is never rewritten. Roster slot count/order is preserved; only eligible species inside existing slots are upgraded. Historical names marked `*` remain inspired profiles rather than byte-identical ROM-hack tables. External difficulty providers are untouched when selected. Physical/Special Split remains an independent Battle Mechanics toggle and is never forced by a difficulty profile.
+
+Trainer creation ownership is exclusive: VANILLA may use the separate Nuzlocke Trainer Stat EXP/DV controls; built-in Difficulty profiles use their own values; selected external difficulty providers are not rewritten by either built-in profile stats or Nuzlocke trainer-start stat rules.
+
+
+## Gen 2 Randomizer+ v2.6 compatibility — 2.2.14
+
+Nuzlocke now source-adapts the Gold-only `gen_2_randomizer_plus` mod when its
+source-confirmed live settings own an overlapping mechanic. Random Starters,
+Random Wild Pokemon, and Random Learnset delegate only while the corresponding
+Randomizer+ toggle is actually ON; merely installing the mod does not disable
+Nuzlocke controls. When Randomizer+ owns wild randomization, Nuzlocke leaves the
+encounter randomization itself to that mod but continues to own challenge
+policy: encounter limits, Failed Encounters, Dupes, type locks, capture legality,
+tracker history, and catch provenance. Tracker entries record Randomizer+ as the
+encounter provider when that delegation is active.
+
+The v2.6 release notes additionally state that Randomizer+ can synchronize
+Wilds of Kanto visible overworld Pokemon with the Pokemon actually battled while
+preserving encounter levels. Nuzlocke intentionally consumes the final battle/
+capture identity and does not attempt to rerandomize or predict the visible
+spawn.

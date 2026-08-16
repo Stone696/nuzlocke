@@ -114,7 +114,8 @@ return function(mod, deps)
     -- Font may not be loaded yet when this split module is evaluated. Retry
     -- after lifecycle events without coupling installation to the active game.
     -- The wrappers themselves remain Gen1-only through kerningEnabled().
-    pcall(kerning.install)
+    -- 2.3.12: do not import/patch Font during the mod load phase.
+    -- game.ready/save.loaded listeners below perform the first safe install.
 
     local function provider()
         if type(mod.find) ~= "function" then return nil end
@@ -284,13 +285,11 @@ return function(mod, deps)
 
     -- Retry because load order is intentionally not a dependency. Registration
     -- itself is one-shot; later lifecycle calls only refresh current activity.
-    pcall(state.tryRegister)
+    -- 2.3.12: provider registration begins at lifecycle events below.
     if mod.events and type(mod.events.on) == "function" then
-        mod.events:on("game.ready", function()
-            if not kerning.installed and not kerning.externalProvider then
-                pcall(kerning.install)
-            end
-        end)
+        -- 2.3.12: do not patch Font during game.ready because that event fires
+        -- before the first screen. The first kerning install waits for a real
+        -- save load; native fixed-width rendering remains the safe fallback.
         mod.events:on("save.loaded", function()
             if not kerning.installed and not kerning.externalProvider then
                 pcall(kerning.install)

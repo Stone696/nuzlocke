@@ -1,3 +1,179 @@
+## 2.3.12
+
+- Promoted 2.3.11 RC to the final 2.3.12 release with no intentional gameplay/API/save behavior change.
+- Recorded Yellow 0.1.98 runtime PASS for title boot, normal fresh-game SETUP, SETUP → NEW GAME, existing SAVE GAME load, and correct fresh-game-only SETUP gating.
+- Recorded Gold NEW GAME boot PASS.
+- Documented the retained lifecycle-safe startup architecture.
+- Corrected the 2.3.11 lineage typo: 2.3.11 is the direct child of 2.3.10, not 2.3.9.
+- Kept the existing 15-file package tree unchanged.
+
+## 2.3.11
+
+- Recorded the user-confirmed Yellow 2.3.9 boot/public-setup-screen PASS and the expected diagnostic-only UI limitations.
+- Restored documentation status for the complete 2.3.0 RC feature surface, including Skip Opening Intro and Quick Nuzlocke Start.
+- Documented lazy Stats/Growth loading, dormant legacy title fallback, lifecycle-deferred gameplay installers, NEW GAME-time Default Names installation, and Gold-only title probing.
+- Carried forward the 2.3.2 Gold trainer-battle Ball scoping correction.
+- Clarified that 2.3.4–2.3.9 deferral/diagnostic notices are historical and no longer describe the current active build.
+
+## 2.3.9
+
+- Recorded Yellow 2.3.8 as runtime PASS to title on Gen1Recomp 0.1.98.
+- Clarified that 2.3.8's absent Setup row was expected.
+- Documented the 2.3.9 public title/setup UI diagnostic boundary.
+
+## 2.3.8
+
+- Recorded Yellow 2.3.7 as runtime PASS to title on Gen1Recomp 0.1.98.
+- Documented the returned-initializer boundary test and continued diagnostic-only status.
+
+## 2.3.7
+
+- Added explicit diagnostic-only warning.
+- Recorded Yellow 2.3.6 as pre-title FAIL.
+- Documented the inert-entry loader isolation test.
+
+## 2.3.6
+
+- Recorded Yellow 2.3.5 as pre-title FAIL.
+- Documented restoration of pre-2.3 installer behavior and repair of the accidentally missing ItemPolicy installer.
+
+## 2.3.5
+
+- Recorded Yellow 2.3.4 as a pre-title runtime FAIL.
+- Documented the 0.1.98 executable compatibility bisect.
+- Confirmed intro-skip features remain deferred and are no longer the leading crash hypothesis.
+
+## 2.3.4
+
+- Marked Skip Opening Intro and Quick Nuzlocke Start as deferred and removed from the active build.
+- Recorded Yellow 2.3.3 as a pre-title runtime FAIL.
+- Clarified that Default Names and Skip Catch Demo remain supported.
+
+## 2.3.3
+
+- Recorded Yellow pre-title runtime failures for 2.3.0-2.3.2.
+- Documented boot-time installer deferral and dormant legacy title fallback.
+
+## 2.3.2
+
+- Corrected contextual field-action seam terminology from direct composition to transitive native guarding.
+- Documented Gold trainer-battle Ball-policy scoping and the distinction between general item bans and capture rules.
+
+## 2.3.1
+
+- Documented the Gen1Recomp 0.1.98 source audit and new `>=0.1.86 <0.1.99` envelope.
+- Documented the shared `mod.battle` snapshot/intents and contextual `mod.world` field-action APIs, including Nuzlocke's read-only/use-only policy.
+- Documented the No Fishing public-field-action backstop.
+- Documented Berry Juice, RageCandyBar, and Sacred Ash under Gold No Field Heal.
+- Documented the all-denial Gold battle-item gate and native Gold starter nickname flow.
+- Kept runtime claims conservative: all changed paths remain TEST REQUIRED.
+
+## 2.2.21
+
+- Documented Quick Nuzlocke Start as a separate capture-ready shortcut from the presentation-only Skip Opening Intro.
+- Documented R/B/Y Pallet checkpoint, Start Balls minimum, optional Route 22 preservation, and Yellow-specific follower/Rival behavior.
+- Documented Gold InitClock/weekday handling, mandatory early-state reconciliation, New Bark checkpoint, Route 29 tutorial preservation, and Cherrygrove whiteout state.
+- Documented Nickname Rule, seeded Random Starter, challenge-rule, and provider-ownership interactions.
+- Marked all new paths runtime TEST REQUIRED.
+
+## 2.2.20
+
+- Documented NEW GAME-only Skip Opening Intro.
+- Documented R/B/Y hidden canonical-name resolution and normal Pallet-bedroom handoff.
+- Documented Gold InitClock preservation and later Rival-name story preservation.
+- Documented provider ownership and the guarantee that no progression/story flags are fabricated.
+
+## 2.2.19
+
+- Documented the new 8-digit shareable seed and RNG algorithm version 1.
+- Documented independent STARTER / ENCOUNTERS / LEARNSETS deterministic streams.
+- Added Starter Style semantics for ANY / 3-STAGE / BASE / SIM BST.
+- Added Encounter Balance semantics for CHAOS / SIM BST / EVO / BALANCED.
+- Documented BST tolerance, evolution-stage classification, progression-safe fallback, legacy roll preservation, and external-provider ownership.
+- Added seed editing instructions and status-display behavior.
+
+## 2.2.18
+
+- Documented rule-interaction audit and corrected Failed Encounter precedence.
+- Documented Gold grass/water/fishing provenance for Time Split.
+- Documented Random Starter species/BST legality and delegated default-name/tutorial/PC-kit ownership.
+- Corrected Forgiveness Token wording to Gym Leaders.
+- Recorded Egg hatch/type-species legality as an unresolved policy choice rather than claiming enforcement.
+
+## 2.2.17
+
+- Documented manual external Difficulty ownership and the new VANILLA / STACK / MULTI-MOD warnings.
+- Clarified that installing Stronger Trainers does not automatically select its `[MOD]` Difficulty entry.
+- Documented direct known-provider detection fallback through `mod.find`.
+
+## 2.2.16
+- Documented Gym Team Size semantics, presets, live composed trainer-party source, and pre-Leader battle rejection behavior.
+- Added PT-BR 0.1.4 and Finnish 0.1.0 to reviewed translation-companion compatibility notes.
+- Documented PT-BR native Trainer Card/ListMenu/BattleState layout ownership and localization-safe shop/action matching.
+- Documented new read-only `getNextGymTeamInfo()` and translation companion diagnostics.
+- Recorded compiler-pressure improvement from 48 to 47 maximum nested upvalues.
+
+## 2.2.15
+- Documented the centralized save-upgrade coordinator and deterministic phase order.
+- Documented centralized legacy Level Cap and Rule Lock reconciliation, and the intentionally lazy Difficulty provider-ID bootstrap.
+- Documented that save schema remains 4 and that the coordinator is internal beta scaffolding, not a public compatibility API.
+- Added old-save/idempotency runtime retest targets.
+- No package files added or removed.
+
+## 2.2.12
+- Documented the full built-in Game Difficulty transformation pipeline and its provider-ownership boundaries.
+- Clarified that historical `*` choices are inspired profiles and that Phys/Spec Split is independent.
+
+## 2.2.10
+- Documented Species Pool AUTO/GEN1/GEN2/BOTH and the provider-aware R/B/Y cross-generation boundary.
+- Documented Gold `gen2Encounters` randomization support.
+- Documented optional per-move Physical/Special Split semantics for R/B/Y and Gold.
+- Classified Phys/Spec Split under **BATTLE MECHANICS** rather than Game Difficulty; behavior and default remain unchanged.
+- Added runtime validation targets and compatibility ownership notes.
+- No package files added or removed.
+
+## 2.2.9
+Compiler-budget policy, empty-party safety, Dungeon Lock-In cross-family handling, five-vitamin canonical data, and Stat EXP acquisition semantics documented.
+
+## 2.2.8
+- Corrected T3 dialogue documentation: vanilla engine text is no longer globally repaginated by Nuzlocke.
+- Documented live Difficulty-aware `NEXT CAP` preview and cache invalidation on runtime Difficulty changes.
+- No package file additions or removals.
+
+## 2.2.7
+
+- Recorded the full runtime compiler error: the late-runtime function exceeded Lua 5.1's 60-upvalue ceiling.
+- Corrected prior documentation that focused on the separate 200-local ceiling.
+- Documented the two-phase late-runtime initialization repair.
+- No package files added or removed.
+
+## 2.2.6
+
+- Recorded the confirmed Lua local-variable compiler-limit startup failure.
+- Corrected the remaining 2.2.3 helper that still consumed a long-lived local after 2.2.5.
+- Documented that Skip Catch Tutorial behavior is preserved through the existing internal beta export namespace.
+- No file additions or removals.
+
+## 2.2.5
+
+- Documented the 2.2.4 startup regression diagnosis and removal of the extra long-lived local.
+- Clarified that the Pokémon Bois Club renderer ownership marker now lives on the NPC rather than in a new file-scope table.
+- No public API or file-tree change.
+
+## 2.2.4
+
+- Corrected current Pokémon Bois Club documentation after confirming the old hand-painted Bryan renderer was dormant/dead code.
+- Documented the replacement native-engine walker strategy and ownership-safe restoration.
+- Recorded that no asset or repository/player-package file was added or removed.
+- Preserved all historical 2.2.3 and earlier release notes unchanged.
+
+## 2.2.3
+
+- Documented the focused Yellow Professor Oak catch-demo hardening and the unified NEW GAME skip-setting query.
+- Documented complete R/B/Y NUZ INFO rendering, explicit disabled-page rows, move accuracy, provenance/BST details, and full SAFE MODE page reconstruction.
+- Recorded that shared T3 dialogue ownership is intentionally unchanged while runtime testing continues.
+- No documentation files were added or removed.
+
 ## 2.2.2
 
 - Updated current documentation for the `Btl. ¥` compact Trainer Money label.
@@ -739,3 +915,5 @@ Documented the PokemonRecompRandomizer public active-run ownership adapter, Gen1
 
 ## 2.1.24
 Documented the R/B/Y NUZ INFO migration to host-owned ListMenu after the Yellow 2.1.23 runtime crash.
+
+- 2.3.1: documented Yellow New Game runtime FAIL in 2.3.0 and the deferred 0.1.98 compatibility initialization hotfix.

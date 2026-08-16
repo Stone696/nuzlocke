@@ -174,7 +174,7 @@ local function withForgivenessTokenStock(game, stock)
             name = d.Strings("FORGIVE TOKEN"),
             price = mod.exports.__beta26.forgivenessTokenShopPrice,
             description = d.Strings(
-                "Restores one failed area's encounter chance. Gym Trainers award these normally."),
+                "Restores one failed area's encounter chance. Gym Leaders award these normally."),
             keyItem = true, tossable = false, canToss = false,
         }
     end

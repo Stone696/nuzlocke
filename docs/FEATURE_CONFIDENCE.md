@@ -1,3 +1,237 @@
+## 2.3.12 release confidence
+
+**Runtime-confirmed on the 2.3.11 code path promoted unchanged into 2.3.12:**
+
+- Yellow + Gen1Recomp 0.1.98 title boot: **PASS**.
+- Yellow fresh NEW GAME normal Nuzlocke SETUP: **PASS**.
+- Yellow SETUP → NEW GAME: **PASS**.
+- Yellow existing SAVE GAME load: **PASS**.
+- Existing Yellow save fresh-game SETUP suppression: **PASS**.
+- Gold NEW GAME boot: **PASS**.
+
+2.3.12 intentionally changes only version/release documentation from 2.3.11, so these startup/title-flow results apply directly to the promoted runtime code. They do **not** convert every individual rule, Gold adapter, or third-party-mod interaction into a newly runtime-confirmed PASS. Historical protected PASS behavior and TEST REQUIRED labels below remain authoritative for those narrower systems.
+
+## 2.3.11 full restoration confidence
+
+**Runtime-confirmed startup boundaries on Yellow + Gen1Recomp 0.1.98:**
+
+- 2.3.7 inert loader/package path: **PASS to title**.
+- 2.3.8 normal returned initializer/static exports: **PASS to title**.
+- 2.3.9 public title hook/custom diagnostic screen: **PASS**; SETUP displayed and opened. Its minimal/truncated diagnostic presentation and SETUP-on-existing-save behavior were expected limitations of that diagnostic build, not accepted final behavior.
+- 2.3.10 full restoration: **FAIL before title / freeze returned** on Yellow 0.1.98.
+
+**2.3.11 TEST REQUIRED:** the complete restored feature surface. First gate is boot-to-title plus full fresh-save setup and existing-save SETUP suppression. No gameplay feature should be promoted to new runtime PASS status from source inspection alone.
+
+Protected historical runtime PASS behavior remains protected; the restoration is not permission to regress unrelated confirmed systems.
+
+## 2.3.9 public title/setup UI diagnostic
+
+**Runtime PASS:** Yellow + Gen1Recomp 0.1.98 + Nuzlocke 2.3.8 reaches the title screen with the normal returned initializer executing.
+
+**2.3.9 TEST REQUIRED:** fresh-title SETUP row, diagnostic custom-screen open/input/back only. Gameplay remains disabled, so no gameplay feature can receive PASS/FAIL status from this build.
+
+## 2.3.8 initializer-boundary diagnostic
+
+**Runtime PASS:** Yellow + Gen1Recomp 0.1.98 + Nuzlocke 2.3.7 only reaches the title screen.
+
+**2.3.8 TEST REQUIRED:** boot-to-title only. 2.3.8 restores the normal returned initializer and static exports, but all gameplay features remain disabled. No gameplay PASS/FAIL may be inferred from this build.
+
+## 2.3.7 boot-safe diagnostic
+
+Yellow 2.3.0 through 2.3.6: **runtime FAIL before title** on Gen1Recomp 0.1.98 with other mods disabled.
+
+2.3.7 intentionally disables all gameplay initialization. Its only runtime question is whether Yellow reaches title.
+
+No gameplay feature can receive PASS/FAIL status from 2.3.7 because those features do not execute.
+
+## 2.3.6 Yellow boot probe
+
+**Runtime FAIL:** Yellow 2.3.0 through 2.3.5 all crash before title on Gen1Recomp 0.1.98 with all other mods disabled.
+
+**2.3.6 TEST REQUIRED:** boot-to-title only.
+
+## 2.3.5 Yellow boot bisect
+
+**Runtime FAIL:** Yellow 2.3.0, 2.3.1, 2.3.2, 2.3.3, and 2.3.4 all crash before title on Gen1Recomp 0.1.98 with other mods disabled.
+
+**2.3.5 TEST REQUIRED:** boot-to-title only.
+
+Skip Opening Intro and Quick Nuzlocke Start remain absent and are no longer the leading cause.
+
+## 2.3.4 runtime-confidence update
+
+**Deferred / not present in active build:** Skip Opening Intro; Quick Nuzlocke Start / Start With Poké Balls.
+
+**Protected and still present:** Default Names; Skip Catch Demo.
+
+**Yellow Gen1Recomp 0.1.98 runtime ledger:** 2.3.0 FAIL pre-title; 2.3.1 FAIL pre-title; 2.3.2 FAIL pre-title; 2.3.3 FAIL pre-title; 2.3.4 TEST REQUIRED.
+
+The immediate test is boot-to-title only with all other mods disabled.
+
+## 2.3.3 runtime status
+
+**Yellow 2.3.0-2.3.2 pre-title boot: FAIL.** 2.3.3 is a source/static boot-isolation candidate only; no PASS is claimed until Yellow reaches title and both NEW GAME/CONTINUE are retested.
+
+## 2.3.2 source-confidence update
+
+**Fixed by source inspection / runtime TEST REQUIRED:** Gold trainer-battle Ball policy leakage introduced by the broad 0.1.98 item-denial pass.
+
+Static assertions verify:
+- the general Gold item-policy block is guarded by `not isBall`;
+- the catch-specific block requires `isBall` plus `catchableBattle`;
+- dynamic Ball detection is shared between both decisions;
+- `contextual_field_actions` is no longer mislabeled as a composed seam;
+- package tree and save schema are unchanged.
+
+Runtime validation remains required before PASS.
+
+## 2.3.1 source-confidence update
+
+**Source/static PASS:** Gen1Recomp v0.1.98 public BattleAPI/Gen2 BattleAPI shape; contextual WorldAPI field-action shape; Gold Pack `useSelected`; Gold `BattleState:useItem`; Gold ItemEffects healing/PP/vitamin families; manifest/API/save-schema review; package-local Lua parse checks.
+
+**Source-complete / runtime TEST REQUIRED:** 0.1.98 engine-range compatibility; additive battle snapshot export; public-field-action No Fishing backstop; Berry Juice/RageCandyBar/Sacred Ash No Field Heal coverage; all-denial Gold battle-item gate; native Gold starter nickname composition.
+
+**Protected behavior:** existing battle/encounter enforcement is not migrated onto `mod.battle`; Time Split still models only Gold grass MORN/DAY/NITE tables and does not manufacture water/fishing time slots; Quick Start/seeded randomizer/save migration logic is not rewritten by this compatibility release.
+
+**Runtime queue:** R/B/Y + Gold 0.1.98 boot/new game/save load; native and public-action fishing; Gold registered rod if supported; Gold field healing items including Sacred Ash; Gold battle Potion/status/Revive/X/PP/ball attempts; starter nickname ON/OFF; Quick Start; Time Split; randomizer seed reproducibility; translation/Modern UI/Stronger Trainers composition.
+
+Nothing in this source/static pass is promoted to runtime PASS.
+
+## 2.2.21 source-confidence update
+
+**Source-complete / runtime TEST REQUIRED:** Quick Nuzlocke Start for Red, Blue, Yellow, and Gold.
+
+**Source/static guarantees checked:** setup-only/default-OFF rule; one-shot fresh-save marker; normal world initialization occurs before reconciliation; R/B/Y optional Route 22 victory flag is not set; R/B/Y configured Start Balls use a 5-ball minimum; Gold InitClock is preserved; Gold Route 29 tutorial is armed rather than consumed; Gold Guide Gent/Map Card and Mom banking are not granted; Gold Cherrygrove whiteout destination is preserved; Nickname Rule blocks shortcut completion until the starter is named; built-in seeded Random Starter uses its existing select/commit seam; provider-owned Quick Start suppresses local mutation; package tree/save schema unchanged.
+
+**Runtime validation queue:** R/B/Y fresh start and revisit of Oak Lab/Viridian; Route 22 first Rival availability; Yellow Pikachu follower and Rival evolution path; Nickname Rule ON/OFF; Random Starter ON/OFF and structured modes; 5/10/25/etc. R/B/Y Start Balls; Gold clock weekday, phone contacts, Pokédex, scene/event persistence, Cherrygrove whiteout, Route 29 tutorial and Skip Catch Demo interaction; immediate save/reload; external quick-start/starter providers.
+
+**Not runtime-PASS:** none of the 2.2.21 shortcut paths are promoted to runtime PASS by this source/static pass.
+
+## 2.2.20 source-confidence update
+
+**Source-complete / runtime TEST REQUIRED:** NEW GAME-only Skip Opening Intro for R/B/Y and Gold; canonical hidden name resolution; Gold InitClock preservation; external intro-skip ownership.
+
+**Static guarantees checked:** implementation wraps the named `intro.oak_speech.build` seam; R/B/Y preserve only `name_player`/`name_rival`; Gold preserves only `init_clock`/`name_player`; no progression flags are synthesized; default is OFF; Permanent Rule Seal does not govern the QoL option; package tree unchanged.
+
+**Runtime validation queue:** Red/Blue/Yellow fresh start reaches the normal Pallet bedroom with correct player/Rival names; Gold still opens/sets its clock correctly and reaches the normal Johto start; later Gold Rival naming remains ??? then SILVER when Default Names ownership applies; translation/intro-provider composition; Skip Opening Intro OFF remains byte-for-behavior-equivalent to the existing intro path.
+
+## 2.2.19 source-confidence update
+
+**Source-complete / runtime TEST REQUIRED:** 8-digit randomizer seed; deterministic RNG v1; independent STARTER/ENCOUNTERS/LEARNSETS streams; Starter Style ANY/3-STAGE/BASE/SIM BST; Encounter Balance CHAOS/SIM BST/EVO/BALANCED; seed display/editing; pre-seed persisted-roll preservation.
+
+**Static guarantees checked:** Lua parsing for all five packaged Lua implementation files; deterministic hash inputs include seed + algorithm version + stream + semantic slot; encounter candidates are selected without modifying native level/rate/time/method/map fields; provider delegation remains checked before local encounter/learnset transforms; package tree unchanged.
+
+**Runtime validation queue:** same-seed fresh-run reproduction on R/B/Y and Gold; different-seed divergence; enabling learnsets after encounters without encounter reshuffle; starter-ball inspection order independence; 3-stage graph correctness including branching/trade/stone lines; BST/evolution fallback under restrictive Species Pool/Type Locke/BST bans; external randomizer hand-off; upgraded legacy randomized saves.
+
+## 2.2.18 source-confidence update
+
+**Source-complete / runtime TEST REQUIRED:** Failed Encounter authoritative-policy reuse; Gold grass/water/fishing method provenance; Random Starter species/BST legality; delegated Automatic Default Names, Skip Catch Tutorial, and PC starting-kit execution.
+
+**Interaction-model audit:** 89 unique rule/control keys were checked for presence, all 35 preset-managed keys matched every preset, and 348 source-derived combination cases passed across Failed/Shiny precedence, Gold method splitting, starter legality, delegation, Rare Candy/cap precedence, First Rival Mercy, lock-in release, and Gym Team Size/Solo redundancy. This is static/model validation, not runtime PASS.
+
+**Policy gap:** Gold Egg Encounter tracking does not yet define destructive behavior for a hatchling that violates a run-wide Type Lock/species/BST restriction. No deletion/rollback is claimed.
+
+**Legacy-data limitation:** pre-2.2.18 Gold records without explicit encounter-method provenance are preserved rather than guessed.
+
+## 2.2.17 source-confidence update
+
+- **Difficulty stacking warnings:** source-complete; runtime UI validation required with Stronger Trainers active under VANILLA, a built-in profile, and its own `[MOD]` entry.
+- **Multiple external providers:** warning logic is source-complete; runtime combination validation required.
+- No save-schema change and no automatic Difficulty selection change.
+
+## 2.2.16 source-confidence update
+
+- **Gym Team Size:** SOURCE/STATIC PASS; RUNTIME TEST REQUIRED. Verify exact/under/over-limit behavior on every generation, ordinary Gym Trainers, Gold Kanto Gyms, and provider-modified Leader roster counts.
+- **Translation companion detection:** SOURCE/STATIC PASS; MULTI-MOD RUNTIME TEST REQUIRED with PT-BR 0.1.4 and Finnish 0.1.0.
+- **PT-BR shop semantics:** source review confirms PT-BR translates BUY/SELL through engine strings; Nuzlocke's semantic/`Strings()` matching remains structurally compatible. Runtime combo test still required.
+- **PT-BR native UI wrappers:** known collision surface, not claimed runtime PASS. Test its Trainer Card and inventory line-break options against NUZ STATUS, NUZ INFO, MOD COMPAT, shops, party menus, and battle messages.
+- **Compiler/parser:** all five packaged Lua files parse with the available compiler. Maximum nested upvalues improve from 48 in 2.2.15 to 47 in 2.2.16; maximum nested total locals remain 129.
+- Existing runtime-PASS behavior is not promoted or downgraded by this source pass.
+
+## 2.2.15 source-confidence update
+
+- Central save-upgrade coordinator: **SOURCE/STATIC PASS; OLD-SAVE RUNTIME TEST REQUIRED**.
+- Ordered phases are schema → semantic → reconstruction → projection. Seven named steps are registered with unique IDs.
+- Numbered schema table explicitly defines v1-v4 and `CURRENT_SAVE_SCHEMA` remains 4; a missing future destination migrator fails visibly.
+- Retired Ball-ban/No Catching, legacy Route Splits, legacy Level Cap scope, and legacy Rule Lock/Permanent Seal reconciliation are centralized semantic steps.
+- Tracker recovery + lazy Pokémon identity initialization is a named reconstruction step; encounter-area reprojection is a named projection step.
+- Route Split translation is no longer executed inside reprojection.
+- Difficulty's numeric-index → provider-ID bootstrap remains intentionally lazy because it depends on the live provider list; it is not claimed as part of the deterministic save-load migration plan.
+- All five Lua files: **Lua 5.4 parser/compiler PASS** using the installed runtime library. Gen1Recomp's Lua 5.1-specific compiler-budget ceilings still require the project budget check/runtime load gate.
+- No runtime-PASS behavior is promoted by this static audit.
+
+## 2.2.12 source-confidence update
+
+- Built-in Difficulty roster/moves/native-AI/Gold-held-item transforms: **SOURCE/STATIC PASS; RUNTIME TEST REQUIRED**.
+- Shared-party mutation/cumulative scaling from the 2.2.11 level transform is repaired by copy-on-compose: **SOURCE/STATIC PASS; RUNTIME TEST REQUIRED**.
+- Gen 1 AI uses native `enemyAIMods` scoring layers; Gold augments per-battle copied AI flag bytes rather than shared trainer records.
+- Gold Difficulty Stat EXP/DV recalculation routes split-special records through the Gen 2 Mon stat path: **SOURCE/STATIC PASS; RUNTIME TEST REQUIRED**.
+- Historical `*` profiles are intentionally inspired/composed profiles, not claims of byte-identical ROM-hack trainer tables.
+- Profile-specific badge-boost suppression and pre-battle Gold NEXT CAP scaling: **SOURCE/STATIC PASS; RUNTIME TEST REQUIRED**.
+- External Difficulty provider ownership bypasses all built-in transformations: **SOURCE/STATIC PASS; MULTI-MOD RUNTIME TEST REQUIRED**.
+- No existing runtime-PASS path is promoted or downgraded by static inspection alone.
+- Copy-on-compose / repeat construction / external-provider bypass: **MOCK PASS**.
+- Gen 1 native AI-layer merge + Gold copied AI-bitfield merge: **MOCK PASS**.
+- Gold `gen2Trainers` pre-battle cap scaling + observed-party precedence: **MOCK PASS**.
+- All five Lua files: **COMPILER/PARSE PASS** in the available local Lua compiler.
+- Compiler-pressure comparison vs. 2.2.11: **UNCHANGED** — max nested upvalues 47; max nested locals 128; one inherited 47-upvalue warning-state function remains below the 48 hard ceiling.
+
+## 2.2.10
+- **Species Pool selector:** source-level implementation complete; runtime TEST REQUIRED for AUTO/GEN1/GEN2/BOTH.
+- **Gold Random Encounters:** source path now targets `gen2Encounters`; grass/time/fishing/tree coverage requires runtime validation.
+- **R/B/Y Gen 2 species:** provider-aware only. Nuzlocke does not claim self-contained Gen 2 injection where the active Gen 1 session lacks complete records/assets.
+- **Physical/Special Split:** source-level implementation complete through `battle.damage`; runtime TEST REQUIRED. Verify representative native-category flips, screens, Counter/Mirror Coat, criticals, burn, and mid-run toggling.
+- **Defaults:** Species Pool AUTO and Phys/Spec Split OFF preserve existing behavior unless explicitly selected.
+- 2.2.9 empty-party, Dungeon Lock-In, dialogue, NEXT CAP, vitamin, and Stat EXP repairs remain protected and still retain their prior runtime-confidence status.
+
+## 2.2.9
+- Empty-party POKEMON-menu CTD: defensive guard added; runtime retest required.
+- Dungeon cross-family transition: explicit defensive handling added; real-map reachability still to verify.
+- Gold PC Vitamins: Zinc removed; five native vitamins canonicalized.
+- Compiler headroom: runtime initializer split further; project hard ceilings are 48 upvalues / 160 locals.
+
+## 2.2.8 confidence update
+
+**T3 dialogue ownership:** Yellow's bedroom SNES exposed an over-broad vanilla-text normalization path. 2.2.8 removes that global vanilla rewrite while preserving Nuzlocke-authored T3 formatting. **Runtime RETEST REQUIRED** for the SNES plus several NPCs previously confirmed improved.
+
+**NUZ STATUS Next Cap:** source repair complete for built-in Difficulty profiles. The live cap preview now includes Nuzlocke's active internal trainer-party composition, and changing Difficulty clears stale observed ace levels. **Runtime RETEST REQUIRED** while cycling Difficulty in-game.
+
+**Startup:** 2.2.7's two-phase upvalue repair is inherited unchanged.
+
+## 2.2.7 confidence update
+
+**Mod startup / New Game Setup:** the exact runtime compiler failure is now confirmed as Lua 5.1's 60-upvalue limit on the former `_lateRuntimeInit` closure. 2.2.7 splits that work into two sequential closures with substantially smaller captured-state sets. **Runtime TEST REQUIRED**: launch with the mod enabled and start a fresh R/B/Y game; New Game Nuzlocke Setup should appear without the Errors screen.
+
+**Yellow Skip Catch Demo / NUZ INFO / Pokémon Bois Club chairman:** inherited unchanged functionally and remain targeted runtime tests once startup is restored.
+
+## 2.2.6 confidence update
+
+**Mod startup / New Game Setup:** source-level repair complete for the runtime-confirmed Lua compiler local-variable limit. The remaining 2.2.3-added long-lived helper has been moved off the giant entry function's local-variable budget. **Runtime TEST REQUIRED**: launch the mod, start a fresh R/B/Y game, and confirm New Game Nuzlocke Setup appears.
+
+**Yellow Skip Catch Demo:** helper behavior is preserved but now resolves through `mod.exports.__beta26.skipCatchTutorialRequested`; runtime TEST REQUIRED.
+
+**Pokémon Bois Club chairman / NUZ INFO:** inherited unchanged from 2.2.5 and remain runtime-test targets.
+
+## 2.2.5 confidence update
+
+**New Game Setup:** regression repair applied after 2.2.4 stopped showing Setup at New Game. The 2.2.4 delta added one extra long-lived local to a file with a known history of hitting Lua 5.1's 200 active-local limit. 2.2.5 removes that extra local while preserving the intended Bryan/Pokémon Bois Club behavior. **Runtime TEST REQUIRED** in Yellow, Red/Blue, and Gold fresh NEW GAME paths.
+
+**Pokémon Bois Club chairman:** native-walker repair retained; runtime visual retest still required.
+
+## 2.2.4 confidence update
+
+**Pokémon Bois Club chairman tribute:** static/source repair complete. The previous custom `makeBryanBoiRenderer` had no call site and could never activate. 2.2.4 removes that dead renderer and applies a genuine native engine `SpriteRenderer` at World Building Tier 3, restoring the vanilla chairman below T3 without clobbering a later third-party replacement. **Runtime TEST REQUIRED** in R/B/Y and Gold Fan Club maps, including T3 activation and lowering the tier while still on the map.
+
+**Yellow Skip Catch Demo / NUZ INFO:** inherited unchanged from 2.2.3 and remain runtime-test targets.
+
+## 2.2.3 confidence update
+
+**Yellow Skip Catch Demo:** the last confirmed failure report predates the direct Pallet/Oak interception added in 2.2.0. 2.2.3 source-audits and hardens that current path rather than claiming a new runtime PASS. Static target: the upstream Yellow scene creates a level-5 Pikachu, calls `makeOldManDemo("PROF.OAK")`, assigns `onFinish`, and calls `Commands.pushBattle`; Nuzlocke now recognizes that exact demo and invokes its continuation without pushing the battle. **Runtime TEST REQUIRED.**
+
+**R/B/Y NUZ INFO:** 2.2.2 runtime confirmed the screen can open without the previous hard crash, but presentation could appear incomplete. 2.2.3 renders the full enabled model and reconstructs Catch/Stat/Move sections in SAFE MODE. **Runtime TEST REQUIRED** with all three page toggles ON, each page individually OFF, an ordinary starter/gift, and a randomized starter.
+
+**T3 dialogue ownership:** user reports several additional NPC tests look much better. Treat as provisionally improved/protected; continue runtime sampling before promoting to broad PASS.
+
 ## 2.2.2 confidence update
 
 **Runtime PASS inherited from Yellow 2.1.24 save-game testing:** No Buying; No Selling; No Center Heal / Pokémon Center healing ban. These enforcement paths are protected and unchanged in 2.2.2.
@@ -677,3 +911,7 @@ NUZ INFO Catch/Stat/Move page rendering and controls require runtime validation 
 
 ## 2.1.24 confidence update
 Yellow 2.1.23 runtime PASS: randomized-starter received-name, party presence, Trainer Money symbol. Yellow 2.1.23 runtime FAIL: party NUZ INFO crash. 2.1.24 native-list repair is parser/static validated; runtime TEST REQUIRED.
+
+### 2.3.1 Yellow New Game
+- 2.3.0: **RUNTIME FAIL** — Yellow froze while starting a new game on Gen1Recomp 0.1.98.
+- 2.3.1: **RETEST REQUIRED** — eager pre-overworld compatibility probing removed and field-action guards deferred to `map.entered`.

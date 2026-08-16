@@ -1,4 +1,4 @@
--- Human-facing metadata for Gen1Recomp's mod manager and tooling.
+2.3.12: final 2.3 release; promotes the boot-safe full-feature 2.3.11 code path unchanged after Yellow 0.1.98 and Gold NEW GAME runtime validation.
 return {
   summary = "Configurable Nuzlocke rules, tracking, status, and challenge options for R/B/Y and Gold.",
   author = "bryanthaboi (updated by Stone696)",
@@ -15,6 +15,24 @@ return {
       "presets, area splits, starter randomization, challenge restrictions, and compatibility APIs",
     },
     known = {
+      "2.3.12: final release; Yellow 0.1.98 boot, fresh SETUP, NEW GAME, existing SAVE GAME, and SETUP suppression are runtime PASS; Gold NEW GAME boot is runtime PASS.",
+      "2.3.1 RC: Gen1Recomp 0.1.98 is source-audited; battle snapshot interop, public-field-action fishing guards, Gold item coverage, and native starter nickname composition require runtime validation.",
+      "2.2.21 RC: Quick Nuzlocke Start is source-complete; all four games, nickname/randomizer interactions, Gold progression/whiteout state, and provider composition require runtime validation.",
+      "2.2.20 RC: Skip Opening Intro is source-complete; Red/Blue/Yellow/Gold fresh-start and provider-composition runtime validation required.",
+      "2.2.19 RC: seeded structured randomizer is source-complete; same-seed reproduction, structured pools, seed editing, and provider hand-off remain runtime TEST REQUIRED.",
+      "2.2.18 RC: rule-interaction fixes are source-complete; changed combinations remain runtime TEST REQUIRED and Egg species-rule handling remains a policy gap.",
+      "2.2.17 RC: external Difficulty stacking warnings are source-complete; Stronger Trainers and multi-provider runtime validation required.",
+      "2.2.16 RC: Gym Team Size and translation-companion hardening are source-complete; runtime validation required.",
+      "2.2.15 RC: save migration ownership is centralized; old-save/idempotency regression validation required.",
+      "2.2.13 RC: six Gold-native encounter/radio features are source-complete and require targeted runtime validation.",
+      "2.2.10 RC: cross-generation Species Pool and optional Physical/Special Split are source-complete and require targeted runtime validation.",
+      "2.2.9 hardening RC: compiler headroom, empty-party safety, Dungeon Lock-In transitions, and Gold vitamin correction require runtime retest.",
+      "2.2.8 stops T3 from rewriting vanilla continuation text and makes NUZ STATUS Next Cap follow active built-in Difficulty; runtime retest required.",
+      "2.2.7 splits the oversized late-runtime closure after runtime confirmed Lua 5.1's 60-upvalue compiler limit; fresh-game retest required.",
+      "2.2.6 fixes the confirmed Lua local-variable compile/load regression that prevented New Game Setup from appearing; runtime retest required.",
+      "2.2.5 removes an extra long-lived Lua local introduced in 2.2.4 after New Game Setup stopped appearing; fresh-game runtime retest required.",
+      "2.2.4 repairs the Tier-3 Pokémon Bois Club chairman tribute using a native engine walker; runtime visual retest required.",
+      "2.2.3 hardens Yellow Skip Catch Demo and complete native NUZ INFO rendering; both require runtime confirmation.",
       "2.2.2 renames compact Trainer Money to Btl. ¥; Yellow 2.1.24 runtime confirmed No Buying, No Selling, and No Center Heal.",
       "2.2.1 moves Gold Setup/NUZ RULES values one native tile left after runtime border crowding; visual retest required.",
       "2.1.22 replaces crashing R/B/Y NUZ ST. and MOD COMPAT custom states with host ListMenu surfaces; runtime retest required.",
@@ -35,10 +53,11 @@ return {
     { who = "bryanthaboi", for_ = "original Nuzlocke mod and project baseline" },
     { who = "Stone696", for_ = "updater of bryanthaboi's original Nuzlocke mod" },
   },
-  compat = { engine = ">=0.1.86 <0.1.98", modApi = 2 },
+  compat = { engine = ">=0.1.86 <0.1.99", modApi = 2 },
 }
 
 Release: 2.2.2
-Current RC: compact Trainer Money label is Btl. ¥; Yellow shop and Pokémon Center enforcement runtime PASSes are protected. Other 2.2.x runtime retests remain required.
+Current release: 2.3.12 promotes the full boot-safe 2.3.11 feature surface after Yellow 0.1.98 and Gold NEW GAME runtime validation.
+2.2.2: compact Trainer Money label is Btl. ¥; Yellow shop and Pokémon Center enforcement runtime PASSes are protected.
 2.1.22: R/B/Y NUZ ST. and MOD COMPAT now use host ListMenu surfaces after Yellow runtime crashes; Gold-native paths unchanged. Runtime retest required.
 2.1.21: Gold Setup spacing cleanup. Reserves one native tile between each Gold rule label and value/toggle while preserving the seven-tile value column. Presentation only; runtime visual retest required.
