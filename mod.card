@@ -1,3 +1,11 @@
+2.4.10: preserve ¥1,000,000 F. TOKEN pricing via cap-aware settlement; manifest forward range <0.2.5.
+2.4.9 RC: decouple badge-boost suppression from AI tier; correct R/B/Y Forgiveness modal panel rendering.
+2.4.8 RC: 0.1.99/0.2.0 launch compatibility, Forgiveness modal cleanup, once-per-battle Gym cap text, encounter-count status.
+2.4.5 RC: Summon / Quest System compatibility; targeted encounter selection and quest framework/content ownership split.
+2.4.4 RC: Catch Helper / Area DexNav compatibility; encounter-selector BLIND policy and capture-mechanics ownership. Wide Menus runtime PASS protected.
+2.4.3 RC: Item Shortcut / Reusable Machines compatibility; precise ITEM USE and MACHINES ownership. Wide Menus parent runtime PASS protected.
+2.4.2 RC: Modern Bag / EXP Share compatibility pass; authoritative mod discovery, separated presentation/policy ownership, and real external EXP cap preflight.
+2.4.1 RC: Difficulty/NEXT CAP direct-party fix; cap display/enforcement now use canonical composed trainer party. Runtime test required before publication.
 2.4.0: published release promoted directly from 2.3.35 RC; consolidates stabilization, compatibility, Randomizer, NUZ INFO, MOD COMPAT, tracker, difficulty, Gym Team Size, and Gold fixes since 2.3.12.
 return {
   summary = "Configurable Nuzlocke rules, tracking, status, and challenge options for R/B/Y and Gold.",

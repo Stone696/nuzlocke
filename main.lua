@@ -21,7 +21,7 @@
 -- * beta.29.2.0 separates missed/lost encounters from Pokemon deaths while
 --   conservatively migrating legacy death history that used LOST bookkeeping.
 return function(mod)
-  mod.exports.__beta26 = { build = "2.4.0", setupProfileScope = "gen1" }
+  mod.exports.__beta26 = { build = "2.4.10", setupProfileScope = "gen1" }
   -- 2.2.9 canonical native stat-vitamin data. R/B/Y and Gold use the
   -- same five vitamins; Zinc is not a Gen II item.
   mod.exports.__beta26.nativeStatVitamins = {
@@ -119,7 +119,7 @@ return function(mod)
   -- missing entries safely fall back through the engine's Strings module.
   mod.exports.nuzlocke_translation = {
       api = 1,
-      build = "2.4.0",
+      build = "2.4.5",
       get = function(source, ...)
           return Strings(source, ...)
       end,
@@ -146,7 +146,7 @@ return function(mod)
   -- screen-name heuristics and Nuzlocke does not need mod-id branches.
   mod.exports.nuzlocke_ui = {
       api = 1,
-      build = "2.4.0",
+      build = "2.4.5",
       stateOwner = "nuzlocke",
       screens = {
           NuzlockeConfigScreen = {
@@ -6161,10 +6161,22 @@ return function(mod)
       function Interop.resolveCapability(capability)
           local requested = norm(capability)
           local aliases = {
-              ALTERNATE_ITEM_UI="ITEM_PROVIDER", AUTOMATIC_ITEM_USE="ITEM_PROVIDER",
-              MACHINE_PROVIDER="ITEM_PROVIDER", ALTERNATE_PC_UI="STORAGE_PROVIDER",
+              -- 2.4.2: an alternate Bag/pocket/favorites UI is presentation,
+              -- not evidence that the mod owns item effects or challenge
+              -- legality. Automatic-use and machine providers remain mechanic
+              -- providers because they may initiate use outside the Bag UI.
+              ALTERNATE_ITEM_UI="ITEM_PRESENTATION",
+              AUTOMATIC_ITEM_USE="ITEM_USE_ENTRYPOINT",
+              MACHINE_PROVIDER="MACHINE_MECHANICS",
+              ALTERNATE_PC_UI="STORAGE_PROVIDER",
               EXTERNAL_ENCOUNTER_START="ENCOUNTER_PROVIDER",
-              EXP_DISTRIBUTION="EXP_PROVIDER", QUEST_PROVIDER="QUEST_CONTENT_PROVIDER",
+              ENCOUNTER_SELECTOR="ENCOUNTER_SELECTOR",
+              CAPTURE_MECHANICS="CAPTURE_MECHANICS",
+              BATTLE_INFORMATION="BATTLE_INFORMATION",
+              EXP_DISTRIBUTION="EXP_DISTRIBUTION",
+              QUEST_FRAMEWORK="QUEST_FRAMEWORK",
+              QUEST_PRESENTATION="QUEST_PRESENTATION",
+              QUEST_PROVIDER="QUEST_CONTENT_PROVIDER",
           }
           local canonical = aliases[requested] or requested
           local explicit, automatic = {}, {}
@@ -6407,6 +6419,51 @@ return function(mod)
           }
       end
 
+      -- Targeted encounter tools (DexNav, radar, search/summon UIs) are
+      -- gameplay selectors, not merely information panels. They must still
+      -- use the final live registry, but under BLIND randomized info they
+      -- should not deliberately select an undiscovered hidden species.
+      --
+      -- This is cooperative: providers call this before choosing a target.
+      -- Ordinary random encounter generation is never blocked by BLIND INFO.
+      function Registry.encounterSelection(context)
+          context = type(context)=="table" and context or {}
+          local policy = Registry.encounterInformationPolicy(context.game)
+          local targeted = context.targeted == true
+              or context.targetedSelection == true
+              or context.selectSpecies == true
+              or context.uncaughtOnly == true
+              or context.selector == true
+
+          local discovered = context.discovered == true
+              or context.encountered == true
+              or context.caught == true
+              or context.owned == true
+
+          local allowed = true
+          local reason = nil
+          if targeted and policy.randomized and policy.mode == "blind"
+              and not discovered then
+              allowed = false
+              reason = "blind_targeted_encounter"
+          end
+
+          return {
+              allowed = allowed,
+              policy = policy.mode,
+              randomized = policy.randomized,
+              targeted = targeted,
+              registry = allowed and policy.gameplayRegistry or nil,
+              reason = reason,
+              fallback = allowed and nil or "random_encounter",
+          }
+      end
+
+      function Registry.canSelectEncounter(context)
+          local result = Registry.encounterSelection(context)
+          return result.allowed == true, result
+      end
+
       function Registry.effectiveMoves(game) game=game or currentGame or mod.game; return game and game.data and game.data.moves or nil end
       function Registry.effectiveLearnset(species, game)
           local p = Registry.effectivePokemon(game)
@@ -6432,7 +6489,7 @@ return function(mod)
           }
       end
 
-      local Experience = {}
+      local Experience = { api = 2 }
       function Experience.getCap(game)
           game = game or currentGame or mod.game
           if mod.exports.__beta26 and mod.exports.__beta26.getNextLevelCapInfo then
@@ -6443,11 +6500,17 @@ return function(mod)
       end
       function Experience.capAward(context)
           context = type(context)=="table" and context or {}
-          -- Distribution providers own who receives how much EXP. Nuzlocke
-          -- intentionally exposes the post-distribution ceiling seam here;
-          -- existing protected cap/edging logic remains authoritative.
-          return { allowed=true, requested=tonumber(context.amount) or 0, amount=tonumber(context.amount) or 0, owner="provider_distribution" }
+          local requested = math.max(0,
+              math.floor(tonumber(context.amount or context.gained) or 0))
+          -- Rebound after the level-cap helpers enter lexical scope. Early
+          -- callers fail open rather than relying on a forward reference.
+          return {
+              allowed=true, requested=requested, amount=requested,
+              overflow=0, owner="pending_cap_policy", mutates=false,
+          }
       end
+      Experience.evaluateAward = Experience.capAward
+      Experience.preflight = Experience.capAward
 
       local PartyPC = {}
       PartyPC.api = 2
@@ -6530,8 +6593,34 @@ return function(mod)
           copy.encounter=true
           if context.source == "dexnav" or context.dexnav == true then copy.kind="wild" end
           if context.source == "summon" or context.summon == true then copy.kind="summon" end
-          return Acquisition.begin(copy)
+
+          local targeted = context.targeted == true
+              or context.targetedSelection == true
+              or context.selectSpecies == true
+              or context.uncaughtOnly == true
+              or context.selector == true
+          if targeted and Registry and type(Registry.encounterSelection) == "function" then
+              local selection = Registry.encounterSelection(context)
+              if selection.allowed ~= true then
+                  return {
+                      allowed=false,
+                      kind=Acquisition.classify(copy),
+                      species=tostring(context.species or ""):upper(),
+                      rule="randomizer_info_policy",
+                      reason=selection.reason or "blind_targeted_encounter",
+                      selection=selection,
+                  }
+              end
+          end
+
+          local result = Acquisition.begin(copy)
+          if targeted and Registry and type(Registry.encounterSelection) == "function" then
+              result.selection = Registry.encounterSelection(context)
+          end
+          return result
       end
+      EncounterAPI.selection = Registry.encounterSelection
+      EncounterAPI.canSelect = Registry.canSelectEncounter
 
       local Content = {
           areas = {}, dungeons = {}, dungeonMapIndex = {},
@@ -6718,19 +6807,51 @@ return function(mod)
           -- Canonical behavior capabilities used by automatic adapters.
           -- Aliases below remain accepted for older integrations.
           capabilityAliases = {
-              ALTERNATE_ITEM_UI = "item_provider",
-              AUTOMATIC_ITEM_USE = "item_provider",
+              ALTERNATE_ITEM_UI = "item_presentation",
+              AUTOMATIC_ITEM_USE = "item_use_entrypoint",
               ALTERNATE_PC_UI = "storage_provider",
               EXTERNAL_ENCOUNTER_START = "encounter_provider",
+              ENCOUNTER_SELECTOR = "encounter_selector",
+              CAPTURE_MECHANICS = "capture_mechanics",
+              BATTLE_INFORMATION = "battle_information",
               REGISTRY_CONSUMER = "registry_consumer",
-              EXP_DISTRIBUTION = "exp_provider",
+              EXP_DISTRIBUTION = "exp_distribution",
+              QUEST_FRAMEWORK = "quest_framework",
+              QUEST_PRESENTATION = "quest_presentation",
               QUEST_PROVIDER = "quest_content_provider",
-              MACHINE_PROVIDER = "item_provider",
+              MACHINE_PROVIDER = "machine_mechanics",
           },
       }
 
       local function activeMods()
           local out = {}
+          local function remember(id, info)
+              id = norm(id)
+              if id == "" then return end
+              if out[id] == nil then
+                  out[id] = type(info) == "table" and info or { id = id }
+              end
+          end
+
+          -- 2.4.2: prefer the authoritative Gen1Recomp loaded-mod graph.
+          -- This prevents disabled/removed mods from lingering as phantom
+          -- automatic providers when an old global compatibility table is stale.
+          local game = currentGame or mod.game
+          local loader = game and game.mods
+          if loader and type(loader.status) == "function" then
+              local okStatus, status = pcall(function() return loader:status() end)
+              if okStatus and type(status) == "table"
+                  and type(status.loaded) == "table" then
+                  for _, manifest in ipairs(status.loaded) do
+                      if type(manifest) == "table" and manifest.id then
+                          local okFind, found = pcall(mod.find, manifest.id)
+                          remember(manifest.id, okFind and found or manifest)
+                      end
+                  end
+              end
+          end
+
+          -- Older runtimes/fallback adapters may only expose these tables.
           local sources = {
               rawget(_G, "mods"), rawget(_G, "activeMods"),
               mod and mod.mods, mod and mod.activeMods,
@@ -6739,10 +6860,9 @@ return function(mod)
               if type(source) == "table" then
                   for k, v in pairs(source) do
                       if type(v) == "table" then
-                          local id = norm(v.id or v.name or k)
-                          if id ~= "" then out[id] = v end
+                          remember(v.id or v.name or k, v)
                       elseif v == true then
-                          local id = norm(k); if id ~= "" then out[id] = {id=id} end
+                          remember(k, { id = k })
                       end
                   end
               end
@@ -6765,13 +6885,33 @@ return function(mod)
           -- These are behavior-family hints, not enforcement branches. They
           -- allow current released mods that predate our API to be described
           -- until they adopt provider registration themselves.
-          if id:find("BAG",1,true) or id:find("ITEM_SHORTCUT",1,true) then addCapability(caps, "alternate_item_ui") end
-          if id:find("REPEL",1,true) then addCapability(caps, "automatic_item_use") end
+          if id:find("BAG",1,true) then addCapability(caps, "alternate_item_ui") end
+          if id:find("ITEM_SHORTCUT",1,true) or id:find("REPEL",1,true) then
+              addCapability(caps, "automatic_item_use")
+          end
           if id:find("BOX",1,true) or id:find("PC",1,true) then addCapability(caps, "alternate_pc_ui") end
-          if id:find("DEXNAV",1,true) or id:find("SUMMON",1,true) then addCapability(caps, "external_encounter_start") end
+          if id:find("DEXNAV",1,true) or id:find("SUMMON",1,true) then
+              addCapability(caps, "external_encounter_start")
+          end
+          if id:find("DEXNAV",1,true) or id:find("SUMMON",1,true) then
+              -- DexNav chooses from a live registry; Summon chooses an
+              -- explicit species. Both are targeted encounter selectors.
+              addCapability(caps, "encounter_selector")
+          end
+          if id:find("CATCH_HELPER",1,true) then
+              -- Current Catch Helper both presents catch information and
+              -- intentionally retunes Ultra Ball capture math.
+              addCapability(caps, "capture_mechanics")
+              addCapability(caps, "battle_information")
+          end
           if id:find("POKEDEX",1,true) or id:find("MOVES_MANAGER",1,true) then addCapability(caps, "registry_consumer") end
           if id:find("EXP_SHARE",1,true) then addCapability(caps, "exp_distribution") end
-          if id:find("QUEST",1,true) then addCapability(caps, "quest_provider") end
+          if id:find("QUEST_SYSTEM",1,true) then
+              addCapability(caps, "quest_framework")
+              addCapability(caps, "quest_presentation")
+          elseif id:find("QUEST",1,true) then
+              addCapability(caps, "quest_provider")
+          end
           if id:find("REUSABLE_MACHINE",1,true) or id:find("TM",1,true) then addCapability(caps, "machine_provider") end
           if id:find("RANDOMIZER",1,true) then addCapability(caps, "randomizer_provider") end
           if id:find("LEVEL_CAP",1,true) or id:find("LEVELCAP",1,true) then addCapability(caps, "level_cap_provider") end
@@ -6905,16 +7045,30 @@ return function(mod)
 
       mod.exports.nuzlocke = mod.exports.nuzlocke or {}
       mod.exports.nuzlocke.api = 1
-      mod.exports.nuzlocke.build = "2.4.0"
+      mod.exports.nuzlocke.build = "2.4.5"
       mod.exports.nuzlocke.interop = Interop
       mod.exports.nuzlocke.ownership = {
-          -- External providers may own mechanics; Nuzlocke remains the
-          -- challenge-policy authority unless a selected rule explicitly
-          -- delegates that policy.
+          -- External providers may own mechanics/presentation; Nuzlocke
+          -- remains the challenge-policy authority unless a selected rule
+          -- explicitly delegates that policy.
+          item_presentation="provider",
+          item_use_entrypoint="provider",
           item_mechanics="provider",
+          machine_mechanics="provider",
+          item_policy="nuzlocke",
           encounter_mechanics="provider",
+          encounter_selection="provider",
+          encounter_policy="nuzlocke",
+          capture_mechanics="provider",
+          capture_policy="nuzlocke",
+          battle_information="provider",
+          quest_framework="provider",
+          quest_presentation="provider",
+          quest_content="provider",
+          quest_reward_policy="source_mod",
           storage_mechanics="provider",
           exp_distribution="provider",
+          exp_cap_policy="nuzlocke",
           challenge_policy="nuzlocke",
           provenance="nuzlocke",
       }
@@ -6924,7 +7078,13 @@ return function(mod)
           exp_post_distribution_seam=true, pc_policy=true,
           storage_transaction_policy=true, storage_swap_policy=true,
           encounter_entry_policy=true, encounter_information_policy=true,
-          final_encounter_registry=true, alternate_item_ui=true,
+          encounter_selection_policy=true, encounter_spend_indicator=true,
+          final_encounter_registry=true,
+          capture_mechanics=true, capture_policy=true, battle_information=true,
+          quest_framework=true, quest_presentation=true, quest_content=true,
+          alternate_item_ui=true,
+          item_presentation=true, item_use_entrypoint=true,
+          machine_mechanics=true, exp_distribution=true, exp_cap_policy=true,
           registry_revision=true, content_provider=true,
           dynamic_areas=true, dynamic_dungeons=true, quest_acquisitions=true,
           custom_boss_metadata=true, randomizer_opt_out=true,
@@ -6955,6 +7115,14 @@ return function(mod)
           mod.exports.nuzlocke_compat.effectiveRegistries = Registry.describe
           mod.exports.nuzlocke_compat.evaluateStorageTransaction = PartyPC.evaluate
           mod.exports.nuzlocke_compat.encounterInformation = Registry.encounterInformation
+          mod.exports.nuzlocke_compat.encounterSelection = Registry.encounterSelection
+          mod.exports.nuzlocke_compat.canSelectEncounter = Registry.canSelectEncounter
+          mod.exports.nuzlocke_compat.encounterSpendIndicator =
+              function(battle)
+                  return mod.exports.__beta26.encounterSpendIndicator
+                      and mod.exports.__beta26.encounterSpendIndicator(battle)
+                      or nil
+              end
           mod.exports.nuzlocke_compat.content = Content
           mod.exports.nuzlocke_compat.registerContentBundle = Content.registerBundle
           mod.exports.nuzlocke_compat.autoCompat = AutoCompat
@@ -7534,7 +7702,7 @@ return function(mod)
 
       mod.exports.randomizer = {
           api = 1,
-          build = "2.4.0",
+          build = "2.4.5",
           rngVersion = Randomizer.algorithmVersion,
           seed = function(create) return mod.exports.__beta26.randomizerSeed(nil, create == true) end,
           apply = Randomizer.applyAll,
@@ -7834,7 +8002,7 @@ return function(mod)
 
   mod.exports.starter_randomizer = {
       api = 2,
-      build = "2.4.0",
+      build = "2.4.5",
       select = mod.exports.__beta26.selectRandomStarter,
       commit = mod.exports.__beta26.commitRandomStarter,
   }
@@ -7896,6 +8064,19 @@ return function(mod)
           local limit = tonumber(info.limit or info.teamSize)
           if not limit or have <= limit then
               return next(game, context, continueBattle)
+          end
+
+          -- 2.4.8: the refusal text may be observed through more than one
+          -- pre-battle callback in the same trainer engagement. Show it once
+          -- for this battle-attempt transaction, but never weaken enforcement.
+          --
+          -- A later talk/challenge gets a fresh context and can explain again.
+          if type(context) == "table" and context.nuzlockeGymCapTextShown == true then
+              continueBattle({ cancel = true })
+              return true
+          end
+          if type(context) == "table" then
+              context.nuzlockeGymCapTextShown = true
           end
 
           local completed = false
@@ -9088,11 +9269,38 @@ return function(mod)
       local key = mod.exports.__beta26.trainerPartyKey(classId, partyIndex)
       if tonumber(observed[key]) then return tonumber(observed[key]), "HOOK" end
 
+      -- 2.4.1: use the same canonical party reader/composer already used by
+      -- Gym Team Size. Gen1Recomp's R/B/Y trainer.parties[partyIndex] is the
+      -- party ARRAY itself, not necessarily { party = {...} }. The older cap
+      -- preview unwrapped only .party/.roster/.team after selecting the row,
+      -- so ordinary R/B/Y parties became nil and NEXT CAP silently fell back
+      -- to vanilla even while Difficulty changed the real battle roster.
+      -- baseTrainerParty accepts both direct arrays and provider wrappers;
+      -- composedTrainerParty then runs the real trainer.party chain, keeping
+      -- cap display/enforcement on the same final roster as battle creation.
+      local baseFn = mod.exports.__beta26.baseTrainerParty
+      local composeFn = mod.exports.__beta26.composedTrainerParty
+      if type(baseFn) == "function" then
+          local base = baseFn(game, classId, partyIndex or 1)
+          if type(base) == "table" then
+              local composed = base
+              if type(composeFn) == "function" then
+                  composed = composeFn(game, classId, partyIndex or 1, base)
+                      or base
+              else
+                  local preview = mod.exports.__beta26.runtimeComposedTrainerAce(
+                      game, classId, partyIndex or 1, base)
+                  if preview then return preview, "HOOK_PREVIEW" end
+              end
+              local ace = mod.exports.__beta26.partyAceLevel(composed)
+              if ace then return ace, "COMPOSED_PARTY" end
+          end
+      end
+
+      -- Defensive legacy fallback for unusual provider registries loaded
+      -- before the canonical helper is available. Direct-array rows are
+      -- accepted here too instead of being discarded.
       local data = game and game.data
-      -- RBY and Gold expose different canonical trainer registries.  Gold
-      -- content mods patch gen2Trainers.classes; RBY uses data.trainers.
-      -- Inspect the composed Gold registry first when present, then retain
-      -- the historical RBY path unchanged.
       local g2 = data and data.gen2Trainers
       local classes = type(g2) == "table" and g2.classes or nil
       local trainer
@@ -9106,12 +9314,10 @@ return function(mod)
           trainer = type(trainers) == "table" and trainers[classId] or nil
           local parties = type(trainer) == "table"
               and (trainer.parties or trainer.rosters) or nil
-          if type(parties) == "table" then
-              trainer = parties[partyIndex or 1]
-          end
+          if type(parties) == "table" then trainer = parties[partyIndex or 1] end
       end
       local party = type(trainer) == "table"
-          and (trainer.party or trainer.roster or trainer.team) or nil
+          and (trainer.party or trainer.roster or trainer.team or trainer) or nil
       local preview = mod.exports.__beta26.runtimeComposedTrainerAce(
           game, classId, partyIndex or 1, party)
       if preview then return preview, "HOOK_PREVIEW" end
@@ -10253,6 +10459,67 @@ return function(mod)
       return nil
   end
 
+  -- Provider-facing read-only EXP ceiling preflight. Canonical
+  -- Experience.apply -> exp.gain remains preferred because that path preserves
+  -- level-up, move-learning, evolution, notifications, and EXP Edging banking.
+  do
+      local expApi = mod.exports.nuzlocke and mod.exports.nuzlocke.experience
+      if type(expApi) == "table" then
+          local function evaluateExternalExpAward(context)
+              context = type(context) == "table" and context or {}
+              local game = context.game or currentGame or mod.game
+              local save = context.save or (game and game.save) or currentSave
+              local mon = context.mon or context.pokemon
+              local requested = math.max(0,
+                  math.floor(tonumber(context.amount or context.gained) or 0))
+              local result = {
+                  allowed=true, requested=requested, amount=requested,
+                  overflow=0, cap=nil, atCap=false, edging=false,
+                  banked=type(mon) == "table" and math.max(0,
+                      math.floor(tonumber(mon.nuzlockeBankedExp) or 0)) or 0,
+                  owner="nuzlocke_exp_cap_policy", mutates=false,
+              }
+
+              if levelCapScope() <= 0 or type(mon) ~= "table" or not save then
+                  return result
+              end
+
+              local cap = nextLevelCap(save)
+              if not tonumber(cap) then return result end
+              cap = tonumber(cap)
+              result.cap = cap
+              if cap >= 100 then return result end
+
+              result.atCap = (tonumber(mon.level) or 1) >= cap
+              result.edging = not (externalRuleDelegation
+                      and externalRuleDelegation("exp_edging", game))
+                  and mod.save:get("exp_edging", false) == true
+
+              if result.atCap then
+                  result.amount = 0
+                  result.overflow = requested
+                  result.allowed = requested == 0
+                  return result
+              end
+
+              local maxExp = capExperienceForMon(mon, cap)
+              if not maxExp then return result end
+              local currentExp = math.max(0, math.floor(tonumber(mon.exp) or 0))
+              local room = math.max(0, math.floor(maxExp - currentExp))
+              result.amount = math.min(requested, room)
+              result.overflow = math.max(0, requested - result.amount)
+              result.allowed = result.amount > 0 or requested == 0
+              return result
+          end
+          expApi.capAward = evaluateExternalExpAward
+          expApi.evaluateAward = evaluateExternalExpAward
+          expApi.preflight = evaluateExternalExpAward
+          if mod.exports.nuzlocke_compat then
+              mod.exports.nuzlocke_compat.experience = expApi
+          end
+      end
+  end
+
   ---------------------------------------------------------------------
   -- STAT EXP / DV RULES (beta.28.15)
   --
@@ -11066,14 +11333,17 @@ return function(mod)
       local selected = Difficulty.selected()
       if type(selected) ~= "table" or selected.id == "vanilla"
           or selected.external == true or type(battle) ~= "table" then return end
-      local tier = math.max(0, math.min(3,
-          math.floor(tonumber(selected.aiTier) or 0)))
-      if tier <= 0 then return end
       local trainer = battle.trainer
       local classId = battle.oppClass or battle.trainerClass
           or (type(trainer) == "table"
               and (trainer.classId or trainer.class or trainer.id))
       local boss = Difficulty.isBoss(classId)
+      -- noBadgeBoosts is an independent difficulty dimension from aiTier and
+      -- must apply even for a hypothetical future profile that sets
+      -- noBadgeBoosts=true with aiTier=0. Previously this was nested after
+      -- the "tier <= 0" early return, so it silently depended on AI tier
+      -- being active; every profile shipped today happens to set aiTier>=1,
+      -- which is why this never surfaced.
       if selected.noBadgeBoosts == true then
           battle.nuzlockeDisableBadgeBoosts = true
           -- Gen 1 battlers carry a private copy of the player's owned badge
@@ -11084,6 +11354,9 @@ return function(mod)
               battle.player.badges = nil
           end
       end
+      local tier = math.max(0, math.min(3,
+          math.floor(tonumber(selected.aiTier) or 0)))
+      if tier <= 0 then return end
       if mod.exports.__beta26.runtimeIsGold(game) then
           if type(trainer) ~= "table" then return end
           local attrs = {}
@@ -12378,6 +12651,19 @@ return function(mod)
               end
 
               local Font = mod.ui.Font
+
+              -- 2.4.8: this screen is opaque. Paint over the panel area
+              -- before drawing so the underlying battle/party HUD cannot
+              -- bleed through when the prompt is pushed from battle
+              -- resolution. mod.ui.clear / game:clear are not real engine
+              -- APIs (see docs/API.md) and silently no-op via pcall, which is
+              -- why the panel was rendering over live battle HUD content.
+              -- Other opaque RBY confirm dialogs (e.g. the Rare Candy prompt)
+              -- use this same fill-rect + drawBox windowed-panel pattern.
+              love.graphics.setColor(1, 1, 1, 1)
+              love.graphics.rectangle("fill", 16, 18, 128, 108)
+              Font.drawBox(16, 18, 16, 13)
+
               Font.draw(Strings("FORGIVE ENCOUNTER?"), 18, 30)
               Font.draw(Strings("Spend 1 token to keep"), 12, 50)
               Font.draw(Strings("this area's encounter open?"), 12, 62)
@@ -19700,7 +19986,7 @@ return function(mod)
 
   mod.exports.battle_classifier = {
       api = 1,
-      build = "2.4.0",
+      build = "2.4.5",
       classify = function(game, battle, species)
           return mod.exports.__beta26.classifyBattle(game, battle, species)
       end,
@@ -19780,6 +20066,7 @@ return function(mod)
       if denied then
           battle.nuzlockeFreeEncounterReason = denied
           battle.nuzlockeEncounterEligible = false
+          battle.nuzlockeEncounterWillSpendArea = false
           return
       end
 
@@ -19811,9 +20098,29 @@ return function(mod)
           -- battle-side mutations or another provider callback changes state.
           battle.nuzlockeFreeEncounterReason = "dupes"
           battle.nuzlockeEncounterEligible = false
+          battle.nuzlockeEncounterWillSpendArea = false
           return
       end
       battle.nuzlockeEncounterEligible = true
+      battle.nuzlockeEncounterWillSpendArea = true
+      battle.nuzlockeEncounterSpendArea = key
+
+      -- Semantic query for native/compatible battle presenters. The result is
+      -- derived from the exact same Failed Encounter/capture-policy decision
+      -- that can actually spend the route, including Dupes/Shiny exceptions.
+      mod.exports.__beta26.encounterSpendIndicator = function(targetBattle)
+          local b = targetBattle or (activeWildEncounter and activeWildEncounter.battle)
+          if not b
+              or b.nuzlockeEncounterEligible ~= true
+              or b.nuzlockeEncounterWillSpendArea ~= true then
+              return nil
+          end
+          return {
+              active = true,
+              area = b.nuzlockeEncounterSpendArea,
+              text = Strings("ENCOUNTER COUNTS"),
+          }
+      end
 
       local provider = activeCompatProvider("encounters", game, battle)
       local delegatedEncounter = externalRuleDelegation
@@ -22437,6 +22744,46 @@ return function(mod)
   
     -- Try immediately and again at both lifecycle points.  The helper is
     -- idempotent, so whichever point sees Commands first performs the install.
+
+    -- 2.4.10: Gen 1 ShopMenu formats BUY-row prices from item data. Our
+    -- synthetic token must use a representable settlement value internally,
+    -- so restore the published ¥1,000,000 label at the ListMenu presentation
+    -- seam. This wrapper is deliberately scoped to the BUY list and token id.
+    local function installForgivenessTokenMillionPricePresentation()
+        if mod.exports.__beta26.isSaveEditorSession() then return true end
+        local okList, ListMenu = pcall(require, "src.ui.ListMenu")
+        if not okList or type(ListMenu) ~= "table"
+            or type(ListMenu.new) ~= "function" then return false end
+        local prior = ListMenu.__nuzlockeMillionTokenPriceSession
+        if type(prior) == "table" and prior.owner == mod
+            and ListMenu.new == prior.wrapper then return true end
+        if type(prior) == "table" and prior.owner ~= mod
+            and ListMenu.new == prior.wrapper
+            and type(prior.previous) == "function" then
+            ListMenu.new = prior.previous
+        end
+        local previous = ListMenu.new
+        local wrapper
+        wrapper = function(game, title, items, opts, ...)
+            if tostring(title or ""):upper() == "BUY"
+                and type(items) == "table" then
+                for _, row in ipairs(items) do
+                    if row and tostring(row.value or "")
+                        == mod.exports.__beta26.forgivenessTokenShopId then
+                        row.right = ("¥%d"):format(
+                            mod.exports.__beta26.forgivenessTokenShopPrice)
+                    end
+                end
+            end
+            return previous(game, title, items, opts, ...)
+        end
+        ListMenu.new = wrapper
+        ListMenu.__nuzlockeMillionTokenPriceSession = {
+            owner = mod, previous = previous, wrapper = wrapper,
+        }
+        return true
+    end
+
     -- 2.3.10: deferred until game.ready/save.loaded.
     mod.events:on("game.ready", function()
         pcall(installNuzlockeFieldCommandPatches)
@@ -22786,9 +23133,11 @@ return function(mod)
     -- 2.3.10: deferred until game.ready/save.loaded.
     mod.events:on("game.ready", function()
         pcall(installShopRuleGate)
+        pcall(installForgivenessTokenMillionPricePresentation)
     end)
     mod.events:on("save.loaded", function()
         pcall(installShopRuleGate)
+        pcall(installForgivenessTokenMillionPricePresentation)
     end)
   
   
@@ -23333,6 +23682,11 @@ return function(mod)
                                 id = mod.exports.__beta26.forgivenessTokenShopId,
                                 name = Strings("F. TOKEN"),
                                 price = mod.exports.__beta26.forgivenessTokenShopPrice,
+                                settlementPrice =
+                                    mod.exports.__beta26.forgivenessTokenSettlementPrice
+                                        and mod.exports.__beta26.forgivenessTokenSettlementPrice(
+                                            game and game.save)
+                                    or 999999,
                                 nuzlockeForgivenessToken = true,
                             }
                         end
@@ -25399,6 +25753,20 @@ return function(mod)
             local display = providerDisplay(provider)
             return display and (display.name or display.id) or provider.id
         end
+        local function interopOwner(capability)
+            local interop = mod.exports.nuzlocke and mod.exports.nuzlocke.interop
+            if not (interop and type(interop.resolveCapability) == "function") then
+                return nil
+            end
+            local ok, resolved = pcall(interop.resolveCapability, capability)
+            if not ok or type(resolved) ~= "table"
+                or resolved.supplied ~= true
+                or type(resolved.preferred) ~= "table" then
+                return nil
+            end
+            local provider = resolved.preferred
+            return tostring(provider.name or provider.id or "External Mod")
+        end
         add("STARTER RNG", starter and (starter.name or starter.id) or "Nuzlocke",
             starter and "EXTERNAL OWNER" or "NATIVE")
         add("ENCOUNTER RNG",
@@ -25411,6 +25779,43 @@ return function(mod)
             money and "EXTERNAL OWNER" or "NATIVE")
         add("LEVEL CAPS", caps and (caps.name or caps.id) or "Nuzlocke",
             caps and "EXTERNAL OWNER" or "NATIVE")
+
+        local bagUiOwner = interopOwner("item_presentation")
+        add("BAG UI", bagUiOwner or "Engine",
+            bagUiOwner and "ITEM PRESENTATION" or "NATIVE")
+
+        local itemUseOwner = interopOwner("item_use_entrypoint")
+        add("ITEM USE", itemUseOwner or "Engine",
+            itemUseOwner and "ITEM ENTRYPOINT" or "NATIVE")
+
+        local machineOwner = interopOwner("machine_mechanics")
+        add("MACHINES", machineOwner or "Engine",
+            machineOwner and "MACHINE MECHANICS" or "NATIVE")
+
+        add("ITEM RULES", "Nuzlocke", "NUZLOCKE POLICY")
+
+        local selectorOwner = interopOwner("encounter_selector")
+        add("ENC SELECT", selectorOwner or "Engine",
+            selectorOwner and "ENCOUNTER SELECTOR" or "NATIVE")
+
+        local captureOwner = interopOwner("capture_mechanics")
+        add("CATCH ODDS", captureOwner or "Engine",
+            captureOwner and "CAPTURE MECHANICS" or "NATIVE")
+        add("CATCH RULES", "Nuzlocke", "NUZLOCKE POLICY")
+
+        local questFrameworkOwner = interopOwner("quest_framework")
+        add("QUEST UI", questFrameworkOwner or "Engine",
+            questFrameworkOwner and "QUEST FRAMEWORK" or "NATIVE")
+        local questContentOwner = interopOwner("quest_content_provider")
+        add("QUEST DATA", questContentOwner or "Source Mods",
+            questContentOwner and "QUEST CONTENT" or "SOURCE OWNED")
+
+        local expOwner = interopOwner("exp_distribution")
+        add("EXP DIST.", expOwner or "Engine",
+            expOwner and "EXTERNAL DISTRIBUTION" or "NATIVE")
+        add("EXP CAP", caps and (caps.name or caps.id) or "Nuzlocke",
+            caps and "EXTERNAL OWNER" or "NUZLOCKE POLICY")
+
         add("DIFFICULTY", difficultyName,
             difficultyName == "VANILLA" and "VANILLA" or "ACTIVE PROFILE")
         add("SPECIES DATA", compatOwner("species_metadata") or "Merged Registry",
@@ -25640,6 +26045,27 @@ return function(mod)
                     if detail == "EXTERNAL OWNER" then
                         return owner .. " controls " .. label
                             .. ". Nuzlocke follows its result instead of applying the same rule twice."
+                    elseif detail == "ITEM PRESENTATION" then
+                        return owner .. " organizes or draws the Bag. Nuzlocke still owns item legality, so banned item use remains blocked."
+                    elseif detail == "ITEM ENTRYPOINT" then
+                        return owner .. " can launch item use outside the normal Bag screen. The action still passes through Nuzlocke item legality before the engine effect."
+                    elseif detail == "MACHINE MECHANICS" then
+                        return owner .. " changes TM/HM behavior such as consumption or forgetting. Nuzlocke still decides whether TM teaching is legal."
+                    elseif detail == "ENCOUNTER SELECTOR" then
+                        return owner .. " can choose a target from the live encounter table. Nuzlocke still owns catch/area rules; BLIND randomized info asks compatible selectors not to target undiscovered species."
+                    elseif detail == "CAPTURE MECHANICS" then
+                        return owner .. " changes or displays catch probability. Nuzlocke still decides whether the capture itself is legal."
+                    elseif detail == "QUEST FRAMEWORK" then
+                        return owner .. " provides the quest journal, persistence, markers and registration API. Individual quest mods still own gameplay and rewards."
+                    elseif detail == "QUEST CONTENT" then
+                        return owner .. " provides quest content or progression. Reward legality still follows the source action and Nuzlocke acquisition/item rules."
+                    elseif detail == "SOURCE OWNED" then
+                        return "Quest gameplay and rewards belong to individual source mods; the quest journal only presents and tracks them."
+                    elseif detail == "EXTERNAL DISTRIBUTION" then
+                        return owner .. " decides who receives EXP and how it is split. Nuzlocke still applies the active level cap to each canonical EXP award."
+                    elseif detail == "NUZLOCKE POLICY" then
+                        return "Nuzlocke owns " .. label
+                            .. ". Other mods may present or distribute the action, but the challenge limit is still enforced here."
                     elseif detail == "SHARED PROVIDER" then
                         return owner .. " shares " .. label
                             .. " with Nuzlocke. Each provider keeps its own job and the final result is combined."

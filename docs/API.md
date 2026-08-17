@@ -1,3 +1,98 @@
+## 2.4.8 RC
+
+Compatibility API remains 27.
+
+New additive capability:
+- `encounter_spend_indicator`
+
+Compatibility helper:
+- `nuzlocke_compat.encounterSpendIndicator(battle)`
+
+It returns an active indicator only when that exact encounter is currently eligible to spend the area's encounter opportunity under the same authoritative Failed Encounter/capture-policy decision.
+
+## 2.4.5 RC
+
+Compatibility API remains 27.
+
+New canonical capability semantics:
+- `QUEST_FRAMEWORK` -> `quest_framework`
+- `QUEST_PRESENTATION` -> `quest_presentation`
+- existing `QUEST_PROVIDER` remains `quest_content_provider`
+
+Summon-style explicit targeting is classified as `encounter_selector` in addition to `encounter_provider`.
+
+## 2.4.4 RC encounter-selection API
+
+Compatibility API number remains **27**; additions are backward-compatible.
+
+### Registry
+- `nuzlocke.registry.encounterSelection(context)`
+- `nuzlocke.registry.canSelectEncounter(context)`
+
+Also available through:
+- `nuzlocke.encounterPolicy.selection`
+- `nuzlocke.encounterPolicy.canSelect`
+- `nuzlocke_compat.encounterSelection`
+- `nuzlocke_compat.canSelectEncounter`
+
+Targeted-selection context may use:
+- `targeted`
+- `targetedSelection`
+- `selectSpecies`
+- `uncaughtOnly`
+- `selector`
+
+Discovery facts may use:
+- `discovered`
+- `encountered`
+- `caught`
+- `owned`
+
+When randomized encounter info is BLIND, a targeted undiscovered selection returns `allowed=false`, reason `blind_targeted_encounter`, and fallback `random_encounter`. Non-targeted gameplay encounters remain allowed.
+
+### Ownership metadata
+Added:
+- `encounter_selection = "provider"`
+- `encounter_policy = "nuzlocke"`
+- `capture_mechanics = "provider"`
+- `capture_policy = "nuzlocke"`
+- `battle_information = "provider"`
+
+## 2.4.3 RC capability semantics
+
+Backward-compatible canonical aliases are refined:
+
+- `AUTOMATIC_ITEM_USE` -> `item_use_entrypoint`
+- `MACHINE_PROVIDER` -> `machine_mechanics`
+- `ALTERNATE_ITEM_UI` remains `item_presentation`
+
+Public ownership metadata now separately exposes `item_use_entrypoint` and `machine_mechanics`.
+
+This prevents an item launcher or TM behavior mod from being mistaken for the owner of all item mechanics or Nuzlocke challenge legality.
+
+## 2.4.2 RC API additions
+
+Compatibility API remains 27.
+
+`nuzlocke.experience.api = 2`.
+
+Read-only aliases:
+- `experience.capAward(context)`
+- `experience.evaluateAward(context)`
+- `experience.preflight(context)`
+
+The result reports requested amount, legal amount, overflow, cap, at-cap state, edging state, banked EXP, owner, and `mutates=false`.
+
+`nuzlocke_compat.experience` points to the same API.
+
+Ownership metadata now separates `item_presentation`, `item_mechanics`, `item_policy`, `exp_distribution`, and `exp_cap_policy`.
+
+## 2.4.1 RC API status
+
+Compatibility API remains **27**, Mod API remains **2**, and save schema remains **4**.
+
+No public contract changed. The existing `getNextLevelCapInfo()` result is corrected internally by routing trainer-ace resolution through `baseTrainerParty()` + `composedTrainerParty()` so direct-array and wrapped provider party shapes are treated consistently.
+
 # Nuzlocke 2.4.0 API status
 
 2.4.0 keeps the established public compatibility numbering:
@@ -900,7 +995,7 @@ Two persisted boolean rule keys are added without changing the Nuzlocke Compatib
 
 
 ## 29.3.3 additions
-`mod.exports.__beta26.forgivenessTokens()` returns the current Route Forgiveness token balance. `mod.exports.__beta26.forgivenessTokenShopPrice` is `1000000`. These are additive compatibility helpers in Compatibility API 26.
+`mod.exports.__beta26.forgivenessTokens()` returns the current Route Forgiveness token balance. `mod.exports.__beta26.forgivenessTokenShopPrice` is the advertised `1000000`. `mod.exports.__beta26.forgivenessTokenSettlementPrice(save)` returns the engine-representable settlement amount (normally `999999` under the native wallet ceiling). These are additive compatibility helpers in Compatibility API 26.
 
 ## Randomizer runtime surface — beta.30.0.0.1
 `mod.exports.randomizer` (`api = 1`) exposes `apply(game)`, `applyEncounters(game)`, and `applyLearnsets(game)`. Choices persist in Nuzlocke save data. Encounter transforms own only `species`; learnset transforms own only `level1Moves` and `learnset[].move`.

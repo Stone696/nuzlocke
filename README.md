@@ -1,3 +1,47 @@
+## 2.4.10 current release
+
+2.4.10 preserves the Forgiveness Token's intentional **¥1,000,000** advertised price with a token-specific cap-aware settlement path. The native wallet ceiling is not raised and ordinary Mart behavior is unchanged. With a native ¥999,999 ceiling, a full wallet is required and fully consumed. Runtime validation is still required for the new purchase path.
+
+Compatibility is audited through Gen1Recomp 0.1.99; the manifest follows the project policy of declaring five patch versions ahead (`>=0.1.86 <0.2.5`).
+
+## 2.4.9 RC hardening note
+
+This RC descends directly from 2.4.8 RC. It decouples `noBadgeBoosts` from AI-tier processing and corrects the opaque R/B/Y Forgiveness confirmation panel. No save-schema change.
+
+# Nuzlocke 2.4.5 RC
+
+Direct development child of **2.4.4 RC**.
+
+This pass improves generic compatibility semantics for **Summon 1.0.2** and **Quest System 1.0.5** while preserving prior runtime-confirmed behavior.
+
+# Nuzlocke 2.4.4 RC
+
+Development build, directly from **2.4.3 RC**.
+
+This pass source-reviews Catch Helper 1.4.0 and Area DexNav 1.0.0 and improves generic encounter-selection/capture-mechanics ownership.
+
+Wide Menus remains a protected runtime PASS and is untouched.
+
+# Nuzlocke 2.4.3 RC
+
+Development build, directly from **2.4.2 RC**.
+
+This compatibility pass source-reviews Item Shortcut 1.4.0 and Reusable Machines 1.0.1 and makes MOD COMPAT ownership more precise.
+
+**Protected runtime result:** the latest parent build was runtime-tested with Wide Menus and no longer crashes. 2.4.3 does not modify ENC TRACKER/Wide Menus presentation code.
+
+# Nuzlocke 2.4.2 RC
+
+Development build, directly from **2.4.1 RC**.
+
+This pass reviews Modern Bag and EXP Share Modes and improves generic compatibility discovery, ownership semantics, MOD COMPAT reporting, and the external EXP-cap preflight API. The 2.4.1 Difficulty/NEXT CAP fix is preserved.
+
+# Nuzlocke 2.4.1 RC
+
+**Development build. Direct child of published 2.4.0. Do not promote until runtime-tested.**
+
+This targeted stabilization fixes the remaining built-in Game Difficulty / level-cap projection bug. The cap path now reads the same direct or wrapped trainer party and runs the same composed `trainer.party` transaction used for battle creation.
+
 # Nuzlocke 2.4.0
 
 A configurable Nuzlocke/challenge-rules mod for Pokémon Gen1Recomp supporting **Red, Blue, Yellow**, with **Gold beta support**.

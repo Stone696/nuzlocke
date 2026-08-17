@@ -1,3 +1,123 @@
+## 2.4.10 compatibility note
+
+The Forgiveness Token keeps its ¥1,000,000 public price while using a token-only cap-aware settlement value under the native ¥999,999 wallet ceiling. Normal Mart transactions and the global wallet ceiling are untouched. R/B/Y and Gold runtime validation are required before this path is promoted to PASS.
+
+## 2.4.8 RC
+
+Manifest launch range is now `>=0.1.86 <0.2.1`, which includes Gen1Recomp 0.1.99 and 0.2.0.
+
+Encounter-count indication is exposed semantically rather than by replacing global battle rendering, allowing compatible UI mods to consume the same authoritative eligibility result safely.
+
+## 2.4.7 RC
+
+`gen1_modern_ui` and `gen_2_randomizer_plus` are now explicit optional dependencies, matching Nuzlocke's active `mod.find` integrations and providing an intentional load-order edge.
+
+## 2.4.5 RC — Summon 1.0.2 / Quest System 1.0.5
+
+### Summon 1.0.2
+Current source reviewed. Summon selects an explicit Pokédex species and creates a standard wild battle. Downstream Nuzlocke capture legality remains authoritative. Current 1.0.2 predates the cooperative BLIND selector contract, so no runtime BLIND enforcement is claimed.
+
+### Quest System 1.0.5
+Current source reviewed. Quest System is a journal/persistence/marker/registration framework. Source quest mods retain gameplay and reward ownership. Its cross-mod API uses exports while its own events remain namespaced.
+
+### Protected
+Wide Menus latest tested combination remains runtime PASS/no crash. Its integration code is unchanged in this child.
+
+## 2.4.4 RC — Catch Helper 1.4.0 / Area DexNav 1.0.0
+
+### Catch Helper 1.4.0
+Current source reviewed.
+
+It reads the active battle's enemy HP/status/species, merged Ball definition, and owned Pokédex state. It does not inspect or reveal an unseen encounter table. Therefore Nuzlocke BLIND INFO should not suppress its catch-probability display after an encounter has begun.
+
+Current 1.4.0 also overrides Ultra Ball to use the stronger HP factor. That is correctly modeled as `capture_mechanics`; Nuzlocke retains `capture_policy`.
+
+Recommended runtime:
+- Catch Helper + No Catching.
+- Catch Helper + Ball restrictions.
+- Catch Helper + randomized BLIND INFO after encounter starts.
+- Confirm Catch Helper catch odds remain visible while illegal capture attempts are still refused.
+
+### Area DexNav 1.0.0
+Current source reviewed.
+
+It reads the current live encounter registry directly and uses weighted uncaught-only target selection. Nuzlocke's encounter randomizer mutates that same live registry, so Area DexNav naturally consumes the randomized species without a separate adapter.
+
+It creates `BattleState.newWild` directly, so normal wild-battle/capture legality still applies downstream. Current 1.0.0 does not call Nuzlocke's newer encounter-selection policy.
+
+2.4.4 provides a generic cooperative selector API:
+- OPEN or non-randomized: targeted selection allowed.
+- BLIND randomized + undiscovered target: targeted selection denied with random-encounter fallback.
+- already discovered/owned target: targeted selection may be allowed.
+
+Recommended runtime:
+- Area DexNav with One Per Area and failed-encounter rules.
+- Area DexNav with Nuzlocke Random Encounters OPEN.
+- Area DexNav with BLIND: document current 1.0.0 behavior; do not claim API enforcement until DexNav adopts the selector contract or a generic engine seam becomes available.
+- Safari and Pokémon Tower ghost modes.
+
+### Protected compatibility
+Wide Menus + latest tested parent: runtime PASS/no crash. Tracker code remains unchanged.
+
+## 2.4.3 RC — Item Shortcut 1.4.0 / Reusable Machines 1.0.1
+
+### Runtime ledger
+**Wide Menus + latest parent build: PASS — no crash.**
+This is protected evidence. 2.4.3 does not modify the tracker/Wide Menus implementation.
+
+### Item Shortcut 1.4.0
+Current source reviewed.
+
+Both the five-slot USE action and FAST-item path call the standard Bag USE behavior. This means target selection, field validation, ItemEffects, and Nuzlocke's engine-level item rule gate remain shared instead of being duplicated.
+
+Compatibility classification is corrected from Bag presentation to `item_use_entrypoint`.
+
+Recommended runtime checks:
+- FAST Rare Candy with No Rare Candy ON.
+- FAST Repel with No Repels ON.
+- FAST healing item with No Field Heal ON.
+- legal item still works normally.
+
+### Reusable Machines 1.0.1
+Current source reviewed.
+
+The mod changes TM consumption, HM forget restrictions, Bag machine labels, and optional Moves Manager handling. Its TM preservation session begins from PartyMenu's TM/HM teaching flow, downstream of Nuzlocke's ItemEffects TM legality check.
+
+Compatibility classification is now `machine_mechanics`, not generic item ownership.
+
+Recommended runtime checks:
+- No TMs ON: TM is refused before party teaching and remains in inventory.
+- No TMs OFF: TM teaches successfully and remains reusable.
+- HM use remains legal under No TMs.
+- Reusable Machines + Modern Bag combination.
+
+## 2.4.2 RC — Modern Bag 1.5.2 and EXP Share Modes 1.0.0
+
+### Modern Bag
+Current mod-index release metadata reports 1.5.2. The browsable source folder is older than the current archive, so 1.5.2 is recorded as release/index-reviewed rather than falsely called current-source-reviewed.
+
+The reviewed Bag architecture delegates actual item actions to the engine path. Nuzlocke therefore models alternate Bag ownership as item presentation while retaining challenge item-policy ownership.
+
+### EXP Share Modes
+1.0.0 current source reviewed. All distribution modes ultimately use Gen1Recomp Experience.apply, including Modern Progressive bench awards. Current Gen1Recomp Experience.apply calls exp.gain before mutating mon.exp, so Nuzlocke cap/edging policy remains on the canonical award seam.
+
+### Provider discovery
+Automatic legacy adapters now prefer `game.mods:status().loaded` and use old globals only as fallback.
+
+Runtime combinations remain TEST REQUIRED.
+
+## 2.4.1 RC — trainer-party shape normalization for caps
+
+Current Gen1Recomp R/B/Y trainer battles use the selected `trainer.parties[partyIndex]` roster directly as the `trainer.party` hook payload. Nuzlocke's Gym Team Size helper already normalized that direct-array shape, but the level-cap preview used an older wrapper-only extraction path.
+
+2.4.1 routes cap projection through the canonical party reader and composed trainer transaction. This improves parity for:
+- native R/B/Y trainer arrays;
+- provider wrappers using `.party`, `.roster`, or `.team`;
+- external trainer.party composition;
+- Nuzlocke's built-in Difficulty transform.
+
+No provider-specific hardcoded branch was added.
+
 # Nuzlocke 2.4.0 compatibility summary
 
 2.4.0 consolidates the compatibility work performed after the 2.3.12 public release.

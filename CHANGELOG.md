@@ -1,3 +1,119 @@
+# 2.4.10 — Forgiveness Token million-price purchase path
+
+Direct child of 2.4.9 RC.
+
+- Preserves the intentional advertised Forgiveness Token price of **¥1,000,000**.
+- Adds a token-specific cap-aware settlement path instead of lowering the token to ¥100,000 or raising the global wallet ceiling.
+- On engines with the native ¥999,999 wallet ceiling, a full wallet is the representable settlement requirement; purchasing consumes that full wallet while the Mart continues to present **¥1,000,000**.
+- Normal Mart prices, ordinary item purchases, Trainer Money, and the global wallet ceiling are unchanged.
+- Keeps the 2.4.9 `noBadgeBoosts`/AI-tier decoupling and Forgiveness modal correction.
+- Gen1Recomp 0.1.99 compatibility audit retained. Per project manifest policy, the forward declaration is now five patch versions ahead: `>=0.1.86 <0.2.5`.
+- Save schema remains unchanged.
+- R/B/Y million-price purchase path is **TEST REQUIRED**. Gold native Mart behavior remains **TEST REQUIRED**; no new Gold runtime PASS is claimed.
+
+# 2.4.9 RC — difficulty hardening + Forgiveness modal correction
+
+Direct child of 2.4.8 RC.
+
+- Decoupled `noBadgeBoosts` from `aiTier`, so badge-boost suppression now applies independently even for future profiles with `aiTier = 0`.
+- Gen 1 private battle badge state is cleared before the AI-tier gate; Gold no longer depends on `trainer.attributes` being available for the independent badge-boost flag.
+- Corrected the R/B/Y Forgiveness prompt's opaque panel rendering: it now paints its own panel/window instead of calling nonexistent `mod.ui.clear` / `game:clear` APIs.
+- Preserves the 2.4.8 RC Gen1Recomp `>=0.1.86 <0.2.1` compatibility range and all unrelated behavior.
+
+# 2.4.8 RC — launcher compatibility + battle feedback cleanup
+
+- Direct child of 2.4.7 RC.
+- Expanded launch compatibility from `>=0.1.86 <0.1.99` to `>=0.1.86 <0.2.1`, fixing 0.1.99 rejection and explicitly allowing 0.2.0.
+- Hardened the R/B/Y Forgive Encounter prompt as an opaque Nuzlocke-owned screen so underlying battle/party HUD content does not bleed through.
+- Gym Team Size refusal text is now limited to once per individual trainer-battle attempt. There is no new setting/toggle. Enforcement remains active on every over-limit attempt.
+- Added semantic encounter-count status based on the same authoritative encounter eligibility used by Failed Encounter/capture rules. Dupes and other free encounters are not marked as spending the area.
+- No global battle/menu draw monkey-patches were added.
+- Runtime validation required before publication.
+
+# 2.4.7 RC — provider load-order metadata fix
+
+- Direct child of 2.4.6 RC.
+- Added `gen1_modern_ui` and `gen_2_randomizer_plus` to `optional_dependencies`; both are actively discovered with `mod.find`.
+- They remain optional integrations.
+- Chuck → Pryce → Jasmine progression is documented intentional behavior and is unchanged.
+- No unrelated gameplay changes.
+
+# 2.4.6 RC — Gym Forgiveness activity guard
+
+- Direct child of 2.4.5 RC.
+- Fixed the confirmed missing `d.active()` guard in `awardGymLeaderForgiveness`.
+- Demo/ghost battles are rejected before the one-shot Gym reward ledger/token path.
+- Focused trainer-reward ledger audit found no second same-confidence defect.
+- No unrelated gameplay changes.
+
+# 2.4.5 RC — Summon / Quest System compatibility pass
+
+- Direct child of the exact uploaded 2.4.4 RC.
+- Source-reviewed Summon 1.0.2 and Quest System 1.0.5.
+- Summon now classifies as both external encounter start and targeted encounter selector.
+- Quest System now classifies as quest framework/presentation rather than generic quest-content ownership.
+- Individual quest/source mods retain their own content and reward ownership.
+- MOD COMPAT adds QUEST UI and QUEST DATA ownership rows.
+- No named-mod gameplay enforcement branches added.
+- Wide Menus runtime PASS remains protected and its integration code is unchanged.
+- Runtime testing required before publication.
+
+# 2.4.4 RC — Catch Helper / Area DexNav compatibility pass
+
+- Direct child of 2.4.3 RC.
+- Source-reviewed Catch Helper 1.4.0 and Area DexNav 1.0.0.
+- Catch Helper is classified as capture mechanics + battle information because current 1.4.0 both displays live catch odds and intentionally retunes Ultra Ball HP-factor behavior.
+- Area DexNav is classified as an encounter selector in addition to an external encounter starter.
+- Added generic cooperative targeted-encounter selection policy for randomized BLIND INFO.
+- Ordinary random encounters are never blocked by BLIND INFO.
+- Under BLIND randomized encounters, compatible targeted selectors are asked not to deliberately choose an undiscovered hidden species; they can fall back to a normal random encounter.
+- EncounterAPI now exposes/uses the targeted selection policy when a provider opts into targeted-selection context.
+- MOD COMPAT adds ENC SELECT / CATCH ODDS / CATCH RULES ownership rows.
+- Nuzlocke random encounters already mutate the final live encounter registry that Area DexNav reads, so no second/randomizer-specific registry was introduced.
+- Catch Helper reads the already-active battle; BLIND INFO does not hide catch odds after the encounter is visibly underway.
+- No hardcoded runtime branch for Catch Helper or Area DexNav.
+- Wide Menus runtime PASS remains protected; tracker code unchanged.
+- Runtime combination testing required before publication.
+
+# 2.4.3 RC — Item Shortcut / Reusable Machines compatibility pass
+
+- Direct child of 2.4.2 RC.
+- Runtime report: latest parent build no longer crashes with Wide Menus. This is now recorded as a protected runtime PASS; 2.4.3 does not touch tracker/Wide Menus code.
+- Source-reviewed Item Shortcut 1.4.0 and Reusable Machines 1.0.1.
+- Corrected legacy capability classification: Item Shortcut is no longer reported as the Bag presentation owner.
+- `AUTOMATIC_ITEM_USE` now canonicalizes to `item_use_entrypoint` instead of broad `item_provider`.
+- `MACHINE_PROVIDER` now canonicalizes to `machine_mechanics` instead of broad `item_provider`.
+- MOD COMPAT adds ITEM USE and MACHINES ownership rows while keeping ITEM RULES Nuzlocke-owned.
+- Item Shortcut's reviewed direct/FAST use path intentionally re-enters the standard Bag USE flow, so Nuzlocke's ItemEffects legality gate remains authoritative.
+- Reusable Machines starts its reusable-TM session from the normal TM/Party teaching flow; No TMs therefore remains upstream of the reusable-consumption behavior.
+- No hardcoded enforcement branch for either mod.
+- Runtime combination tests required before publication.
+
+# 2.4.2 RC — Modern Bag / EXP Share compatibility pass
+
+- Direct child of 2.4.1 RC; preserves the 2.4.1 Difficulty/cap fix.
+- Modern Bag current indexed release 1.5.2 reviewed; index/release metadata is newer than the browsable source folder, so current-source status is not overstated.
+- EXP Share Modes 1.0.0 current source reviewed.
+- Legacy auto-compat discovery now prefers Gen1Recomp's authoritative loaded-mod graph.
+- Split alternate Bag presentation ownership from item mechanics and Nuzlocke item policy.
+- MOD COMPAT adds BAG UI / ITEM RULES / EXP DIST. / EXP CAP ownership rows and explanations.
+- `nuzlocke.experience` is now API 2; its capAward/evaluateAward/preflight helper returns a real read-only cap ceiling instead of always allowing the requested EXP.
+- Canonical Experience.apply -> exp.gain remains the preferred EXP path.
+- No mod-specific gameplay enforcement branches added.
+- Runtime combination testing required before publication.
+
+# 2.4.1 RC — Difficulty/cap direct-party fix
+
+- Direct child of published 2.4.0.
+- Confirmed 2.4.0 bug: changing built-in Game Difficulty could leave NUZ STATUS NEXT CAP and the shared level-cap enforcement source at vanilla values.
+- Root cause: R/B/Y trainer parties are commonly direct arrays at `trainer.parties[partyIndex]`; the cap reader selected that array and then incorrectly required a nested `.party/.roster/.team`, producing nil.
+- `liveTrainerAce()` now uses the existing canonical `baseTrainerParty()` reader and `composedTrainerParty()` transaction already used by Gym Team Size.
+- NEXT CAP, EXP edging, Rare Candy cap enforcement, Trainer Card/status consumers, and actual battle composition now derive from the same composed trainer-party shape.
+- Defensive fallback also accepts direct-array party rows.
+- Executable Lua regression harness PASS: stable Difficulty selection changes representative Yellow boss caps and projected caps match composed battle aces.
+- Real in-game Yellow runtime confirmation is still required before any 2.4.1 publication.
+- No save schema, Compatibility API number, package tree, or engine range change.
+
 # 2.4.0 — published release
 
 **Direct promotion of 2.3.35 RC. No additional runtime/gameplay behavior was changed during promotion.**

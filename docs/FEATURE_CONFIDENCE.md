@@ -1,3 +1,133 @@
+## 2.4.8 RC
+
+Static/syntax validated:
+- 0.1.99 and 0.2.0 manifest compatibility.
+- Forgive Encounter opaque-screen clear.
+- Gym Team Size text once per battle-attempt transaction with enforcement unchanged.
+- Encounter-spend state follows the authoritative eligibility decision.
+
+Runtime required:
+1. Launch on Gen1Recomp 0.1.99.
+2. Forgive Encounter prompt during battle: no underlying HUD overlap.
+3. Over-limit Gym Leader attempt: one refusal message, battle canceled.
+4. Challenge Leader again: refusal may appear once again for the new attempt.
+5. Eligible first encounter reports encounter-count state.
+6. Dupes/free/ineligible encounters do not report that the area will be spent.
+
+## 2.4.7 RC
+
+Static-confirmed: both newly listed optional providers are actively discovered by Nuzlocke. Runtime combination tests remain recommended.
+
+## 2.4.6 RC
+
+Confirmed static fix: Gym Forgiveness rejects demo/ghost battles before reward processing. Runtime retest: legitimate Gym grant, full-bag retry, and once-only ledger behavior.
+
+## 2.4.5 RC confidence
+
+Source-reviewed:
+- Summon 1.0.2.
+- Quest System 1.0.5.
+
+Protected runtime:
+- Wide Menus: PASS/no crash.
+
+Runtime required:
+1. Summon + One Per Area / No Catching.
+2. Summon in Safari.
+3. Observe current Summon under BLIND without claiming cooperative enforcement.
+4. Quest System plus a source quest reward/acquisition path.
+5. MOD COMPAT QUEST UI / QUEST DATA.
+6. Preserve Difficulty/NEXT CAP validation.
+
+## 2.4.4 RC confidence
+
+### Protected runtime PASS
+- Wide Menus + latest tested parent: PASS/no crash.
+- 2.4.4 does not alter tracker/Wide Menus code.
+
+### Current source reviewed
+- Catch Helper 1.4.0.
+- Area DexNav 1.0.0.
+
+### Static/harness validated
+- encounter-selector capability classification.
+- capture-mechanics classification.
+- BLIND targeted-selection policy.
+- existing Difficulty/cap regression harness remains PASS.
+
+### Runtime required
+1. Catch Helper + No Catching / Ball rule.
+2. Catch Helper under randomized BLIND after encounter begins.
+3. Area DexNav + One Per Area.
+4. Area DexNav + Random Encounters OPEN.
+5. Area DexNav Safari/Pokémon Tower behavior.
+6. Observe current Area DexNav 1.0.0 under BLIND; do not claim targeted-selector enforcement because that release predates the cooperative API.
+7. Preserve Difficulty/NEXT CAP in-game validation.
+
+## 2.4.3 RC confidence
+
+### Runtime-confirmed
+- Wide Menus + latest parent build: **PASS / no crash**.
+- Protected: 2.4.3 does not modify ENC TRACKER/Wide Menus code.
+
+### Source-confirmed, runtime required
+- Item Shortcut 1.4.0 routes direct and FAST use through the standard Bag USE flow.
+- Reusable Machines 1.0.1 starts reusable-TM preservation downstream of the normal TM teaching entry.
+- New MOD COMPAT ITEM USE / MACHINES classification is static/syntax validated.
+
+### Runtime matrix
+1. Item Shortcut FAST Rare Candy + No Rare Candy.
+2. Item Shortcut FAST Repel + No Repels.
+3. Item Shortcut FAST Potion + No Field Heal.
+4. Reusable Machines + No TMs ON.
+5. Reusable Machines + No TMs OFF.
+6. HM teaching with No TMs ON.
+7. MOD COMPAT ownership rows with each mod installed.
+8. Preserve Difficulty/NEXT CAP runtime regression test.
+
+## 2.4.2 RC confidence
+
+Source/release analysis:
+- Modern Bag 1.5.2: current release/index reviewed; runtime required.
+- EXP Share Modes 1.0.0: current source reviewed; runtime required.
+- Gen1Recomp Experience.apply -> exp.gain: source confirmed.
+
+Runtime matrix:
+1. Preserve 2.4.1 Difficulty -> NEXT CAP -> actual Leader/enforcement test.
+2. Modern Bag + No Rare Candy.
+3. Modern Bag + one PP/heal/Repel ban.
+4. Modern Bag Favorites, if available, cannot bypass item rules.
+5. EXP Share Modes OFF with cap.
+6. Classic Even Split with cap.
+7. Modern Progressive bench EXP with cap/edging.
+8. MOD COMPAT shows BAG UI separate from ITEM RULES and EXP DIST. separate from EXP CAP.
+
+Do not publish until the target release candidate passes runtime testing.
+
+## 2.4.1 RC confidence
+
+### Confirmed defect from runtime
+- 2.4.0 built-in Difficulty selection changes labels but does not reliably change displayed NEXT CAP: **FAIL**.
+- Shared enforcement cap may therefore also remain stale/vanilla: **affected by same authoritative calculation**.
+
+### Executable regression harness
+- direct-array R/B/Y trainer shape reproduced: **PASS**
+- VANILLA / NUZ MEDIUM / YELLOW LEGACY / SHIN-STYLE stable-ID switching: **PASS**
+- composed boss ace changes by profile: **PASS**
+- projected NUZ STATUS cap == composed battle ace: **PASS**
+- shared enforcement cap == composed battle ace: **PASS**
+
+### Required before publication
+Yellow in-game:
+1. Open NUZ STATUS before Brock/Misty and note NEXT CAP.
+2. Switch VANILLA → NUZ MEDIUM → YELLOW LEGACY* → SHIN-STYLE*.
+3. Reopen NUZ STATUS after each switch; cap should change when rounded boss ace changes.
+4. Battle the Leader and confirm their actual levels match the projected cap.
+5. Verify Rare Candy/EXP cap enforcement uses that same value.
+6. Return to VANILLA and confirm vanilla cap returns.
+
+Do not publish 2.4.1 until this passes.
+
 # Feature Confidence — Nuzlocke 2.4.0
 
 ## Runtime-confirmed / protected results

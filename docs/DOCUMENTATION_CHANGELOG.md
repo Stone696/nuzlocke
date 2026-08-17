@@ -1,3 +1,72 @@
+## 2.4.10
+- Documented the ¥1,000,000 Forgiveness Token cap-aware settlement contract.
+- Updated the manifest-policy declaration to five Gen1Recomp patch versions beyond audited 0.1.99 (`<0.2.5`).
+- No new runtime PASS claimed.
+
+## 2.4.8 RC
+
+- Documented 0.1.99/0.2.0 launcher compatibility.
+- Documented Forgive Encounter modal cleanup.
+- Documented once-per-battle Gym Team Size refusal text; no setting added.
+- Documented encounter-spend indicator API/state.
+
+## 2.4.7 RC
+
+- Added Modern UI and Gen 2 Randomizer+ optional dependency metadata.
+- Recorded Chuck → Pryce → Jasmine as intentional rather than a defect.
+- No files added or removed.
+
+## 2.4.6 RC
+
+- Documented confirmed Gym Forgiveness demo/ghost activity-guard fix.
+- No files added or removed.
+
+## 2.4.5 RC
+
+- Added Summon 1.0.2 source review.
+- Added Quest System 1.0.5 source review.
+- Added targeted Summon classification.
+- Split quest framework/presentation from source quest content/rewards.
+- Preserved Wide Menus runtime PASS.
+- No files added or removed.
+
+## 2.4.4 RC
+
+- Added current source review for Catch Helper 1.4.0.
+- Added current source review for Area DexNav 1.0.0.
+- Added encounter-selector/capture-mechanics compatibility semantics.
+- Added cooperative BLIND targeted-encounter selection contract.
+- Recorded that Catch Helper active-battle odds are not hidden by BLIND INFO.
+- Preserved Wide Menus runtime PASS.
+- No files added or removed.
+
+## 2.4.3 RC
+
+- Recorded Wide Menus no-crash runtime PASS for the latest parent build.
+- Added current source review for Item Shortcut 1.4.0.
+- Added current source review for Reusable Machines 1.0.1.
+- Documented item-use-entrypoint and machine-mechanics capability semantics.
+- No files added or removed.
+
+## 2.4.2 RC
+
+- Added Modern Bag 1.5.2 current release/index review.
+- Added EXP Share Modes 1.0.0 current source review.
+- Documented item presentation vs item policy.
+- Documented EXP distribution vs EXP cap ownership.
+- Documented Experience provider API 2 read-only cap preflight.
+- Documented authoritative loaded-mod discovery.
+- No files added or removed.
+
+## 2.4.1 RC
+
+- Recorded published 2.4.0 Difficulty/NEXT CAP runtime failure.
+- Documented direct-array R/B/Y trainer-party root cause.
+- Documented canonical party-reader/composition fix.
+- Recorded executable Lua regression-harness PASS.
+- Explicitly left in-game Yellow validation as TEST REQUIRED before publication.
+- No files added or removed.
+
 # Documentation Changelog
 
 ## 2.4.0

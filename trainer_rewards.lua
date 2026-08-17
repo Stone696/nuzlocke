@@ -163,6 +163,22 @@ local function installForgivenessTokenBagBridge()
     return true
 end
 
+
+-- 2.4.10: The published F. TOKEN price is intentionally ¥1,000,000, one yen
+-- above the native six-digit wallet ceiling. Keep that public/design price,
+-- but settle the transaction at the engine's representable wallet ceiling.
+-- This is token-specific: normal Mart prices and the global wallet cap remain
+-- untouched. UI integrations should continue to present ¥1,000,000.
+function M.forgivenessTokenSettlementPrice(save)
+    local advertised = math.max(0, math.floor(tonumber(
+        mod.exports.__beta26.forgivenessTokenShopPrice) or 1000000))
+    local ceiling = trainerWalletCeiling(save)
+    if advertised > ceiling then
+        return ceiling
+    end
+    return advertised
+end
+
 local function withForgivenessTokenStock(game, stock)
     if not M.forgivenessEnabled() or type(stock) ~= "table" then
         return stock
@@ -172,7 +188,9 @@ local function withForgivenessTokenStock(game, stock)
         game.data.items[mod.exports.__beta26.forgivenessTokenShopId] = {
             id = mod.exports.__beta26.forgivenessTokenShopId,
             name = d.Strings("F. TOKEN"),
-            price = mod.exports.__beta26.forgivenessTokenShopPrice,
+            price = M.forgivenessTokenSettlementPrice(game and game.save),
+            nuzlockeAdvertisedPrice =
+                mod.exports.__beta26.forgivenessTokenShopPrice,
             description = d.Strings(
                 "Restores one failed area's encounter chance. Gym Leaders award these normally."),
             keyItem = true, tossable = false, canToss = false,
@@ -247,6 +265,9 @@ function M.scaleTrainerMoney(battle, result)
 end
 
 function M.awardGymLeaderForgiveness(battle, result)
+    -- 2.4.6: permanent Gym rewards require a real active battle.
+    local game = battle and (battle.game or d.getCurrentGame()) or d.getCurrentGame()
+    if not d.active(game, battle) then return false end
     if result ~= "win" or not M.forgivenessEnabled() or not battle
         or not d.isTrainerBattle(battle) then
         return false
@@ -374,6 +395,8 @@ function M.install(ownerMod, supplied)
     mod.exports.__beta26.forgivenessTokenShopId =
         "NUZLOCKE_FORGIVENESS_TOKEN"
     mod.exports.__beta26.forgivenessTokenShopPrice = 1000000
+    mod.exports.__beta26.forgivenessTokenSettlementPrice =
+        M.forgivenessTokenSettlementPrice
     mod.exports.__beta26.installForgivenessTokenBagBridge =
         installForgivenessTokenBagBridge
     mod.exports.__beta26.withForgivenessTokenStock =

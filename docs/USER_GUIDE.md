@@ -1,3 +1,56 @@
+## 2.4.8 RC feedback behavior
+
+Gym Team Size refusal dialogue is automatic and shows at most once during a single battle attempt. There is no separate frequency option.
+
+When encounter-count status is presented by the native/compatible UI, it means the current encounter is actually eligible to spend that area's encounter opportunity; Dupes and other free encounters should not show it.
+
+## 2.4.5 RC compatibility display
+
+**QUEST UI** identifies the journal/framework provider.
+**QUEST DATA** identifies source quest-content ownership.
+
+A quest framework does not automatically own or bypass Nuzlocke legality for item or Pokémon rewards.
+
+Summon is treated as a targeted encounter selector because the player deliberately chooses a species.
+
+## 2.4.4 RC compatibility ownership
+
+MOD COMPAT now distinguishes:
+- **ENC SELECT** — a tool that deliberately selects a species from the live encounter table;
+- **CATCH ODDS** — a mod that changes/displays capture probability;
+- **CATCH RULES** — Nuzlocke legality such as whether the capture is permitted.
+
+Under Random Encounters **BLIND INFO**, compatible encounter selectors should not deliberately target an undiscovered hidden randomized species. Ordinary random gameplay encounters are unchanged.
+
+Catch odds for a Pokémon already encountered on screen are not considered hidden encounter-table information.
+
+## 2.4.3 RC MOD COMPAT ownership
+
+Two additional ownership rows improve clarity:
+
+- **ITEM USE** — a mod that can launch item use outside the normal Bag screen, such as a shortcut/automatic-use interface.
+- **MACHINES** — a mod that changes TM/HM mechanics such as consumption or forgetting.
+
+These do **not** replace **ITEM RULES**. Nuzlocke still owns challenge legality unless an explicit challenge-policy provider is selected.
+
+## 2.4.2 RC compatibility display
+
+MOD COMPAT now distinguishes:
+- BAG UI — who draws/organizes inventory;
+- ITEM RULES — who decides whether challenge item use is legal;
+- EXP DIST. — who decides who receives EXP/how it is divided;
+- EXP CAP — who enforces the challenge level ceiling.
+
+An alternate Bag or EXP Share mod can therefore own presentation/distribution without silently taking over Nuzlocke challenge policy.
+
+## 2.4.1 RC test note
+
+Game Difficulty and Level Caps are independent settings, but when level caps are enabled the **numeric next cap follows the actual composed next boss roster**.
+
+In this RC, switching a built-in Difficulty profile should immediately change NUZ STATUS NEXT CAP whenever that profile changes the rounded next-boss ace. EXP/Rare Candy cap enforcement uses the same calculation.
+
+2.4.1 RC is a development build awaiting in-game validation.
+
 # Nuzlocke 2.4.0 User Guide — release update
 
 This section summarizes user-visible behavior added or changed since 2.3.12.
