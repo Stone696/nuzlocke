@@ -124,7 +124,7 @@ return function(mod, opts)
             mod.save:get("locke_type", 1)) or 1))
         return ({
             [0] = "CUSTOM", [1] = "NUZLOCKE", [2] = "HARDCORE",
-            [3] = "SOLO", [4] = "IRONMON",
+            [3] = "SOLO", [4] = "IRONMON", [5] = "VANILLA",
         })[mode] or "CUSTOM"
     end
 

@@ -1,12 +1,12 @@
 {
   "id": "nuzlocke",
   "name": "Nuzlocke",
-  "version": "2.4.10",
+  "version": "2.4.69",
   "api": 2,
   "entry": "main.lua",
   "profile": "content",
   "category": "BALANCE",
-  "game_version": ">=0.1.86 <0.2.5",
+  "game_version": ">=0.1.86 <2.0.0",
   "priority": 100,
   "permissions": [
     "engine_internals"
@@ -17,7 +17,17 @@
     "pokemon_randomizer",
     "wide-menus",
     "gen1_modern_ui",
-    "gen_2_randomizer_plus"
+    "gen_2_randomizer_plus",
+    "overworld_wild_spawns",
+    "modern_party_ui",
+    "kanto_ascendant",
+    "delta_type",
+    "dex_overflow",
+    "safari_all",
+    "wonder_trade",
+    "qol_toggles",
+    "quality_of_life",
+    "g9-battle-engine"
   ],
   "conflicts": [],
   "description": "Configurable Nuzlocke enforcement, encounter tracking, challenge rules, run status, and quality-of-life options for Red, Blue, Yellow, and beta Gold support.",
@@ -27,5 +37,6 @@
     "blue",
     "yellow",
     "gold"
-  ]
+  ],
+  "affects_link": true
 }

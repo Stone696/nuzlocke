@@ -1,3 +1,674 @@
+# Nuzlocke Changelog
+
+## 2.4.69 RC — Release Candidate Consolidation
+- Strict child of **2.4.68 DEV**.
+- No new gameplay feature or rule behavior is introduced in this RC.
+- Promotes the 2.4.68 development head into a release-candidate package after sequential Dev Mode hardening from 2.4.64–2.4.68.
+- Retains 2.4.62 Random Encounter legality filtering and 2.4.63 future-schema downgrade safety unchanged.
+- Retains Dev diagnostics for hook health, lifecycle duplicate detection, future-schema write-attempt detection, rule effectiveness, and Randomizer integrity.
+- Save Schema remains **4**; Compatibility API remains **27**; Diagnostics API remains **1**.
+- Package inventory remains the existing **15 files**; no files added or removed.
+- Release-candidate status is **STATIC/SOURCE PASS / RUNTIME REGRESSION TEST REQUIRED**.
+
+
+## 2.4.68 DEV — Dev Randomizer Integrity Audit
+- Strict child of **2.4.67 DEV**.
+- Adds a read-only recursive scan of the currently applied Nuzlocke-owned wild encounter registry.
+- Reuses Random Encounter legality dimensions from the live candidate pool: generation mode, glitch exclusion, runtime safety, and canonical `specialAcquisitionDenied(...)` rule legality.
+- Skips externally delegated Random Encounter ownership and content-provider slots that explicitly opt out of Nuzlocke randomization.
+- Reports scan count, violation count, status, delegation owner, and up to 64 deterministic violation rows with path/species/reason.
+- Integrates the audit into Dev snapshots, self-test results, exported `[RANDOMIZER INTEGRITY]` text, and `nuzlocke_dev.randomizer_integrity()`.
+- No encounter tables are changed by the audit and no gameplay/save/API behavior changes.
+
+
+## 2.4.67 DEV — Dev Rule Effectiveness Audit
+- Strict child of **2.4.66 DEV**.
+- Adds read-only rule diagnostics showing each applicable rule's configured/stored value, normalized effective config value, and current owner/relationship.
+- Reuses the canonical `getConfigValue(...)` and `externalRuleDelegation(...)` paths instead of duplicating rule/delegation semantics.
+- Reports whether a value came from the save or the rule default, plus aggregate totals for applicable, delegated, changed, and errored rows.
+- Reports the Nuzlocke master-switch state and future-schema support state separately rather than falsely rewriting every rule's effective value when the master switch is off.
+- Adds rule-effectiveness evidence to Dev snapshots, self-test results, exported `[RULE EFFECTIVENESS]` text, and `nuzlocke_dev.rule_effectiveness()`.
+- No gameplay, rule, save-schema, Compatibility API, or persistent-save behavior change.
+
+
+## 2.4.66 DEV — Future-Schema Safe-Stop Write Diagnostics
+- Strict child of **2.4.65 DEV**.
+- Adds a transparent diagnostic wrapper around Nuzlocke's own `mod.save:set(...)` surface.
+- While `saveSchemaTooNew` is active, every attempted Nuzlocke save write is counted by key and the first attempt per key emits a `safe_stop.write_attempt` breadcrumb when Dev Mode is enabled.
+- The detector never blocks or changes the underlying write; 2.4.63's explicit safe-stop guards remain the protection mechanism. This build only proves whether an unguarded writer escaped them.
+- Adds aggregate/first/last/per-key evidence to Dev assertions, snapshots, self-test results, and exported `[SAFE STOP WRITES]` text.
+- Adds `nuzlocke_dev.safe_stop_writes()` and `nuzlocke_dev.reset_safe_stop_writes()` for controlled downgrade tests.
+- No gameplay, rule, save-schema, Compatibility API, or intended persistent-save behavior change.
+
+
+## 2.4.65 DEV — Dev Lifecycle Counters
+- Strict child of **2.4.64 DEV**.
+- Adds session-only Dev counters for `game.ready`, `save.loaded`, `battle.started`, `battle.ended`, `pokemon.caught`, and `pokemon.evolved`.
+- Counters live on the surviving `Dev` table so supported hot-reload cycles preserve evidence instead of resetting it.
+- Uses weak event-payload identity tracking to detect the same event table reaching the Dev callback more than once; repeated delivery increments `duplicate_callbacks` and per-event duplicate counts.
+- Duplicate callback detection pushes a `lifecycle.duplicate` breadcrumb immediately.
+- `battle_delta` reports `battle.started - battle.ended` as context only; it is not automatically considered failure because a self-test can run during an active battle.
+- Lifecycle evidence is included in Dev snapshots, self-test results, exported `[LIFECYCLE]` text, and the public diagnostics surface.
+- Adds `nuzlocke_dev.lifecycle()` and `nuzlocke_dev.reset_lifecycle()` for controlled runtime tests.
+- No event-registration, gameplay, rule, save-schema, Compatibility API, or persistent-save behavior changes.
+
+
+## 2.4.64 DEV — Dev Hook / Adapter Health
+- Strict child of **2.4.63 DEV**.
+- Adds read-only `Dev.hookHealth()` inspection for 13 observable Nuzlocke runtime adapters across R/B/Y and Gold.
+- Diagnostics never `require(...)` a module merely to inspect it; only already-loaded modules are observed, preserving boot/load order.
+- Health states are deliberately conservative: **HEALTHY** (our wrapper is live top-level), **CHAINED** (our marker/wrapper exists but another live function is above it or replaced it), **MISSING** (loaded module lacks the expected Nuzlocke marker), and **PENDING** (module not loaded yet).
+- `Dev.selfTest()`, snapshots, exported self-test text, and `nuzlocke_dev.hook_health()` now expose hook-health evidence.
+- CHAINED is informational rather than an automatic failure because another compatible mod may legitimately compose above Nuzlocke.
+- No gameplay, rule, save-schema, compatibility-API, hook-ordering, or persistent-save behavior change.
+
+
+## 2.4.63 DEV — Future-Schema Downgrade Safety
+- Strict child of **2.4.62 DEV**.
+- A save whose `__nuzlocke_save_schema` is newer than schema 4 now suspends ordinary Nuzlocke enforcement through the shared `active(...)` gate instead of continuing under older schema assumptions.
+- High-risk lifecycle repair writers that do not naturally pass through `active(...)` now bail out while the newer-schema safe-stop is active: WIP Wonderlocke cleanup, staged new-game rule commits, external-save reconciliation, Randomizer encounter/all reapplication, and Gym/E4 initialization.
+- The first ready game session displays a non-persisted **NUZLOCKE PAUSED** warning explaining that the save came from a newer Nuzlocke build and that enforcement/save repairs are disabled to protect it.
+- Adds `mod.exports.__beta26.saveSchemaSupported()` as the central read-only schema-support query.
+- No Save Schema or Compatibility API bump.
+
+
+## 2.4.62 DEV — Random Encounter Rule-Legality Filtering
+- Strict child of **2.4.61 DEV**.
+- Fixes Nuzlocke-owned Random Encounter pools ignoring active Type Locke, No Legendaries, No Mythicals, No Pseudos, and Maximum BST legality.
+- Reuses the same canonical `specialAcquisitionDenied(...)` gate already used by Random Starter instead of duplicating rule logic.
+- Existing persisted random encounter slots are revalidated against the current candidate pool; saved choices that become illegal are deterministically replaced. Mid-run Type Locke/BST/species-ban edits now trigger immediate randomizer reapplication.
+- If the legal species pool is empty, encounter randomization safely leaves/restores the vanilla encounter registry rather than crashing.
+- Corrects inherited runtime build metadata that still reported 2.4.60 inside `main.lua` despite the 2.4.61 package manifest/docs.
+- Future-schema downgrade-safety finding remains queued and is not mixed into this gameplay-rule interaction patch.
+- Save Schema remains **4**, Compatibility API remains **27**, Diagnostics API remains **1**.
+
+## 2.4.61 DEV — Permanent Rule Seal Write Ordering
+- Strict child of **2.4.60 DEV**.
+- Fixes dormant `persistPermanentRuleSeal()` ordering so durable `mod.storage` persistence must succeed before `mod.save` is marked permanently locked.
+- Storage unavailable, missing-playthrough, thrown-write, and unsuccessful-write returns now leave the in-memory lock flags untouched.
+- Preserves the 2.4.59 `pguard` storage diagnostic path.
+- Permanent Rule Seal remains intentionally WIP-disabled; no intended live gameplay-rule behavior change.
+- Save Schema remains **4**, Compatibility API remains **27**, Diagnostics API remains **1**.
+
+## 2.4.60 DEV — Runtime Crash Diagnostic Capture
+- Strict child of **2.4.59 DEV**.
+- Routes full NUZ RULES/SETUP `update`/`draw` `xpcall` tracebacks into `Dev.recordError` before player-facing truncation.
+- Applies the same capture to the independent NUZ STATUS screen runtime-failure path with distinct labels.
+- Keeps existing deferred screen-recovery behavior intact and protects diagnostic reporting with `pcall`.
+- No gameplay-rule, save-schema, Compatibility API, or Diagnostics API change.
+
+## 2.4.59 DEV — Passive Dev Diagnostic Hardening
+- Strict child of **2.4.58 DEV**.
+- Adds recursion-safe `Dev.pguard()` so selected high-value guarded failures enter the existing Dev breadcrumb/error/snapshot pipeline without changing normal `pcall` return semantics.
+- Instruments permanent-seal storage access, save-upgrade steps, compat loader/provider discovery, active-provider callbacks, recovery/context callbacks, and the fallback species-metadata provider signature.
+- Preserves intentional provider signature fallback: the first species-metadata signature may fail normally; Dev reports only when the fallback call also throws.
+- Adds read-only encounter-ledger assertions for `encounter_states`/`caught_areas` contradictions.
+- Adds structural Shiny Clause assertions for malformed mode/used values without falsely warning when a player legitimately lowers a finite limit after prior uses.
+- Does **not** wrap mechanics-capability calculation itself, avoiding recursive diagnostic snapshots.
+- Preserves 2.4.58 full 48-breadcrumb export and bounded 16-report history unchanged.
+- Corrects stale `mod.card` engine metadata to match the manifest range `>=0.1.86 <2.0.0`.
+- Save Schema remains **4**, Compatibility API remains **27**, Diagnostics API remains **1**.
+
+## 2.4.58 DEV — Encounter Provenance + Diagnostic History
+- Strict child of **2.4.57 DEV**.
+- Pins battle encounter provenance once; catch, failed-encounter, and Ball-legality accounting can no longer drift to later map/cardinal/Gold-time state.
+- Keeps battle-less current-location queries live; death-location records explicitly remain live-location semantics.
+- Dev reload distinguishes READ success from true write/read-back verification.
+- Exports the full bounded 48-breadcrumb ring.
+- Verified exports update `dev/self_test_latest` and also create a sequenced history record.
+- Retains the newest 16 history reports per playthrough via official `mod.storage`.
+- Save Schema remains **4**, Compatibility API remains **27**, engine range remains `>=0.1.86 <2.0.0`.
+
+## 2.4.57 DEV — Launcher Range + Capture Ledger Integrity
+- Strict child of **2.4.56 DEV**.
+- Broadens `game_version` from `>=0.1.86 <0.2.5` to **`>=0.1.86 <2.0.0`** so compatible Gen1Recomp/launcher updates do not disable Nuzlocke merely for crossing the 0.2.x version line.
+- Keeps Mod API **2** as the breaking mod-surface contract; the upper engine-major guard remains below 2.0.0.
+- Adds monotonic capture-state reconciliation: successful consumed-catch evidence from `tracker_log` / `caught_areas` cannot be downgraded to FAILED by a delayed callback or conflicting reconstructed state.
+- Reconciles `caught_areas`, `encounter_states`, and `encounter_area_state_ledger` before projection and before save writes.
+- Does not invent tracker catches, reopen areas, or convert Shiny/exempt `consumedArea=false` catches into consumed slots.
+- Save Schema remains **4** and Compatibility API remains **27**.
+
+## 2.4.56 DEV — Documentation Integrity Reconciliation
+- Strict child of **2.4.55 DEV**.
+- Documentation/current-metadata reconciliation only; no gameplay semantics changed.
+- Repaired historical version attribution and current-state documentation across the full package.
+- Corrected engine/current contracts to audited Gen1Recomp **0.2.1**, Save Schema **4**, Compatibility API **27**, manifest range **`>=0.1.86 <0.2.5`**.
+- Added a permanent rule forbidding blanket historical version replacement.
+
+## 2.4.55 DEV — Fast Section Navigation
+- Strict child of **2.4.54 DEV**.
+- Added SELECT+UP/DOWN section-header jump with wraparound.
+- Added SELECT+LEFT/RIGHT collapse-all / expand-all on section headers.
+
+## 2.4.54 DEV — Rule-List Wraparound Navigation
+- Strict child of **2.4.53 DEV**.
+- UP from the first selectable row wraps to the last; DOWN from the last wraps to the first.
+
+## 2.4.53 DEV — Historical Difficulty Scope Correction
+- Strict child of **2.4.52 DEV**.
+- Restored the intended historical profile set/names while keeping the deeper 2.4.52 trainer-team/moves/AI/boss/DV mechanics.
+
+## 2.4.52 DEV — Deeper Historical Difficulty Mechanics
+- Strict child of **2.4.51 DEV**.
+- Added deeper boss-specific team/BST/move/AI/Stat EXP/DV/held-item tuning and selected-profile summaries.
+- Temporary extra profile names from this build were removed in 2.4.53.
+
+## 2.4.51 DEV — Gold-Only No Held Items
+- Strict child of **2.4.50 DEV**.
+- Added Gold-only No Held Items: GIVE blocked, TAKE preserved, existing player-held effects suppressed, enemy/trainer held items unaffected.
+
+## 2.4.50 DEV — Gen1Recomp 0.2.1 Compatibility Consolidation
+- Strict child of **2.4.49 DEV**.
+- Confirmed 0.2.1 adds no additional mod-runtime migration beyond 0.2.0.
+
+## 2.4.49 DEV — Gen1Recomp 0.2.x Compatibility Migration
+- Strict child of **2.4.48 DEV**.
+- Migrated Dev diagnostics persistence to official `mod.storage`.
+- Removed legacy direct filesystem/clipboard persistence assumptions.
+
+## 2.4.48 DEV — Native DEV TOOLS Cursor + Wrapped Info
+- Strict child of **2.4.47 DEV**.
+- Added native cursor glyphs and wrapped diagnostic info.
+
+## 2.4.47 DEV — Verified Diagnostic Export + FILE INFO
+- Strict child of **2.4.46 DEV**.
+- Added legacy write/read-back verification and FILE INFO diagnostics.
+
+## 2.4.46 DEV — Deterministic Self-Test File
+- Strict child of **2.4.45 DEV**.
+- Added deterministic legacy self-test file target; later superseded by `mod.storage`.
+
+## 2.4.45 DEV — DEV TOOLS Layout Repair
+- Strict child of **2.4.44 DEV**.
+- Fixed R/B/Y DEV TOOLS geometry and added cached report viewer/copy controls.
+
+## 2.4.44 DEV — Clipboard-First Diagnostics
+- Strict child of **2.4.43 DEV**.
+- Prioritized clipboard delivery; later superseded by official storage.
+
+## 2.4.43 DEV — DEV TOOLS + Self-Test
+- Strict child of **2.4.42 DEV**.
+- Added dedicated Dev Mode tools screen and structural self-test.
+
+## 2.4.42 DEV — Self-Test + Presentation-Control Unlock
+- Strict child of **2.4.41 DEV**.
+- Kept Level Cap Messages / Encounter Indicator editable after challenge sealing and added initial self-test wiring.
+
+## 2.4.41 DEV — Rules Row Collision Fix
+- Strict child of **2.4.40 DEV**.
+- Fixed R/B/Y label/value overlap.
+
+## 2.4.40 DEV — Lua Loadability Hotfix
+- Strict child of **2.4.39 DEV**.
+- Repaired the >200-local compiler failure from 2.4.38/2.4.39.
+
+## 2.4.39 DEV — Encounter Tracker Death Projection
+- Strict child of **2.4.38 DEV**.
+- Added persistent-ID death projection; inherited 2.4.38 compiler-invalid state.
+
+## 2.4.38 DEV — Encounter Indicator + Cap Message Frequency
+- Strict child of **2.4.37 DEV**.
+- Added encounter indicator and cap-message frequency.
+- Historical compiler-invalid build due to >200 locals.
+
+## 2.4.37 DEV — Forgiveness Modal UI Polish
+- Strict child of **2.4.36 DEV**.
+- Rebuilt the R/B/Y forgiveness prompt as an opaque framed modal.
+
+## 2.4.36 DEV — Shiny / Encounter-Slot Integrity
+- Strict child of **2.4.35 DEV**.
+- Fixed finite Shiny Clause accounting and centralized caught/failed slot conflict semantics.
+
+## 2.4.35 DEV — Developer Diagnostics Mode
+- Strict child of **2.4.34 DEV**.
+- Added default-OFF read-only diagnostics mode.
+
+# 2.4.34 — Provider Capability Architecture + Gen9Dex Hardening
+
+## 2.4.34 DEV
+
+- Strict child of 2.4.33 DEV; no older branch restoration.
+- Added a private mechanics-capability resolver so compatibility can distinguish battle-stat ownership, stat-growth ownership, native-DV identity, move-category ownership, and merged evolution data instead of treating an entire mod as one feature owner.
+- Added a source-audited Gen9Dex / Gen 9 Battle Engine 1.2.0 Gold adapter. Its modern IV/EV/Nature battle-stat growth is treated separately from Gold native DVs, which remain meaningful for shiny/gender/Unown identity.
+- Gold Player/Wild/Trainer Stat EXP starting controls and No Stat EXP Gain now delegate when Gen9Dex owns modern EV growth rather than misleadingly appearing to control the active growth system. Perfect native DVs remain available.
+- Added a normalized species-facts surface over merged species/provider data for BST/types/category/evolution consumers.
+- Evolution Limits NO FINAL now evaluates outgoing evolutions against the final merged evolution-method registry; dormant unsupported National-Dex evolution rows no longer make a currently terminal species look non-final.
+- Added g9-battle-engine as an optional dependency for deterministic compatibility discovery.
+- Save Schema remains 4 and Compatibility API remains 27; the new capability resolver is intentionally internal until its contract is runtime-proven.
+
+# 2.4.33 — Save Editor / External Save-State Hardening
+
+## 2.4.33 DEV
+
+- Direct child of 2.4.32 DEV; no older branch was restored.
+- Audited Gen1Recomp's built-in Save Editor mutation and save-serialization paths against Nuzlocke Save Schema 4.
+- Added load/re-entry reconciliation so a Pokemon already marked `nuzlockeDead` cannot be resurrected by an external HP edit while Permadeath is active.
+- Added non-destructive external party-cap reconciliation: parties above the selected Party Size Limit are reported in MOD COMPAT, but Nuzlocke never auto-boxes, deletes, reorders, or chooses which Pokemon to remove.
+- Preserved the existing persistent identity model: `speciesAtRegistration` remains historical while `currentSpecies` follows external/in-game species changes.
+- Preserved the persisted `EDITED` provenance token for backward compatibility while changing player-facing Nuz Info presentation to EXTERNAL; no encounter location or catch slot is fabricated for editor-added Pokemon.
+- Added Save Editor audit/runtime requirements to compatibility, API, user-guide, confidence, and release-note documentation.
+- Save Schema remains 4; Compatibility API remains 27.
+
+# 2.4.32 — Quality of Life 1.3.0 Compatibility Hardening
+
+## 2.4.32 DEV
+
+- Direct child of 2.4.31 DEV.
+- Added `quality_of_life` as an optional dependency and audited compatibility adapter target.
+- Gen 1 Easy Interactions SELECT shortcut can no longer bypass active Travel Restrictions or Dungeon Lock-In; the external shortcut handler is conservatively suppressed instead of wrapping low-level story-sensitive transport methods.
+- Gold remains on native field-move permission paths.
+- Existing No Repels enforcement remains authoritative for the mod's Repel shortcut/refill paths.
+- Updated compatibility ledger, user/API docs, release notes, and confidence guidance.
+- Save Schema remains 4; Compatibility API remains 27.
+
+# 2.4.31 — QoL Toggles 1.24.1 compatibility hardening
+
+## 2.4.31 DEV
+
+- Direct child of 2.4.30 DEV; no older branch was restored.
+- Added an option-aware audited adapter for QoL Toggles 1.24.1 across Gen 1 + Gold.
+- Added `qol_toggles` as an optional dependency for deterministic coexistence ordering.
+- Hardened No Escape and Travel Restrictions / Dungeon Lock-In public veto hooks at restriction priority so external convenience wrappers cannot short-circuit active Nuzlocke policy.
+- Guarded QoL Toggles AUTO-REPEL's direct exported consumption helper when No Repels is active.
+- Delegates only the duplicate Automatic Running convenience control, and only while QoL Toggles `run_hold_b` is actually enabled; the stored Nuzlocke choice remains dormant and returns when external ownership ends.
+- Did not broaden No Field Heal, No Gambling, Perfect DVs, Dupes Clause, or other rule semantics merely to match similarly named QoL options.
+- Save Schema remains 4 and Compatibility API remains 27.
+- Runtime combination validation remains TEST REQUIRED.
+
+# 2.4.30 — Compatibility ledger stale-target refresh
+
+## 2.4.30 DEV
+
+- Direct child of 2.4.29 DEV; no older branch was restored.
+- Re-audited Too Many Balls 0.6.1 (historically Kanto Balls). Current source supports Gen 1 + Gen 2 with generation-specific custom-ball mechanics; Nuzlocke retains generic semantic Ball/content compatibility and adds no named adapter.
+- Re-audited Shiny Pokémon 1.0.8. R/B/Y shiny identity remains visible through native shiny DVs / `mon.shiny`; targeted Limited Shiny Clause + Randomizer runtime combination testing remains required. Gold is not certified by this audit.
+- Marked Kanto Life and NPC Bubbles as UPSTREAM UNRESOLVED after a fresh resolution attempt could not identify canonical current upstreams from retained evidence. Historical architecture lessons are preserved without pretending to be current certification.
+- Corrected stale current-build lineage wording carried in 2.4.29 metadata.
+- No gameplay rules, save keys/schema, Compatibility API methods, engine range, dependencies, or package files changed.
+
+# 2.4.29 — Maintained rule × game-family parity matrix
+
+## 2.4.29 DEV
+
+- Direct child of 2.4.28 DEV; no older branch was restored.
+- Added the promised permanent rule × game-family parity matrix to the existing `docs/COMPATIBILITY.md`.
+- Matrix records R/B/Y and Gold implementation state, enforcement/adaptation mechanism, runtime confidence, and intentional/upstream limitations for the current rule surface.
+- Added a release gate: every future rule addition, removal, rename, game-family exposure change, or generation-specific enforcement change must update the matrix in the same child build.
+- Clarified that matrix `✅` means an implementation exists; it does not promote a TEST REQUIRED path to runtime PASS.
+- No gameplay mechanics changed. Save Schema remains 4; Compatibility API remains 27.
+- Package file tree remains unchanged.
+
+# 2.4.28 — Cross-version rule parity audit
+
+## 2.4.28 DEV
+
+- Direct child of **2.4.27 DEV**; no older branch was restored.
+- Audited every exposed rule against R/B/Y and Gold/Gen2-specific data and execution seams.
+- Gold now exposes shared rules that already had generation-neutral enforcement but were omitted from the Gold beta allowlist: **Route Forgiveness, Overworld Encounters, Town Catches, No Legendaries, No Mythicals, No Pseudos, Trainer Money, Solo Only, Randomizer Seed, Starter Style, Encounter Balance, Randomizer Info, Random Learnsets, and Learnset Gen**.
+- Gold Random Learnsets now supports the native Gen2 `levelMoves` species data shape in addition to the Gen1 `level1Moves` / `learnset` shapes. Learn levels and row counts are preserved; only move ids are replaced through the existing deterministic LEARNSETS RNG stream.
+- Added native Gen2 fallback classification for **Raikou, Entei, Suicune, Lugia, and Ho-Oh** as Legendaries and **Celebi** as Mythical. Merged provider metadata remains authoritative when present.
+- Kept genuinely Kanto/R/B/Y-specific controls off the Gold surface: Route 2/10/20 splits, Mt. Moon splits, Safari Zone splits, Gym Guide Rare Candy, and R/B/Y-only starting Money/Poke Balls/Rare Candy. Wonderlocke remains WIP/disabled.
+- Updated Gold parity metadata to `2.4.28`.
+- Save schema remains **4** and Compatibility API remains **27**; no public provider contract or incompatible persisted structure changed.
+- Runtime validation is required for the newly exposed Gold rules, especially Random Learnsets, Route Forgiveness rewards, Trainer Money, species bans, Solo Only, town/overworld capture policy, and randomizer sub-controls.
+
+# 2.4.27 — Gold compact rule-label parity
+
+## 2.4.27 DEV
+
+- Direct child of 2.4.26 DEV; no older branch was restored.
+- Ported the existing R/B/Y localization-safe compact-label fallback into Gold's native Setup and NUZ RULES renderer.
+- Gold now prefers the full translated rule/category label whenever it fits the native field, then consults existing `shortName` / `shortTitle` only when needed.
+- If a full label is translated but its shorthand is not, Gold keeps the translated full label and uses the existing marquee instead of substituting untranslated English shorthand.
+- Rule values, descriptions, controls, save keys, presets, provider ownership, and gameplay enforcement are unchanged.
+- Save schema remains 4; Compatibility API remains 27; package file set remains 15 files.
+- Runtime visual confirmation required for Gold NEW GAME Setup and in-game NUZ RULES, including long translated labels and section headers.
+
+# Nuzlocke 2.4.26 DEV — Chronological Changelog Normalization
+
+2.4.26 is the strict child of 2.4.25 DEV and changes no gameplay behavior. This build completes the structural changelog repair by turning the cumulative historical record into one coherent newest-to-oldest sequence.
+
+## Repaired chronology
+
+- Reordered all recovered version blocks into descending version chronology instead of leaving beta.30.0.0.x / beta.30.1.x records stranded after the early-beta archive.
+- Reconciled duplicate version headings while preserving unique historical notes under a single version block.
+- Restored the missing **2.1.19 RC** heading from surviving contemporaneous documentation; its unique compatibility/lifecycle notes had survived in 2.4.25 but were incorrectly attached to 2.1.20.
+- Preserved evidence qualifiers and intentionally missing-number gaps; no unsupported release details were invented.
+- Preserved all historical version identities carried by 2.4.25, including internal beta.25 milestone labels such as 25D2/25D3/25D4 and 26B10.
+- Added a minimal `2.0.0-beta.30.1.19` lineage heading because surviving packaged-revision evidence confirms the build existed; its exact delta remains intentionally unattributed.
+
+## Permanent release gates
+
+`CHANGELOG.md` remains append-only historical evidence. In addition to preserving every immediate-parent version identity, future candidates must now verify that:
+
+1. version blocks are in newest-to-oldest order;
+2. duplicate version identities are reconciled into one chronological block unless an explicitly documented internal milestone intentionally shares the public version number;
+3. historical content is never moved below older versions by an append operation;
+4. unique notes from a reconciled duplicate are retained.
+
+## Validation
+
+- Documentation/version reconciliation only; no challenge rule, save schema, compatibility API, engine range, or gameplay hook is intentionally changed.
+- Package file set remains unchanged.
+
+---
+
+# Nuzlocke 2.4.25 DEV — Full Historical Changelog Restoration
+
+2.4.25 is the strict child of 2.4.24 DEV and changes no gameplay behavior. This build repairs the changelog regression discovered after 2.4.24 by making the surviving pre-2.3.1 RC development history explicit, searchable, and protected from future truncation.
+
+## Repaired historical record
+
+- Reconciled the current changelog against surviving earlier changelog/handoff records instead of reconstructing feature history from memory.
+- Restored explicit visibility for the pre-2.3.1 RC development line, including the detailed 2.2.x and 2.1.x histories and the surviving 2.0.0-beta development records.
+- Preserved evidence qualifiers such as **surviving snapshot**, **reconstructed**, **runtime PASS**, **TEST REQUIRED**, and known conflicting historical records. Missing exact deltas are not invented.
+- Added the historical coverage index below so the older development line can no longer appear to vanish simply because archival entries were stranded far below later release sections.
+- Corrected the current API document's stale build-contract label while performing the documentation reconciliation.
+
+## Historical coverage index
+
+The detailed entries remain in this same file. The currently recovered project record includes:
+
+- **2.4.x:** 2.4.0 through 2.4.25 development/release work represented by surviving entries.
+- **2.3.x:** 2.3.1 RC through the 2.3.35 RC stabilization/compatibility line plus the 2.3.12 final release.
+- **2.2.x:** 2.2.0 through 2.2.21 RC, including Gen1Recomp compatibility, UI/runtime safety, Difficulty, cross-generation pools, Randomizer, Gym Team Size, intro/tutorial shortcuts, and interaction hardening.
+- **2.1.x:** 2.1.0 through 2.1.24 where surviving records exist, including localization/UI repair, Type Locke expansion, Gold UI/runtime work, NUZ INFO/status recovery, and compatibility hardening.
+- **beta.31:** surviving 2.0.0-beta.31.0.0 through 31.0.4 records.
+- **beta.30:** surviving 30.0.0.x and 30.1.x records, including the compatibility/presentation/API development line.
+- **beta.29:** surviving 29.0.x, 29.1.x, 29.2.x, and 29.3.x records.
+- **beta.28 / beta.27 / beta.26 / beta.25:** surviving development and runtime-stabilization records.
+- **early beta history:** surviving/reconstructed beta.1, .3, .4, .5, .8, .10, .11, .12, .14, .15, .16, .19, .20, .21, .22, .23, and .24 records.
+
+Where an exact internal revision has no surviving changelog evidence, the file intentionally does **not** fabricate an entry merely to fill a numbering gap.
+
+## Permanent changelog rule
+
+`CHANGELOG.md` is now **append-only historical evidence**. Future builds may prepend new entries and may make narrowly documented factual corrections, but they must not truncate, replace wholesale, or silently collapse older version history. Before packaging, the immediate parent's historical version headings must be compared against the candidate; any disappearing historical heading is a release-gate failure unless its removal was explicitly approved as a duplicate correction and the unique historical information remains present elsewhere in this file.
+
+## Validation
+
+- Documentation/version reconciliation only; no challenge rule, save schema, compatibility API, engine range, or gameplay hook is intentionally changed.
+- Package file set remains unchanged.
+
+---
+
+---
+
+# Nuzlocke 2.4.24 DEV — Compatibility Research Ledger + Audit Governance
+
+2.4.24 is the direct child of 2.4.23 DEV and intentionally changes no gameplay rule. It reconciles the project's compatibility history into a maintained ledger and formalizes when source research is allowed to become runtime integration code. Save schema remains 4 and the 15-file package set is unchanged.
+
+## Documentation / compatibility process
+
+- Added the maintained compatibility research ledger to `docs/COMPATIBILITY.md`. Each entry records the mod/tool, version last inspected, audit date/build, analysis type, Nuzlocke treatment, runtime status, known limitations, and re-audit trigger.
+- Added a standing project rule that every future compatibility/learning pass updates the ledger in the same build. Static/source review, architecture/learning research, design inspiration, and runtime-confirmed compatibility are separate evidence levels.
+- Added current ledger entries for All Pokémon Catchable 151, Gen1Recomp Content Editor, Trainer Talk 0.2.6, Spaceworld Sprites 1.0, and Gen2-3D-Sprites / Stadium 2 Overworld Models 0.2.81, while retaining earlier audited integrations and research targets.
+- Recorded Gen2-3D-Sprites' embedded Wilds/direct overworld-capture path as a targeted Gold runtime-test requirement, especially Party Size Limit, capture legality, Ball restrictions, encounter consumption, tracker area attribution, and Nuzlocke UI coexistence. No private/internal adapter is added without a demonstrated failure.
+- Corrected stale 2.4.23 lineage comments/documentation that incorrectly named 2.4.21 as its parent; the true parent is 2.4.22.
+
+## Validation
+
+- Documentation/version reconciliation only; no challenge behavior or save data is intentionally changed.
+- Runtime status of previously untested mod combinations remains TEST REQUIRED.
+
+---
+
+---
+
+# Nuzlocke 2.4.23 DEV — Generic Content-Mod Compatibility Hardening
+
+2.4.23 is the direct child of 2.4.22 DEV and adds no new challenge option. It hardens composition with ordinary API-2 content mods and editor-generated content.
+
+## Hardened
+
+- Tracker area discovery now also learns map IDs from merged encounter registries, covering content mods that publish encounters before/without a separately discoverable map registry row.
+- Legendary/Mythical/Pseudo classification accepts common `tags`, `flags`, `traits`, and `categories` metadata collections in addition to dedicated booleans. Unknown classifications still fail open.
+- Ball detection now accepts dedicated merged `balls` / `ballRegistry` / `ball_registry` registries as well as item metadata and legacy item-effect tables, so custom API-2 capture devices participate in semantic capture policy without hard-coded IDs.
+- Existing merged BST/evolution/type handling and unknown-map support are preserved. Custom trainers are not guessed to be Gym Leaders; boss/cap ownership remains known-progression/provider driven.
+
+## Compatibility policy
+
+Ordinary content mods remain composers, not exclusive encounter or difficulty providers. Nuzlocke evaluates the final merged runtime world. Authored encounters remain intact with Random Encounters OFF; with Random Encounters ON, the player is explicitly asking Nuzlocke to randomize the merged tables.
+
+## Validation
+
+Static/source/package validation only. Runtime confirmation remains required with an encounter-expansion mod and with an editor-generated mod containing a custom map, custom species metadata, and a custom Ball. Save schema and package file set are unchanged.
+
+---
+
+---
+
+# 2.4.22 — General Party Size Limit
+
+Direct child of 2.4.21 DEV.
+
+- Added `Party Size Limit` with selectable active-party capacity 1–6.
+- Default 6 preserves vanilla party capacity and full-party auto-box behavior.
+- Values below 6 gate catches, gifts, trades, and PC withdrawals before they can increase the active party past the cap.
+- Preserved deposits and one-for-one PC moves/swaps; lowering the cap never destructively edits an existing oversized party.
+- Extended the cooperative storage-transaction policy and native R/B/Y + Gold PC seams.
+- Kept Solo Only, Gym Team Size, and Nuzlocke Loadouts independent.
+- No save-schema or package-file-set change.
+- Runtime status: TEST REQUIRED in R/B/Y and Gold.
+
+---
+
+# 2.4.21 — Travel Restrictions
+
+Direct child of 2.4.20 DEV.
+
+- Added `Travel Restrictions` with `NORMAL / NO FLY / NO FLY+TELEPORT`.
+- Reused the existing shared `fieldmove.eligibility` seam instead of adding a second field-move wrapper.
+- NO FLY blocks only player-invoked Fly while Nuzlocke is active; NO FLY+TELEPORT blocks Fly and Teleport.
+- Preserved Dig, Escape Rope, scripted/story transportation, map warps, trains, ferries, and unrelated travel.
+- Preserved Dungeon Lock-In's independent DIG/TELEPORT/FLY blocking while its entrance lock is active.
+- Kept Travel Restrictions outside Nuzlocke Loadout ownership.
+- Default is NORMAL; no save-schema change.
+- Runtime status: TEST REQUIRED in R/B/Y and Gold.
+
+---
+
+# 2.4.20 — Limited Shiny Clause
+
+Direct child of 2.4.19 DEV.
+
+## Added / changed
+
+- Upgraded Shiny Clause to `OFF / 1 / 2 / 3 / UNLIMITED`.
+- Added persistent `shiny_clause_used` run telemetry.
+- Successful shiny exceptions consume exactly one limited allowance; failed catch attempts do not.
+- Historical boolean ON is read as UNLIMITED and OFF as OFF, preserving old-save behavior without a schema bump.
+- Exhausted limited clauses stop bypassing area/Failed Encounter/Dupes restrictions.
+- Mid-run limit changes do not reset the used counter.
+- Shiny Clause remains outside Nuzlocke Loadout ownership.
+
+## Validation
+
+- Save schema unchanged.
+- Package file set unchanged.
+- Runtime R/B/Y + Gold confirmation required.
+
+---
+
+# 2.4.19 — Evolution Limits
+
+Direct child of 2.4.18 DEV.
+
+## Added
+
+- Added **Evolution Limits** with NORMAL / NO FINAL / NO EVOLUTION for R/B/Y and beta Gold.
+- NORMAL preserves vanilla evolution behavior and is the absent-key/default value.
+- NO FINAL blocks evolution into a terminal target derived from the live merged `pokemon[*].evolutions` graph; branching targets are evaluated independently.
+- NO EVOLUTION blocks all ordinary evolution decisions while Nuzlocke is active.
+- Unknown/incomplete mod-added target metadata fails open instead of being guessed terminal.
+- Enforcement uses the public shared `evolution.check` hook.
+- Evolution Limits remains independent of Nuzlocke Loadout preset ownership.
+
+## Validation
+
+- Save schema unchanged.
+- Package file set unchanged.
+- Runtime R/B/Y + Gold confirmation required.
+
+---
+
+# 2.4.18 — Nuzlocke Loadout synchronization
+
+Direct child of 2.4.17 DEV.
+
+## Added / changed
+
+- Added **VANILLA** loadout with neutral values for only loadout-owned challenge rules.
+- Added pre-apply loadout confirmation showing the number of rules that will change and a compact affected-rule preview; Cancel is non-destructive.
+- Manual edits to loadout-owned rules now reclassify to the exact matching preset or CUSTOM.
+- Independent rules no longer force a loadout to CUSTOM.
+- Reduced loadout ownership to the actual challenge footprint; Dupes, Shiny Clause, Type Locke, Maximum BST, glitch handling, Gym/Dungeon Lock-In, Difficulty, Randomizer, World Building, QoL, UI, area splits, Badge Boosts, and other independent options are not preset-owned.
+- Preserved historical saved IDs 1-4 for NUZLOCKE/HARDCORE/SOLO/IRONMON; VANILLA is ID 5 and is inserted first only in UI cycle order.
+- Preset application skips externally delegated rules and matching ignores those delegated rows.
+
+## Validation
+
+- Save schema unchanged.
+- Package file set unchanged.
+- Runtime R/B/Y + Gold confirmation required.
+
+---
+
+# 2.4.17 — Badge Boosts toggle
+
+Direct child of 2.4.16 DEV.
+
+## Added
+
+- Added **Badge Boosts ON/OFF** under Battle Mechanics for R/B/Y and beta Gold.
+- Default is ON, preserving vanilla behavior and making absent-key/old-save migration safe.
+- OFF reuses the existing battle-only badge-boost suppression machinery; earned badges and overworld progression are untouched.
+- Built-in difficulty composition is restrictive: either Badge Boosts OFF or a profile with `noBadgeBoosts=true` suppresses boosts.
+- Active-rule status shows **No Badge Boosts** only while the user-facing rule is OFF.
+
+## Scope / validation
+
+- No other backlog feature was implemented.
+- Save schema remains 4 and the package file set is unchanged.
+- Source/static validation only until R/B/Y and Gold runtime tests confirm ON/OFF behavior.
+
+---
+
+# 2.4.16 — Gen1 numeric edit-hint repair
+
+Direct child of 2.4.15 DEV.
+
+## Fixed
+
+- R/B/Y numeric rule edit mode no longer hides its control instructions behind unreachable draw logic.
+- The edit hint is now rendered inside the selected numeric-rule branch, where `editingNumber` can actually be true.
+- Numeric edit controls themselves are unchanged: Left/Right select a digit, Up/Down change the value, A confirms, and B backs out.
+- Gold's already-working edit-mode hint path is unchanged.
+
+## Validation
+
+- Static/syntax smoke only; runtime R/B/Y UI confirmation remains TEST REQUIRED.
+- Save schema remains 4 and package file set is unchanged.
+
+---
+
+# 2.4.15 — G1RecompMods compatibility hardening
+
+Direct child of 2.4.14 DEV.
+
+- Audited `zeak6464/G1RecompMods`, focusing on Delta Type 1.2.0, Dex Overflow 0.1.1, Safari Zone All 1.1.0, and Wonder Trade 1.2.1.
+- Added `typeLockAllowsPokemon(game, mon)` and changed concrete-mon legality paths to prefer runtime Pokémon typing over the base species record. This prevents transformed Pokémon from being judged by stale species typing while keeping starter/setup candidate checks species-based.
+- Failed Encounter handling, live capture denial, acquisition evaluation when a mon object is supplied, and NUZ INFO legality now use the concrete-mon Type Locke evaluator.
+- Added a separate Gold random-encounter runtime-safety check. Gold encounter randomization may now select complete merged species records without `def.index`, enabling string-id species such as Dex Overflow's runtime-safe additions.
+- The relaxed index rule is intentionally limited to encounter-table replacement. Starter, script-byte, save-byte, and link assumptions are not globally relaxed.
+- Wired audited local compatibility adapters into MOD COMPAT discovery when another mod publishes no explicit Nuzlocke relationship metadata. Explicit external declarations still win.
+- Added scoped Safari All ownership metadata and observe-only Wonder Trade metadata.
+- Added `delta_type`, `dex_overflow`, `safari_all`, and `wonder_trade` as optional dependencies for deterministic load ordering without making any required.
+- Gen1Recomp audit target remains 0.1.99; manifest remains `>=0.1.86 <0.2.5`; save schema unchanged.
+- All new combination behavior is **TEST REQUIRED**. No new runtime PASS is claimed.
+
+---
+
+# 2.4.14 DEV — Gen1Recomp 0.1.99 documentation/compatibility cleanup
+
+Direct child of 2.4.13.
+
+- Source-audited the current Gen1Recomp 0.1.99 mod-author documentation, Gen2 compatibility matrix, registries, manifest/link semantics, public battle/field APIs, and current source-level hook additions relevant to Nuzlocke.
+- Updated executable audited-engine metadata from 0.1.98 to 0.1.99 and added a dedicated 0.1.99 compatibility profile.
+- Corrected `contextual_field_actions` metadata to `transitive_native_guard`; Nuzlocke does not wrap `mod.world:useFieldAction` itself.
+- Records the new Gen 1 `item.use` BagMenu-dispatch hook as available but not authoritative; existing item policy enforcement remains unchanged.
+- Records shared `battle.bottom_ui_visible` and `battle.status_hud_visible` presentation seams for battle-HUD coexistence/future encounter-HUD work.
+- Added explicit `affects_link: true` because Nuzlocke modifies battle decisions and must participate in Gen1Recomp link fingerprinting.
+- Fixed `mod.card`: historical text outside its Lua return table made the 2.4.13 card unparsable.
+- Rebuilt current README/API/compatibility/user-guide/confidence documentation around actual 2.4.14 code and reconciled the planned backlog against implemented features.
+- Clarified that Permanent Rule Seal has retained durable implementation but is currently WIP-disabled.
+- Reviewed AIRivials 2.1.0 and Floating Battle HUD 0.5.7 at the accessible release/repository level; no speculative adapters were added because current implementation source lives in release assets unavailable to the connected source audit.
+- All five shipped `.lua` files and repaired `mod.card` pass available `texlua` syntax/loadfile checks. `manifest.json` parses and all literal package-local `mod:read()` targets exist.
+- Package file tree remains unchanged at 15 files; save schema remains 4.
+- Full Gen1Recomp `modkit validate/lint/gen2check` and runtime certification remain unavailable/not run in this environment, so no new runtime PASS is claimed.
+
+### Reconciled historical subrecord — 2.4.14 — Gen1Recomp 0.1.99 documentation + compatibility cleanup
+
+Direct child of 2.4.13.
+
+- Synchronized current compatibility metadata/docs to Gen1Recomp 0.1.99.
+- Corrected contextual field-action ownership metadata to `transitive_native_guard`.
+- Recognized the Gen 1 `item.use` dispatch and shared battle HUD visibility hooks without replacing protected enforcement paths.
+- Explicitly declared `affects_link=true` for link fingerprint safety.
+- Repaired malformed `mod.card` content and reconciled active documentation/backlog state.
+- No gameplay-rule or save-schema rewrite; no new runtime PASS claimed.
+
+---
+
+# 2.4.13 — dedicated Gold parity pass
+
+Direct child of 2.4.12.
+
+- Audited the shared R/B/Y rule surface against Gold's implemented adapters and policy seams.
+- Fixed a real Gold parity/UI gap: four rules that already had shared Gold-capable enforcement were omitted from `goldBetaRules` and therefore could not be configured from Gold's reduced rule surface.
+- Gold now exposes **No Healing Items**, **No X Items**, **No Center Heal**, and **No Mom Heal**.
+- Added Gold-specific descriptions for all four newly exposed rules.
+- No new enforcement subsystem was invented: battle item legality continues through the shared item-use policy, while Center/Mom healing continues through the existing shared healing-service gates.
+- Updated the exported Gold compatibility contract to identify battle-item and healing-service parity surfaces.
+- Preserves Kanto Ascendant 6.5.4, Wilds of Kanto 2.1.7, and Modern Party UI 0.3.8 compatibility work from prior builds.
+- Manifest remains `>=0.1.86 <0.2.5`, five patch versions ahead of the audited Gen1Recomp 0.1.99 engine.
+- Save schema unchanged.
+- Newly exposed Gold rule paths remain **TEST REQUIRED** until runtime validated.
+
+---
+
+# 2.4.12 — Kanto Ascendant 6.5.4 compatibility
+
+Direct child of 2.4.11.
+
+- Re-audited Kanto Ascendant against the v6.5.4 source/tag.
+- Explicitly classifies Kanto Ascendant as an external difficulty owner for its badge-phased trainer and wild level transforms.
+- Explicitly classifies Kanto Ascendant as a Trainer Card presentation owner.
+- Prevents Nuzlocke compatibility composition from treating Ascendant-owned difficulty surfaces as unclaimed and reduces the risk of double-transforming trainer/wild difficulty when Ascendant is the selected external provider.
+- Leaves Ascendant's `trainer.party`, `encounter.species`, deterministic randomizer, Johto pool expansion, protected encounters, followers, Archive PC, and storage behavior untouched.
+- Preserves the 2.4.11 Wilds of Kanto and Modern Party UI adapters.
+- Manifest remains `>=0.1.86 <0.2.5` under the five-versions-ahead project rule.
+- Save schema unchanged.
+- Kanto Ascendant 6.5.4 coexistence is **TEST REQUIRED**; no runtime PASS is claimed yet.
+
+---
+
+# 2.4.11 — Wilds of Kanto + Modern Party UI compatibility
+
+Direct child of 2.4.10.
+
+- Added an audited compatibility adapter for **Wilds of Kanto 2.1.7** (`overworld_wild_spawns`).
+- Wilds overworld Ball catches now consult Nuzlocke capture policy before the Pokémon is granted. Denied catches are converted to Wilds' normal escape path and the consumed Ball is refunded.
+- Successful Wilds overworld catches are routed through Nuzlocke's existing `pokemon.caught` tracker/provenance path so One Per Area, tracker history, Catch Info, shiny/dupes metadata, and provider provenance use the same registration code as normal catches.
+- Added explicit **Modern Party UI 0.3.8** (`modern_party_ui`) compatibility classification. It is treated as party presentation only; Nuzlocke does not replace or double-wrap its preserved engine party controller.
+- Added both mods as optional dependencies so load ordering is explicit without making either mod required.
+- Preserves 2.4.10 Forgiveness Token pricing behavior and all prior runtime-PASS behavior.
+- Manifest remains `>=0.1.86 <0.2.5` under the five-versions-ahead project rule.
+- Save schema unchanged.
+- Wilds overworld-catching integration and Modern Party UI coexistence are **TEST REQUIRED**; no runtime PASS is claimed yet.
+
+---
+
 # 2.4.10 — Forgiveness Token million-price purchase path
 
 Direct child of 2.4.9 RC.
@@ -11,6 +682,8 @@ Direct child of 2.4.9 RC.
 - Save schema remains unchanged.
 - R/B/Y million-price purchase path is **TEST REQUIRED**. Gold native Mart behavior remains **TEST REQUIRED**; no new Gold runtime PASS is claimed.
 
+---
+
 # 2.4.9 RC — difficulty hardening + Forgiveness modal correction
 
 Direct child of 2.4.8 RC.
@@ -19,6 +692,8 @@ Direct child of 2.4.8 RC.
 - Gen 1 private battle badge state is cleared before the AI-tier gate; Gold no longer depends on `trainer.attributes` being available for the independent badge-boost flag.
 - Corrected the R/B/Y Forgiveness prompt's opaque panel rendering: it now paints its own panel/window instead of calling nonexistent `mod.ui.clear` / `game:clear` APIs.
 - Preserves the 2.4.8 RC Gen1Recomp `>=0.1.86 <0.2.1` compatibility range and all unrelated behavior.
+
+---
 
 # 2.4.8 RC — launcher compatibility + battle feedback cleanup
 
@@ -30,6 +705,8 @@ Direct child of 2.4.8 RC.
 - No global battle/menu draw monkey-patches were added.
 - Runtime validation required before publication.
 
+---
+
 # 2.4.7 RC — provider load-order metadata fix
 
 - Direct child of 2.4.6 RC.
@@ -38,6 +715,8 @@ Direct child of 2.4.8 RC.
 - Chuck → Pryce → Jasmine progression is documented intentional behavior and is unchanged.
 - No unrelated gameplay changes.
 
+---
+
 # 2.4.6 RC — Gym Forgiveness activity guard
 
 - Direct child of 2.4.5 RC.
@@ -45,6 +724,8 @@ Direct child of 2.4.8 RC.
 - Demo/ghost battles are rejected before the one-shot Gym reward ledger/token path.
 - Focused trainer-reward ledger audit found no second same-confidence defect.
 - No unrelated gameplay changes.
+
+---
 
 # 2.4.5 RC — Summon / Quest System compatibility pass
 
@@ -57,6 +738,8 @@ Direct child of 2.4.8 RC.
 - No named-mod gameplay enforcement branches added.
 - Wide Menus runtime PASS remains protected and its integration code is unchanged.
 - Runtime testing required before publication.
+
+---
 
 # 2.4.4 RC — Catch Helper / Area DexNav compatibility pass
 
@@ -75,6 +758,8 @@ Direct child of 2.4.8 RC.
 - Wide Menus runtime PASS remains protected; tracker code unchanged.
 - Runtime combination testing required before publication.
 
+---
+
 # 2.4.3 RC — Item Shortcut / Reusable Machines compatibility pass
 
 - Direct child of 2.4.2 RC.
@@ -89,6 +774,8 @@ Direct child of 2.4.8 RC.
 - No hardcoded enforcement branch for either mod.
 - Runtime combination tests required before publication.
 
+---
+
 # 2.4.2 RC — Modern Bag / EXP Share compatibility pass
 
 - Direct child of 2.4.1 RC; preserves the 2.4.1 Difficulty/cap fix.
@@ -102,6 +789,8 @@ Direct child of 2.4.8 RC.
 - No mod-specific gameplay enforcement branches added.
 - Runtime combination testing required before publication.
 
+---
+
 # 2.4.1 RC — Difficulty/cap direct-party fix
 
 - Direct child of published 2.4.0.
@@ -113,6 +802,8 @@ Direct child of 2.4.8 RC.
 - Executable Lua regression harness PASS: stable Difficulty selection changes representative Yellow boss caps and projected caps match composed battle aces.
 - Real in-game Yellow runtime confirmation is still required before any 2.4.1 publication.
 - No save schema, Compatibility API number, package tree, or engine range change.
+
+---
 
 # 2.4.0 — published release
 
@@ -208,6 +899,8 @@ Confirmed during the 2.3.13–2.3.35 development line:
 
 ---
 
+---
+
 # 2.3.35 RC — MOVE INFO overlap fix
 
 - Direct child of 2.3.34 RC.
@@ -220,6 +913,8 @@ Confirmed during the 2.3.13–2.3.35 development line:
 - Long type/stat lines use the existing marquee-safe renderer rather than colliding.
 - Two moves remain visible at once; Up/Down still reaches moves 3-4.
 - No gameplay rules, move data, save schema, Compatibility API number, package tree, or engine range changed.
+
+---
 
 # 2.3.34 RC — NUZ INFO / MOD COMPAT runtime presentation follow-up
 
@@ -235,6 +930,8 @@ Confirmed during the 2.3.13–2.3.35 development line:
 - Move 3/4 remain reachable with normal Up/Down scrolling.
 - No gameplay rules, save schema, Compatibility API number, package tree, or engine range changed.
 
+---
+
 # 2.3.33 RC — Yellow runtime follow-up
 
 - Direct child of 2.3.32 RC.
@@ -247,6 +944,8 @@ Confirmed during the 2.3.13–2.3.35 development line:
 - Difficulty selection still clears observed boss-cap cache on every in-game profile change.
 - No gameplay formula duplication, save schema change, Compatibility API bump, package-tree change, or engine-range change.
 - 2.3.32 Gym Team Size fix remains TEST REQUIRED.
+
+---
 
 # 2.3.32 RC — Yellow Gym Team Size enforcement fix
 
@@ -261,6 +960,8 @@ Confirmed during the 2.3.13–2.3.35 development line:
 - Gym Lock-In implementation is untouched.
 - No save schema, Compatibility API number, package tree, or engine range change.
 
+---
+
 # 2.3.31 RC — runtime-feedback stabilization pass
 
 - Direct child of runtime-tested 2.3.30 RC.
@@ -274,6 +975,8 @@ Confirmed during the 2.3.13–2.3.35 development line:
 - Preserved confirmed 2.3.30 Difficulty/provider and dependent-row improvements.
 - No save schema, Compatibility API number, package tree, or engine range change.
 
+---
+
 # 2.3.30 RC — dependency/UI and difficulty-warning stabilization
 
 - Direct child of 2.3.29 RC.
@@ -285,6 +988,8 @@ Confirmed during the 2.3.13–2.3.35 development line:
 - Child selections remain saved and restore when their parent is enabled again.
 - No gameplay provider is disabled or invented; active installed providers remain discoverable.
 - No save-schema, Compatibility API-number, package-tree, or engine-range change.
+
+---
 
 # 2.3.29 RC — dependent randomizer controls + status polish
 
@@ -299,6 +1004,8 @@ Confirmed during the 2.3.13–2.3.35 development line:
 - NUZ STATUS now shows bold-emphasized `ACTIVE RULES:`.
 - No save schema, Compatibility API number, package tree, or engine-range change.
 
+---
+
 # 2.3.28 RC — MOD COMPAT presentation/accessibility pass
 
 - Direct child of 2.3.27 RC.
@@ -312,6 +1019,8 @@ Confirmed during the 2.3.13–2.3.35 development line:
 - Added semantic MOD COMPAT presentation metadata/model for compatible UI overhauls.
 - No compatibility ownership, gameplay rule, save schema, Compatibility API number, package tree, or engine-range changes.
 
+---
+
 # 2.3.27 RC — NUZ INFO stabilization
 
 - Direct child of 2.3.26 RC.
@@ -321,6 +1030,8 @@ Confirmed during the 2.3.13–2.3.35 development line:
 - Shortened only the constrained native Catch Info row label from `LOCATION` to `LOC.`.
 - Added glyph-safe right-column fitting to R/B/Y native NUZ INFO rows to prevent label/value overlap.
 - No gameplay shiny logic, legality rules, encounter behavior, save schema, Compatibility API number, package tree, or engine range changed.
+
+---
 
 # 2.3.26 RC — stabilization-only UI pass
 
@@ -334,6 +1045,8 @@ Confirmed during the 2.3.13–2.3.35 development line:
 - Forgiveness Token price, quantity, purchase behavior, rule logic, dialogue, and descriptive naming are unchanged.
 - No new gameplay features, save-schema change, Compatibility API-number change, package-tree change, or engine-range change.
 
+---
+
 # 2.3.25 RC — storage + encounter-information compatibility pass
 
 - Direct child of 2.3.24 RC.
@@ -346,6 +1059,8 @@ Confirmed during the 2.3.13–2.3.35 development line:
 - BLIND INFO hides undiscovered randomized table data only through cooperative information APIs; it never alters the gameplay registry or encounter generation.
 - No FAFF0x-specific runtime branches, save-schema change, Compatibility API-number change, package-tree change, or engine-range change.
 
+---
+
 # 2.3.24 RC — IronMON / Enemy HP upstream-resolution pass
 
 - Direct child of 2.3.23 RC.
@@ -356,6 +1071,8 @@ Confirmed during the 2.3.13–2.3.35 development line:
 - Did not conflate the actively maintained community IronMON Ultimate challenge rules with the unresolved Gen1Recomp mod source.
 - No gameplay, compatibility API, save schema, package tree, or engine-range changes.
 
+---
+
 # 2.3.23 RC — compatibility ledger consolidation
 
 - Direct child of 2.3.22 RC.
@@ -365,6 +1082,8 @@ Confirmed during the 2.3.13–2.3.35 development line:
 - Added compatibility-ledger policy separating source-reviewed, release-reviewed, expected-compatible, runtime-PASS, and historical evidence.
 - No gameplay, UI behavior, API, save schema, package tree, or engine-range change.
 
+---
+
 # 2.3.22 RC — generic UI-overhaul compatibility contract
 
 - Direct child of 2.3.21 RC.
@@ -372,6 +1091,8 @@ Confirmed during the 2.3.13–2.3.35 development line:
 - Added additive `nuzlocke_ui` API 1 describing Nuzlocke custom-screen presentation roles, state ownership, preferred layout, native fallback and semantic-adapter safety.
 - NuzlockeConfigScreen and NuzlockeTrackerScreen now carry the same generic presentation metadata on their live screen instances.
 - No Gen-3-UI-specific rule branch, gameplay ownership change, screen replacement, save-schema change, Compatibility API number change or package-tree change.
+
+---
 
 # 2.3.21 RC — Weather FX compatibility-learning pass
 
@@ -382,6 +1103,8 @@ Confirmed during the 2.3.13–2.3.35 development line:
 - Exported the reconciliation helper through the existing compatibility surface.
 - No Weather-FX-specific enforcement branch, rule semantics, save-schema, Compatibility API number, package tree, or engine-range change.
 
+---
+
 # 2.3.20 RC — translation/performance compatibility learning pass
 
 - Direct child of 2.3.19 RC.
@@ -391,6 +1114,8 @@ Confirmed during the 2.3.13–2.3.35 development line:
 - Modern UI tracker model generation no longer mutates tracker/save state itself.
 - Existing tracker-row helpers keep their original maintenance behavior for non-screen callers.
 - No rule semantics, save schema, Compatibility API number, package tree, or engine range changed.
+
+---
 
 # 2.3.19 RC — recent-mod compatibility pass
 
@@ -403,6 +1128,8 @@ Confirmed during the 2.3.13–2.3.35 development line:
 - Added descriptive legacy auto-compat hints for trainer-capture and custom-Ball providers.
 - No mod-ID-specific enforcement branches, files, save-schema, or engine-range changes.
 
+---
+
 # 2.3.18 RC — smaller-risk presentation bug-fix pass
 
 - Direct child of 2.3.17 RC.
@@ -412,6 +1139,8 @@ Confirmed during the 2.3.13–2.3.35 development line:
 - MOD COMPAT native fitting no longer byte-truncates translated text when font span helpers are unavailable.
 - No rule, battle, save, encounter, provider, startup, API, schema, or package-tree changes.
 
+---
+
 # 2.3.17 RC — small bug-fix pass
 
 - Direct child of 2.3.16 RC.
@@ -419,6 +1148,8 @@ Confirmed during the 2.3.13–2.3.35 development line:
 - Gold egg provenance no longer registers or marks a synthetic UNKNOWN area as visited when current map resolution fails; UNKNOWN remains provenance-only.
 - Removed a dead delegated-learnset condition after the authoritative-provider early return.
 - No gameplay-rule, file-tree, API, or save-schema changes.
+
+---
 
 # 2.3.16 RC — medium-risk bug-fix pass
 
@@ -428,6 +1159,8 @@ Confirmed during the 2.3.13–2.3.35 development line:
 - Repaired the logically unreachable duplicate-starter catch fallback.
 - Gold Physical/Special Split now scopes temporary type/category changes to copied per-call damage data.
 - No new features, files, API version, or save-schema changes.
+
+---
 
 # 2.3.15 RC — full bug-fixing pass
 
@@ -441,6 +1174,8 @@ Confirmed during the 2.3.13–2.3.35 development line:
 - Preserves 2.3.14 hold-B Running Shoes and ENC TRACKER/Wide Menus ownership behavior.
 - No files added or removed; save schema remains 4; Compatibility API remains 27.
 
+---
+
 # 2.3.13 RC — ENC TRACKER hotfix candidate
 
 - Direct child of the published 2.3.12 release.
@@ -450,6 +1185,8 @@ Confirmed during the 2.3.13–2.3.35 development line:
 - Gold tracker presentation remains native 20x18 / 160x144.
 - No tracker data, save, rule, input, boot-lifecycle, Compatibility API, or save-schema changes.
 - Runtime validation required before promotion.
+
+---
 
 # 2.3.12 — final release
 
@@ -463,6 +1200,8 @@ Confirmed during the 2.3.13–2.3.35 development line:
 - Corrects 2.3.11 documentation lineage: 2.3.11 descended from 2.3.10, with 2.3.9 used only as a boot-confirmed comparison point.
 - No files added or removed; save schema remains 4; Compatibility API remains 27; engine support remains `>=0.1.86 <0.1.99`.
 - Corrected after release: ENC TRACKER can crash with Modern UI disabled; Wide Menus was observed to mask the crash, so Modern UI is not established as the cause.
+
+---
 
 # 2.3.11 RC — full 2.3.0 feature restoration + Yellow 0.1.98 boot-safe initialization
 
@@ -478,6 +1217,30 @@ Confirmed during the 2.3.13–2.3.35 development line:
 - No files added or removed; save schema remains 4; engine support remains `>=0.1.86 <0.1.99`.
 - Runtime validation is required before treating 2.3.11 as release-ready.
 
+
+### Reconciled historical record: 2.3.11 RC
+
+
+- Direct child of 2.3.10 RC; no rollback or wholesale branch restoration.
+- Preserves the full restored 2.3.0 RC feature surface.
+- Moves the first large runtime installation phase from entry-chunk execution to `game.ready`, after Gen1Recomp services initialize.
+- Defers the optional Modern UI kerning/provider first pass and Pokégear provider first pass to lifecycle events instead of mod-load time.
+- Keeps 2.3.10 boot protections: lazy Stats/Growth, deferred legacy title fallback, deferred Default Names/field/shop adapters, and the corrected Gold trainer-battle Ball policy.
+- Yellow 0.1.98 boot result: TEST REQUIRED.
+
+
+## Gold-native features
+
+- Added Gold **Time Split** encounter projection with morning/day/night provenance and safe reprojection of existing encounter history.
+- Added **Roamer Clause** with persistent species-specific encounter slots and free failed roamer meetings.
+- Added **Egg Encounter** policies: OFF / RECEIVED / HATCHED / GIFT.
+- Added **Bug Contest** policies: NORMAL / EXEMPT / SLOT, finalized from Gold's native `bug_contest.scored` seam.
+- Added **Headbutt Split** using Gold's native Headbutt battle path.
+- Added optional **Radio Nuzlocke** World Building through the existing Pokegear presentation provider; native station behavior remains owned by Gold.
+- All new Gold rules default OFF/NORMAL and preserve R/B/Y behavior.
+
+---
+
 # 2.3.9 RC — public Yellow title/setup UI diagnostic
 
 - Direct child of 2.3.8 RC.
@@ -486,6 +1249,8 @@ Confirmed during the 2.3.13–2.3.35 development line:
 - Restores only `src.core.Strings`, one minimal `NuzlockeConfigScreen`, and the public `ui.title_menu.items` hook that inserts SETUP before NEW GAME when CONTINUE is absent.
 - Does **not** load `title_setup_compat.lua`, save/setup-profile state, gameplay events, rule enforcement, randomizers, or other split integrations.
 - Test target: Yellow 0.1.98 should boot, show SETUP on a fresh title menu, open the diagnostic setup screen, allow basic cursor input, and return with B.
+
+---
 
 # 2.3.8 RC — initializer-boundary diagnostic
 
@@ -497,6 +1262,8 @@ Confirmed during the 2.3.13–2.3.35 development line:
 - Diagnostic only; gameplay remains intentionally disabled.
 - No files added or removed.
 
+---
+
 # 2.3.7 RC — boot-safe loader diagnostic
 
 - Direct child of 2.3.6 RC.
@@ -506,6 +1273,8 @@ Confirmed during the 2.3.13–2.3.35 development line:
 - Package tree, manifest permissions, optional dependencies, game targets, and 0.1.98 engine range remain unchanged so the test isolates loader/package compatibility.
 - Diagnostic only; gameplay is intentionally disabled.
 - No files added or removed; save schema documentation remains historical and no save migration runs.
+
+---
 
 # 2.3.6 RC — pre-2.3 behavior compatibility probe
 
@@ -518,6 +1287,8 @@ Confirmed during the 2.3.13–2.3.35 development line:
 - Skip Opening Intro and Quick Nuzlocke Start remain removed.
 - No files added or removed; save schema remains 4.
 
+---
+
 # 2.3.5 RC — 0.1.98 executable compatibility bisect
 
 - Direct child of 2.3.4 RC.
@@ -526,6 +1297,8 @@ Confirmed during the 2.3.13–2.3.35 development line:
 - Temporarily disabled the executable 2.3.x public battle/contextual-field integrations and broad Gold item-policy additions while keeping 0.1.98 in the manifest range.
 - Kept 2.3.3's safer deferred installer timing.
 - No files added or removed; save schema remains 4.
+
+---
 
 # 2.3.4 RC — defer startup shortcuts / Yellow boot isolation
 
@@ -538,6 +1311,8 @@ Confirmed during the 2.3.13–2.3.35 development line:
 - Yellow 2.3.3 pre-title crash recorded as runtime FAIL; 2.3.4 requires a title-screen-only retest.
 - No files added or removed; save schema remains 4.
 
+---
+
 # 2.3.3 RC — Yellow pre-title boot-safety isolation
 
 - Direct child of 2.3.2 RC.
@@ -545,6 +1320,8 @@ Confirmed during the 2.3.13–2.3.35 development line:
 - Disabled invocation of the legacy 0.1.86 TitleState fallback; public `ui.title_menu.items` remains authoritative.
 - Deferred non-title engine-internal installers until map/save/battle lifecycle points.
 - No files added or removed; save schema remains 4.
+
+---
 
 # 2.3.2 RC — Gold trainer-ball policy scoping
 
@@ -556,6 +1333,8 @@ Confirmed during the 2.3.13–2.3.35 development line:
 - Uses dynamic `ItemPolicy.isBall(...)` classification so custom/merged Ball records follow the same scope.
 - Corrected `contextual_field_actions` seam metadata from `compose` to `transitive_native_guard`; Nuzlocke does not wrap `mod.world:useFieldAction` directly.
 - No files added or removed. Save schema remains 4.
+
+---
 
 # 2.3.1 RC — Gen1Recomp 0.1.98 compatibility + public API hardening
 
@@ -569,6 +1348,18 @@ Confirmed during the 2.3.13–2.3.35 development line:
 - Gold `BattleState:useItem` now honors every `evaluateItemUsePolicy` denial, fixing No Healing Items / No X Items fallthrough while retaining downstream species/static/type capture legality checks.
 - Updated Gold nickname/item compatibility metadata for the 0.1.98 native paths.
 - No save-schema, permission, dependency, or package-tree change; runtime validation required.
+
+
+### Reconciled historical record: 2.3.1 RC — Yellow New Game startup hotfix
+
+- Direct child of 2.3.0 RC.
+- Records 2.3.0 Yellow New Game as runtime FAIL on Gen1Recomp 0.1.98.
+- Removes eager pre-overworld `mod.battle` / `mod.world` capability probing from the title/New Game path.
+- Defers the new 0.1.98 field-action backstop until `map.entered`, when a real overworld exists.
+- Preserves the 2.3.0 No Fishing, Gold item-policy, Gen II healing classification, and battle-snapshot interoperability work.
+- Runtime retest required; static checks are not runtime PASS.
+
+---
 
 # 2.2.21 RC — Quick Nuzlocke Start
 
@@ -587,6 +1378,8 @@ Confirmed during the 2.3.13–2.3.35 development line:
 - Permanent Rule Seal does not govern the QoL shortcut.
 - Save schema remains 4; package tree unchanged. Runtime validation required on Red, Blue, Yellow, and Gold.
 
+---
+
 # 2.2.20 RC — opening intro skip
 
 - Direct child of 2.2.19 RC; no older branch restored.
@@ -597,6 +1390,8 @@ Confirmed during the 2.3.13–2.3.35 development line:
 - Added external ownership capability `opening_intro_skip_provider` / `tutorial_qol_provider`.
 - Permanent Rule Seal does not affect the QoL option.
 - No files added or removed; save schema remains 4.
+
+---
 
 # 2.2.19 RC — seeded structured randomizer
 
@@ -616,6 +1411,8 @@ Confirmed during the 2.3.13–2.3.35 development line:
 - External randomizer delegation remains authoritative.
 - Save schema remains 4; package tree unchanged. Runtime validation required.
 
+---
+
 # 2.2.18 RC — rule-interaction hardening
 
 - Direct child of 2.2.17 RC; no older branch restored.
@@ -629,6 +1426,8 @@ Confirmed during the 2.3.13–2.3.35 development line:
 - Egg-hatch species-rule handling remains an explicit policy gap; no destructive hatch rollback was added.
 - Save schema remains 4; package tree unchanged. Runtime interaction validation required.
 
+---
+
 # 2.2.17 RC — external Difficulty stacking warnings
 
 - Direct child of 2.2.16 RC; no older branch restored.
@@ -639,6 +1438,8 @@ Confirmed during the 2.3.13–2.3.35 development line:
 - Selecting Stronger Trainers `[MOD]` removes the Stronger-Trainers warning; selection remains manual and Nuzlocke never silently changes Difficulty ownership.
 - Known historical providers (`stronger_trainers`, `ironmon_ultimate`, `indigo_conference`) are now queried directly through `mod.find` in addition to status/discovery scans.
 - Save schema remains 4; package tree unchanged. Runtime UI/combination validation required.
+
+---
 
 # 2.2.16 RC — Gym Team Size + translation compatibility
 
@@ -652,6 +1453,8 @@ Confirmed during the 2.3.13–2.3.35 development line:
 - Confirmed semantic shop enforcement remains localization-safe; no Portuguese/Finnish BUY/SELL literals were added to Nuzlocke.
 - Reduced the inherited maximum nested upvalue count from the 2.2.15 hard-ceiling value of 48 to 47 by routing late Gym Guide refresh through the existing internal export namespace.
 - Save schema remains 4; package tree unchanged. Runtime validation required.
+
+---
 
 # 2.2.15 RC — save migration coordinator hardening
 
@@ -668,6 +1471,8 @@ Confirmed during the 2.3.13–2.3.35 development line:
 - A save from a schema newer than this build now safely stops the upgrade pipeline before reconstruction/reprojection rather than applying older assumptions to newer persisted data.
 - Save schema remains **4**; no existing rule keys or migration markers were removed.
 - No package files added or removed.
+
+---
 
 # 2.2.14 RC — Gen 2 Randomizer+ compatibility
 
@@ -686,27 +1491,8 @@ Confirmed during the 2.3.13–2.3.35 development line:
   Kanto compatibility layer; Nuzlocke consumes its final battle identity.
 - No files added or removed.
 
+---
 
-
-## 2.3.11 RC
-
-- Direct child of 2.3.10 RC; no rollback or wholesale branch restoration.
-- Preserves the full restored 2.3.0 RC feature surface.
-- Moves the first large runtime installation phase from entry-chunk execution to `game.ready`, after Gen1Recomp services initialize.
-- Defers the optional Modern UI kerning/provider first pass and Pokégear provider first pass to lifecycle events instead of mod-load time.
-- Keeps 2.3.10 boot protections: lazy Stats/Growth, deferred legacy title fallback, deferred Default Names/field/shop adapters, and the corrected Gold trainer-battle Ball policy.
-- Yellow 0.1.98 boot result: TEST REQUIRED.
-
-
-## Gold-native features
-
-- Added Gold **Time Split** encounter projection with morning/day/night provenance and safe reprojection of existing encounter history.
-- Added **Roamer Clause** with persistent species-specific encounter slots and free failed roamer meetings.
-- Added **Egg Encounter** policies: OFF / RECEIVED / HATCHED / GIFT.
-- Added **Bug Contest** policies: NORMAL / EXEMPT / SLOT, finalized from Gold's native `bug_contest.scored` seam.
-- Added **Headbutt Split** using Gold's native Headbutt battle path.
-- Added optional **Radio Nuzlocke** World Building through the existing Pokegear presentation provider; native station behavior remains owned by Gold.
-- All new Gold rules default OFF/NORMAL and preserve R/B/Y behavior.
 # 2.2.12 — complete built-in Difficulty RC
 
 - Direct child of 2.2.11 RC; no older branch was restored.
@@ -728,13 +1514,18 @@ Confirmed during the 2.3.13–2.3.35 development line:
 - Compiler-pressure comparison to 2.2.11 is unchanged at 47 max nested-function upvalues and 128 max nested-function locals; no new function crosses either warning line.
 - Package tree remains exactly 15 existing files; no additions/removals.
 
-## 2.2.11 RC — Difficulty implementation audit
+---
+
+# 2.2.11 RC — Difficulty implementation audit
+
 - Audited every built-in Game Difficulty profile against its live code path.
 - Fixed built-in trainer Stat EXP and perfect-DV settings: these fields were previously attached as metadata by `trainer.party` but were not consumed by trainer construction.
 - Built-in Difficulty now owns trainer starting Stat EXP/DVs independently of the Nuzlocke master switch and independently of the manual Trainer Stat EXP / Perfect Trainer IV controls.
 - External difficulty providers retain ownership of their constructed Pokemon; Nuzlocke does not overwrite their trainer stats.
 - Removed the inert built-in AI labels (`smart`/`strong`/`max`). The current engine/provider path did not consume those labels, so documentation no longer implies an AI change that is not actually enforced.
 - Historical `*` profiles remain explicitly inspired profiles, not byte-identical reproductions. Their currently enforced native dimensions are trainer levels, trainer starting Stat EXP, perfect DVs where selected, and live boss-cap preview through the composed trainer party.
+
+---
 
 # 2.2.10 — cross-generation pools + Physical/Special Split RC
 
@@ -751,6 +1542,8 @@ Confirmed during the 2.3.13–2.3.35 development line:
 - No public compatibility API, save-schema, Mod API, engine-range, or package-tree change.
 - Runtime validation is required for the new feature paths; 2.2.9 runtime-PASS behavior remains protected.
 
+---
+
 # 2.2.9 — hardening RC
 
 - Direct child of 2.2.8 RC.
@@ -762,9 +1555,11 @@ Confirmed during the 2.3.13–2.3.35 development line:
 - Clarified Wild-to-caught Player Stat EXP ownership.
 - Preserves 2.2.8 dialogue and live Difficulty-cap repairs.
 
+---
+
 # 2.2.8 — dialogue ownership and live Difficulty cap repair
 
-## 2.2.8 RC
+### Historical subrecord — 2.2.8 RC
 - Direct child of 2.2.7 RC.
 - Runtime reproduced duplicated/stiched vanilla Yellow SNES dialogue at World Building Tier 3.
 - Removed the global T3 rewrite of vanilla `show_text` / `ask` `\v` continuation text.
@@ -774,9 +1569,11 @@ Confirmed during the 2.3.13–2.3.35 development line:
 - Preserved 2.2.7's split late-runtime closures and kept both phases below the Lua 5.1 upvalue ceiling.
 - No file additions/removals, save-schema change, API change, engine-range change, or rule-default change.
 
+---
+
 # 2.2.7 — confirmed Lua 5.1 upvalue-limit startup repair
 
-## 2.2.7 RC
+### Historical subrecord — 2.2.7 RC
 
 - Direct child of 2.2.6 RC.
 - Runtime error text confirmed the real compiler failure: `_lateRuntimeInit` had **more than 60 upvalues**.
@@ -790,9 +1587,11 @@ Confirmed during the 2.3.13–2.3.35 development line:
 - No file additions/removals, save-schema change, Mod API change, engine-range change, or rule-default change.
 - Fresh NEW GAME Setup runtime retest required.
 
+---
+
 # 2.2.6 — confirmed Lua local-limit startup repair
 
-## 2.2.6 RC
+### Historical subrecord — 2.2.6 RC
 
 - Direct child of 2.2.5 RC.
 - Runtime error screen confirmed that `main.lua` was rejected at compile/load time due to Lua's per-function local-variable ceiling.
@@ -804,9 +1603,11 @@ Confirmed during the 2.3.13–2.3.35 development line:
 - No save schema, Mod API, engine range, permissions, rule defaults, or package file-tree change.
 - Fresh NEW GAME Setup runtime retest required.
 
+---
+
 # 2.2.5 — startup/local-limit regression repair
 
-## 2.2.5 RC
+### Historical subrecord — 2.2.5 RC
 
 - Direct child of 2.2.4 RC.
 - Investigated a runtime report that New Game Nuzlocke Setup no longer appeared.
@@ -817,9 +1618,11 @@ Confirmed during the 2.3.13–2.3.35 development line:
 - No setup logic, save schema, engine range, API version, permissions, or package file tree change.
 - New Game Setup runtime retest required.
 
+---
+
 # 2.2.4 — Pokémon Bois Club native-walker repair
 
-## 2.2.4 RC
+### Historical subrecord — 2.2.4 RC
 
 - Direct child of 2.2.3 RC; no older branch was restored.
 - Confirmed the old `makeBryanBoiRenderer` hand-painted sprite generator was dead code: it had no call sites and its activation flag was never set.
@@ -833,9 +1636,11 @@ Confirmed during the 2.3.13–2.3.35 development line:
 - No save schema, API version, permissions, engine range, asset set, or player-package file tree change.
 - Yellow Skip Catch Demo and expanded NUZ INFO behavior from 2.2.3 are inherited unchanged and still require runtime confirmation.
 
+---
+
 # 2.2.3 — Yellow catch-demo hardening + NUZ INFO completeness
 
-## 2.2.3 RC
+### Historical subrecord — 2.2.3 RC
 
 - Direct child of the published 2.2.2 RC; no older branch was restored.
 - Left the recently improved shared T3/world-building dialogue ownership path unchanged pending continued runtime testing.
@@ -850,9 +1655,11 @@ Confirmed during the 2.3.13–2.3.35 development line:
 - No save schema, API version, permission, engine range, or repository/player-package file tree change.
 - Runtime TEST REQUIRED for Yellow Pallet Skip Catch Demo and R/B/Y NUZ INFO with all page-toggle combinations.
 
+---
+
 # 2.2.2 — battle-money label + Yellow runtime ledger
 
-## 2.2.2 RC
+### Historical subrecord — 2.2.2 RC
 
 - Direct child of 2.2.1 RC; no older branch was restored.
 - Renamed compact Trainer Money from `Trnr ¥` to `Btl. ¥`.
@@ -861,9 +1668,11 @@ Confirmed during the 2.3.13–2.3.35 development line:
 - Recorded Yellow 2.1.24 save-game runtime PASS for No Center Heal / Pokémon Center healing ban.
 - No rule mechanics, API/save schema, permissions, engine range, or repository file tree changed.
 
+---
+
 # 2.2.1 — Gold value-column visual correction
 
-## 2.2.1 RC
+### Historical subrecord — 2.2.1 RC
 
 - Direct child of 2.2.0 RC; no older branch was restored.
 - Gold 2.1.24 runtime testing confirmed the right-aligned Setup/NUZ RULES value column was one native tile too far right and could crowd/clip the frame.
@@ -872,9 +1681,11 @@ Confirmed during the 2.3.13–2.3.35 development line:
 - Gen1Recomp 0.1.94 audited compatibility, NUZ INFO/MOD COMPAT/NUZ ST. repairs, Yellow catch-demo work, and native Bryan path from 2.2.0 are preserved.
 - Runtime visual RETEST REQUIRED for Gold NEW GAME Setup and in-game NUZ RULES.
 
+---
+
 # 2.2.0 — Gen1Recomp 0.1.94 compatibility and runtime repair rollup
 
-## 2.2.0 RC
+### Historical subrecord — 2.2.0 RC
 
 - Direct child of 2.1.24 RC; no older branch was restored.
 - Renumbered the planned 2.1.25 work to 2.2.0 at user request.
@@ -889,9 +1700,11 @@ Confirmed during the 2.3.13–2.3.35 development line:
 - Protected runtime PASSes inherited from 2.1.23/2.1.24: Yellow randomized-starter received-name and party delivery, Trainer Money symbol, Setup/Type Locke selector visibility, startup name skip, PC Heal/Rare Candy/Vitamin loadouts, and native Trainer Card.
 - Runtime TEST REQUIRED for Gen1Recomp 0.1.94 and every repaired UI/tutorial/Bryan path above.
 
+---
+
 # 2.1.24 — R/B/Y NUZ INFO native-menu crash repair
 
-## 2.1.24 RC
+### Historical subrecord — 2.1.24 RC
 - Direct child of 2.1.23 RC.
 - Yellow 2.1.23 runtime PASS: randomized starter message names the actual received Pokemon; randomized Sandslash appears correctly in party; Trainer Money shows the money symbol.
 - Yellow 2.1.23 runtime FAIL: selecting party NUZ INFO crashes.
@@ -899,9 +1712,11 @@ Confirmed during the 2.3.13–2.3.35 development line:
 - Gold NUZ INFO presentation is unchanged.
 - Runtime retest required.
 
+---
+
 # 2.1.23 — systemic T3 dialogue + catch-demo repair
 
-## 2.1.23 RC
+### Historical subrecord — 2.1.23 RC
 
 - Direct child of 2.1.22 RC; no files added or removed.
 - Runtime reports showed the same continuation/stitched-dialogue presentation in Mom, Viridian catch-tutorial, Oak's Lab, and other interactions. Replaced one-off T3 text fixes with a shared World Building paginator used by every Nuzlocke-owned overworld message.
@@ -911,9 +1726,11 @@ Confirmed during the 2.3.13–2.3.35 development line:
 - TV's currently runtime-good T3 path remains on the shared World Building presenter and was not replaced with a new special case.
 - Runtime validation required, especially Yellow Mom/Lab/tutorial dialogue, R/B/Y catch-demo progression, and Gold Setup spacing.
 
+---
+
 # 2.1.22 — R/B/Y Nuz menu native-surface repair
 
-## 2.1.22 RC
+### Historical subrecord — 2.1.22 RC
 
 - Direct child of 2.1.21 RC; no files added or removed.
 - Logged Yellow 2.1.21 runtime FAIL: NUZ ST. and MOD COMPAT still hard-crash.
@@ -923,9 +1740,11 @@ Confirmed during the 2.3.13–2.3.35 development line:
 - Preserved all confirmed 2.1.19 Yellow PASS paths and 2.1.21 Gold Setup spacing.
 - Runtime validation required.
 
+---
+
 # 2.1.21 — Gold Setup spacing cleanup
 
-## 2.1.21 RC
+### Historical subrecord — 2.1.21 RC
 
 - Direct child of 2.1.20 RC; no files added or removed.
 - Gold Setup/NUZ RULES now reserve one native tile between the rule-label field and value/toggle field.
@@ -933,7 +1752,9 @@ Confirmed during the 2.3.13–2.3.35 development line:
 - Presentation-only change: no rule mechanics, save keys, controls, descriptions, R/B/Y layout, or 2.1.20 menu-recovery behavior changed.
 - Runtime visual confirmation required on Gold Setup and Gold in-game NUZ RULES.
 
-## 2.1.20 RC
+---
+
+# 2.1.20 RC
 
 - Direct child of 2.1.19 RC; no files added or removed.
 - Recorded Yellow 2.1.19 runtime PASS: NEW GAME Setup appears; Type Locke selector visibility behaves correctly; automatic default names work; PC Heal/rare-candy/vitamin startup grants work; native Trainer Card opens without the prior crash.
@@ -944,6 +1765,10 @@ Confirmed during the 2.3.13–2.3.35 development line:
 - UI labels: `Trnr ¥`, `Start ¥`, `No Esc. Rope`, and `Heal Loadout`.
 - Re-audited Type Locke legality: OFF returns no allowed-type filter; MONO returns only Type 1; DUO returns only Types 1-2; TRI returns only Types 1-3. Actual runtime acquisition enforcement is still TEST REQUIRED.
 
+---
+
+# 2.1.19 RC — compatibility/lifecycle hardening
+
 - Direct child of `2.1.18 RC`; no older branch was restored.
 - Removed the active-generation precondition from Gen1 kerning installation retries. Installation now retries whenever Font is not yet wrapped and no external kerning provider owns the surface; `kerningEnabled()` still gates all visual effect to confirmed Gen1 at call time.
 - Hardened Gen1 Modern UI registration so only an explicit `true` from `registerAdapter` counts as success. `nil` or any other non-true value leaves the integration inactive/unregistered with an error state.
@@ -951,6 +1776,8 @@ Confirmed during the 2.3.13–2.3.35 development line:
 - Added safe migration from the exact 2.1.18 legacy wrapper when it is still directly installed; when another mod sits above that legacy wrapper, the new outer stateful wrapper rebinds the existing Nuzlocke SETUP row to the current callback instead of inserting a duplicate.
 - Preserved the runtime save-editor check on every title-menu open; no install-time editor short-circuit was reintroduced.
 - No challenge-rule mechanics changed. No files added or removed. Runtime validation remains required.
+
+---
 
 # 2.1.18 — Yellow runtime hardening: native Trainer Card + dialogue ownership
 
@@ -963,6 +1790,8 @@ Confirmed during the 2.3.13–2.3.35 development line:
 - Existing `pushWorldText` protection against stacking optional World Building over an active TextBox remains in force.
 - No files added or removed. Runtime validation remains required.
 
+---
+
 # 2.1.16 — Trilocke, Type Locke invariants, rule-section cleanup
 
 - Direct child of `2.1.15 RC`.
@@ -974,6 +1803,8 @@ Confirmed during the 2.3.13–2.3.35 development line:
 - Added +1 px micro-tracking to centered bold-like section headers so adjacent glyphs retain separation.
 - No files added or removed. Runtime validation remains required.
 
+---
+
 # 2.1.15 — Rules UI alignment, Type Locke OFF, reversible Rule Lock
 
 - Centered R/B/Y and Gold rule-section headers inside the list area and added subtle bold-like emphasis using the existing pixel font only.
@@ -983,6 +1814,8 @@ Confirmed during the 2.3.13–2.3.35 development line:
 - Added migration logic for older non-permanent `rules_locked` state when no irreversible seal marker exists.
 - No files added or removed. Runtime validation remains required.
 
+---
+
 # 2.1.14 — Type Locke MONO state/UI repair
 
 - Direct child of `2.1.13 RC`.
@@ -991,6 +1824,8 @@ Confirmed during the 2.3.13–2.3.35 development line:
 - Returning to DUO restores a valid secondary type distinct from Type 1.
 - Shared config code means the repair applies to R/B/Y and Gold, Setup and in-game Rules.
 - Runtime status: **TEST REQUIRED**.
+
+---
 
 # 2.1.13 — Yellow/T3 repair candidate
 
@@ -1009,6 +1844,8 @@ Confirmed during the 2.3.13–2.3.35 development line:
 - Changed paths are parser/static/source-audit candidates only; runtime confirmation remains required.
 - Full 15-file repository tree preserved.
 
+---
+
 # 2.1.12 — Leader-only Forgiveness + compact UI fallbacks
 
 - Direct child of `2.1.11 RC`.
@@ -1026,6 +1863,8 @@ Confirmed during the 2.3.13–2.3.35 development line:
 - Gen1Recomp 0.1.93 audit status and approved marquee cadence are preserved.
 - Full 15-file repository tree preserved.
 
+---
+
 # 2.1.11 — localization-safe labels / Gen1Recomp 0.1.93 audit
 
 - Direct child of `2.1.10 RC`.
@@ -1042,6 +1881,8 @@ Confirmed during the 2.3.13–2.3.35 development line:
 - Existing engine range remains `>=0.1.86 <0.1.98`.
 - No new permissions, save-schema change, Mod API bump, or gameplay-hook rewrite.
 - Full 15-file repository tree preserved.
+
+---
 
 # 2.1.10 — compact rule-label candidate
 
@@ -1079,6 +1920,8 @@ Confirmed during the 2.3.13–2.3.35 development line:
 - Engine range remains `>=0.1.86 <0.1.98`; Mod API 2/save schema 4 unchanged.
 - Full 15-file repository tree preserved.
 
+---
+
 # 2.1.9 — explicit Wide Menus refusal / concise core labels
 
 - Direct child of `2.1.8 RC`.
@@ -1095,6 +1938,8 @@ Confirmed during the 2.3.13–2.3.35 development line:
 - Engine range remains `>=0.1.86 <0.1.98`; Mod API 2/save schema 4 unchanged.
 - Full 15-file repository tree preserved.
 
+---
+
 # 2.1.8 — concise-label presentation candidate
 
 - Direct child of `2.1.7 RC`.
@@ -1108,6 +1953,8 @@ Confirmed during the 2.3.13–2.3.35 development line:
 - Wide Menus remains native-width fallback for Nuzlocke Rules pending a separately validated adapter.
 - Engine range remains `>=0.1.86 <0.1.98`; Mod API 2/save schema 4 unchanged.
 - Full 15-file tree preserved.
+
+---
 
 # 2.1.7 — Wide Menus coexistence / selection repair candidate
 
@@ -1123,6 +1970,8 @@ Confirmed during the 2.3.13–2.3.35 development line:
 - Engine range remains `>=0.1.86 <0.1.98`; Mod API 2/save schema 4 unchanged.
 - Full 15-file tree preserved.
 
+---
+
 # 2.1.6 — Yellow selection/readability repair candidate
 
 - Direct child of `2.1.5 RC`.
@@ -1136,6 +1985,8 @@ Confirmed during the 2.3.13–2.3.35 development line:
 - Gold native presentation unchanged.
 - Engine range remains `>=0.1.86 <0.1.98`; Mod API 2/save schema 4 unchanged.
 - Full 15-file tree preserved.
+
+---
 
 # 2.1.5 — conditional-marquee / reverse-selection candidate
 
@@ -1154,6 +2005,8 @@ Confirmed during the 2.3.13–2.3.35 development line:
 - Engine range remains `>=0.1.86 <0.1.98`; Mod API 2/save schema 4 unchanged.
 - Full 15-file tree preserved.
 
+---
+
 # 2.1.4 — pixel-aware presentation candidate
 
 - Direct child of `2.1.3 RC`.
@@ -1168,6 +2021,8 @@ Confirmed during the 2.3.13–2.3.35 development line:
 - Engine range remains `>=0.1.86 <0.1.98`; Mod API 2/save schema 4 unchanged.
 - Full 15-file repository tree preserved.
 
+---
+
 # 2.1.3 — focused review repair candidate
 
 - Direct child of `2.1.2 RC`; no branch reset or older-tree restore.
@@ -1181,6 +2036,8 @@ Confirmed during the 2.3.13–2.3.35 development line:
 - Existing 15-file repository tree preserved.
 - Runtime PASS behavior from Yellow fresh Setup/boot remains protected.
 
+---
+
 # 2.1.2 — Yellow 0.1.92 runtime repair candidate
 
 - Direct child of 2.1.1 RC.
@@ -1192,6 +2049,8 @@ Confirmed during the 2.3.13–2.3.35 development line:
 - Engine range remains `>=0.1.86 <0.1.98`; Mod API 2/save schema 4 unchanged.
 - Full 15-file tree preserved.
 - MOD COMPAT and visible kerning behavior remain RUNTIME TEST REQUIRED.
+
+---
 
 # 2.1.1 — release candidate
 
@@ -1207,6 +2066,8 @@ Confirmed during the 2.3.13–2.3.35 development line:
 - Wide Menus phase-1 behavior from 2.1.0 remains runtime-test-required.
 - Full 15-file tree preserved.
 
+---
+
 # 2.1.0 — canonical versioning transition
 
 - Renumbered the current canonical `2.0.0-beta.31.0.4` development tree to `2.1.0`.
@@ -1214,6 +2075,8 @@ Confirmed during the 2.3.13–2.3.35 development line:
 - This establishes ordinary SemVer for future Gen1Recomp GitHub Release/update detection.
 - The complete pre-2.1.0 beta lineage remains preserved below as historical development history.
 - Full 15-file repository tree preserved.
+
+---
 
 # 2.0.0-beta.31.0.4 — optional Wide Menus Nuz Rules integration
 
@@ -1228,6 +2091,8 @@ Confirmed during the 2.3.13–2.3.35 development line:
 - No save-schema, Mod API, or challenge-rule change.
 - Lua parser/static integration checks PASS; visual/input runtime validation remains required.
 
+---
+
 # 2.0.0-beta.31.0.3 — Mt. Moon Dungeon Lock-In repair
 
 - Direct child of `.31.0.2`; full 15-file tree preserved.
@@ -1236,6 +2101,8 @@ Confirmed during the 2.3.13–2.3.35 development line:
 - The exclusion is deliberately generic so similarly named dungeon-adjacent service interiors do not reproduce the same prefix-bleed bug.
 - Actual Mt. Moon floor identifiers remain classified as `MT_MOON`; existing Dungeon Lock-In entrance/exit behavior is otherwise unchanged.
 - Lua parser/static/mock classifier checks PASS; reported Mt. Moon Center scenario remains RUNTIME TEST REQUIRED.
+
+---
 
 # 2.0.0-beta.31.0.2 — Gen1Recomp 0.1.90 compatibility review
 
@@ -1248,6 +2115,8 @@ Confirmed during the 2.3.13–2.3.35 development line:
 - No Nuzlocke mechanic required patching for 0.1.90; this build records the reviewed compatibility baseline.
 - Lua parser/static PASS; runtime on Gen1Recomp 0.1.90 remains TEST REQUIRED.
 
+---
+
 # 2.0.0-beta.31.0.1 — lifecycle and progression repair
 
 - Direct child of `.31.0.0`; 15-file tree preserved.
@@ -1257,6 +2126,8 @@ Confirmed during the 2.3.13–2.3.35 development line:
 - Trainer Rewards now validates `gymProgressKey`, returns `true` after recognized R/B/Y Gym Leader progression, and compares Gym Leader identity fields independently to prevent cross-field concatenation false matches.
 - Champion progression already returned `true` in `.31.0.0` and was intentionally left unchanged.
 - Lua parser/static checks PASS; runtime validation remains required.
+
+---
 
 # 2.0.0-beta.31.0.0 — World Building / Bryan expansion
 
@@ -1270,6 +2141,8 @@ Confirmed during the 2.3.13–2.3.35 development line:
 - Added design backlog notes for a future provider-aware Black Market shop and future NPC/rule reactions to achievements. Neither system is mechanically enabled here.
 - Lua parser/static validation PASS; new dialogue paths remain RUNTIME TEST REQUIRED.
 
+---
+
 # 2.0.0-beta.30.1.22 — Tracker / Compat / NUZ INFO intelligence
 
 - Direct child of `2.0.0-beta.30.1.21`; no repository files added, removed, or renamed.
@@ -1280,7 +2153,9 @@ Confirmed during the 2.3.13–2.3.35 development line:
 - Corrected stale internal build identifiers inherited from `.30.1.21`; all executable build exports now identify `.30.1.22`.
 - Lua parser/static validation PASS; new UI behavior remains RUNTIME TEST REQUIRED.
 
-## 2.0.0-beta.30.1.21 — compatibility intelligence and contextual guidance
+---
+
+# 2.0.0-beta.30.1.21 — compatibility intelligence and contextual guidance
 
 - Added spoiler-safe external encounter-randomizer ownership context to Encounter Tracker.
 - Added the dedicated MOD COMPAT ownership diagnostics screen.
@@ -1289,14 +2164,763 @@ Confirmed during the 2.3.13–2.3.35 development line:
 - Added adaptive compatibility/tracker presentation helpers.
 - Added context-sensitive World Building guidance for consumed areas, Lock-Ins, caps, Forgiveness Tokens, progression catches and externally randomized areas.
 
-## 2.0.0-beta.30.1.20 — Gen1 variable-width Nuzlocke presentation
+
+### Reconciled historical record: 2.0.0-beta.30.1.21
+
+
+- Added spoiler-safe randomizer ownership context to Encounter Tracker.
+- Added dedicated MOD COMPAT ownership diagnostics screen.
+- Expanded translation-safe semantic menu matching.
+- Added merged external species metadata export.
+- Added adaptive compatibility/tracker presentation helpers.
+- Added context-sensitive World Building guidance API.
+
+
+This file is the permanent cumulative development/release history. A known revision is retained even when its exact per-build delta is only partially recoverable; uncertain history is labeled rather than guessed. A beta.29.2.0 history-recovery pass reconciled preserved source, packages, runtime evidence, and retained development records; newly recovered details are added only where their version attribution is supportable.
+
+---
+
+# 2.0.0-beta.30.1.20 — Gen1 variable-width Nuzlocke presentation
 
 - Added internal R/B/Y-only variable-width tile-font presentation.
 - Gold/Gen2 is hard-excluded from the Gen1 glyph transform.
 - Compatible existing kerning ownership is not double-applied.
 - Presentation only; challenge mechanics and save semantics were unchanged.
 
-## 2.0.0-beta.30.0.0.10
+---
+
+# 2.0.0-beta.30.1.19 — surviving packaged revision
+
+- Surviving project File Library evidence confirms that a packaged `2.0.0-beta.30.1.19` revision existed between `.30.1.18` and `.30.1.20`.
+- The exact per-build feature delta has not been recovered from a trustworthy changelog/source snapshot, so no behavior is attributed to this revision here.
+- This heading exists to preserve confirmed lineage without inventing historical details.
+
+---
+
+# 2.0.0-beta.30.1.18
+
+Optional Gen1 Modern UI presentation integration, directly from 30.1.17.
+
+## Added — responsive presentation for high-use Nuzlocke information screens
+
+When an active `gen1_modern_ui` provider exposes its documented `registerAdapter` API, Nuzlocke now publishes a source-owned semantic screen contract for:
+
+- Encounter Tracker / Area Guide;
+- NUZ INFO Catch / Stat / Move pages;
+- Nuzlocke Trainer Card / active-rule status page.
+
+Nuzlocke continues to own all underlying state and actions. The UI provider receives only read-only row models plus semantic navigation callbacks.
+
+### Fail-safe behavior
+
+- No hard dependency on Modern UI.
+- Provider is detected as active through `mod.find`, not installed-only.
+- Registration retries across load lifecycle events.
+- If the provider is absent, unsupported, disabled, or rejects the contract, classic Nuzlocke screens remain unchanged.
+- If a semantic model cannot be produced, the provider can fall back instead of Nuzlocke replacing mechanics.
+- Gold is not registered because the inspected Modern UI line is Gen1-only.
+
+### Deliberately not adapted yet
+
+`NuzlockeConfigScreen` (Setup / Nuz Rules editor) now has a stable screen ID but remains native. Fresh Setup is protected runtime behavior and the editor owns complex numeric editing, collapsed sections, permanent-seal confirmation, descriptions, and staged pre-game state. It will only move to an external presenter after dedicated runtime validation.
+
+### Internal classic screens retained
+
+Native R/B/Y and Gold draw/update implementations remain intact. The integration is presentation-only.
+
+## Validation
+
+- All five Lua files parser PASS.
+- 15-file package tree.
+- Mock adapter provider registration PASS.
+- Semantic model/action harness PASS for Tracker, NUZ INFO and Trainer Card.
+- `.30.1.17` localization-safe Mart gate retained.
+
+---
+
+# 2.0.0-beta.30.1.17
+
+Translation-safe R/B/Y Mart enforcement, directly from 30.1.16.
+
+## Fixed — translated BUY / SELL labels could bypass No Buying / No Selling
+
+The R/B/Y ShopMenu compatibility wrapper previously identified the two shop actions by comparing the rendered menu label only to literal English `BUY` and `SELL`.
+
+Localization mods legitimately build those rows through `Strings("BUY")` and `Strings("SELL")`. For example, the Finnish translation renders them as `OSTA` and `MYY`. The old wrapper therefore failed to decorate either action, allowing purchases/sales despite the Nuzlocke rules being enabled.
+
+30.1.17 keeps the existing English recognition and additionally compares each row against the current live translated `Strings("BUY")` / `Strings("SELL")` values.
+
+No shop mechanics, stock, pricing, token behavior, or Gold Mart logic are otherwise changed.
+
+## Validation
+- All four Lua files parser PASS.
+- Focused localization harness PASS:
+  - English BUY/SELL detected;
+  - Finnish OSTA/MYY detected through translated source values;
+  - unrelated menu labels remain untouched.
+- Existing Route Forgiveness shop stock bridge remains in the same wrapper.
+- 14-file package tree unchanged.
+
+---
+
+# 2.0.0-beta.30.1.16
+
+Type Locke canonical Fairy compatibility repair, directly from 30.1.15.
+
+## Fixed — Fairy typings could be treated as unknown by Mono/Duo Type Locke
+
+Compatible typing/content mods can add the canonical `FAIRY` type to the merged species registry. Nuzlocke's Type Locke vocabulary previously stopped at Dark/Steel, so a pure-Fairy species could produce no recognized Type Locke metadata and hit the intentional "unknown custom schema" fail-open behavior.
+
+That meant a legitimate Fairy species could be allowed by an unrelated Monolocke simply because Nuzlocke did not recognize the canonical type.
+
+30.1.16 adds canonical Fairy awareness to Type Locke.
+
+### Save-safe selector layout
+
+Existing numeric selector meaning is preserved exactly:
+- `0..16` = existing Normal through Steel values;
+- `17` = RANDOM, unchanged from every prior build;
+- `18` = FAIRY, newly appended.
+
+RANDOM is deliberately **not moved**. No migration of old saves or pending Setup profiles is required.
+
+### Runtime behavior
+
+- Fairy Monolocke is now selectable.
+- Fairy may be either side of a Duolocke.
+- Pure Fairy species are evaluated as Fairy rather than unknown/fail-open.
+- Dual types such as Water/Fairy match either appropriate allowed type.
+- RANDOM can roll Fairy only when Fairy is represented in the live merged species pool.
+- RANDOM still never persists as runtime legality state; it resolves once to concrete type(s).
+- Unknown genuinely custom type schemas continue to fail open.
+- Manual Dark/Steel/Fairy selections remain possible even when the current base species pool has no such species, preserving compatibility-mod challenge setups.
+
+### Compatibility target
+
+This specifically closes the Nuzlocke-side gap found while reviewing `steel_typing` / STEEL-FAIRY AND TYPING CHARTS 2.0.1, but the implementation is package-name agnostic and works with any mod that exposes canonical `FAIRY` through the merged Pokémon/type metadata.
+
+## Validation
+
+- All four Lua files parser PASS.
+- Selector compatibility audit PASS: RANDOM remains 17; FAIRY is 18.
+- Focused Type Locke harness PASS:
+  - Fire Mono rejects pure Fairy;
+  - Fairy Mono accepts pure Fairy;
+  - Water Mono accepts Water/Fairy;
+  - Fairy Mono accepts Water/Fairy;
+  - random viable pool includes Fairy only when a Fairy species is present;
+  - old RANDOM value 17 still resolves as RANDOM, never Fairy;
+  - DUO duplicate correction skips the RANDOM sentinel.
+- 14-file package tree unchanged.
+
+---
+
+# 2.0.0-beta.30.1.15
+
+World Building tier-fallback consistency fix, directly from 30.1.14.
+
+## Fixed — `queueTrainerFlavor` fallback ignored its caller-selected minimum tier
+
+`queueTrainerFlavor(key, message, minimumTier)` correctly checked its requested tier before trying battle-native `say` / `emit`, but its last-resort path called `worldOnce(game, key, message)`.
+
+`worldOnce` had a hardcoded Tier 3 gate. Therefore a caller such as First Rival Mercy, which explicitly requests Tier 1, could pass the outer Tier 1 gate and still lose its message on battle objects without `say` or `emit`.
+
+30.1.15 makes `worldOnce` accept an optional `minimumTier`:
+- omitted -> Tier 3, preserving its historical default;
+- supplied -> honors the caller's explicit threshold.
+
+`queueTrainerFlavor` now passes its own `minimumTier` into the fallback.
+
+This preserves the same once-per-save flag behavior and the same `pushWorldText` safety path while making all three delivery seams agree on whether the message is eligible.
+
+## Validation
+- All four Lua files parser PASS.
+- Focused fallback-tier harness PASS:
+  - Tier 1 + minimum 1 + no say/emit -> fallback displays and sets once flag;
+  - Tier 2 + minimum 1 -> fallback displays;
+  - Tier 2 + default minimum 3 -> remains blocked;
+  - failed text push -> does not consume once flag;
+  - repeated successful call -> remains once-only.
+- 14-file package tree unchanged.
+
+---
+
+# 2.0.0-beta.30.1.14
+
+First Rival Mercy one-shot hardening, directly from 30.1.13.
+
+## Fixed — non-opening rival-shaped battle could permanently burn First Rival Mercy
+
+`armFirstRivalForgiveness()` previously persisted `nuzlocke_first_rival_battle_seen = true` immediately after the broad `isRivalBattle()` test, before the stricter `isOpeningRivalBattle()` check.
+
+A later/reordered/rewound rival-classified battle could therefore consume the durable slot even though it was not the canonical opening encounter. If the true opening battle was reached afterward, First Rival Mercy could never arm for that save.
+
+30.1.14 changes the latch semantics:
+- non-rival battle: unchanged, ignored;
+- rival but not opening rival: rejected without consuming the durable flag;
+- actual opening rival: marks `nuzlocke_first_rival_battle_seen = true`;
+- opening rival with First Rival Mercy OFF: still consumes the one-shot, preserving the original rule semantics;
+- opening rival with First Rival Mercy ON: arms the battle-local forgiveness flag as before.
+
+The existing `isOpeningRivalBattle()` old-save safeguard remains authoritative, so later rival fights on old saves are still never granted First Rival Mercy merely because the durable flag is absent.
+
+## Validation
+- All four Lua files parser PASS.
+- Focused one-shot state-machine harness PASS.
+- Static ordering audit confirms `isOpeningRivalBattle()` is evaluated before the durable save write and the save write occurs only after the `not opening` return.
+- 14-file package tree unchanged.
+
+---
+
+# 2.0.0-beta.30.1.13
+
+Solo Only scripted-trade enforcement fix, directly from 30.1.12.
+
+## Fixed — Solo Only gated gifts but not NPC trades
+
+`specialAcquisitionDenied()` applied the Solo Only party-slot check only when `kind == "gift"`.
+
+Wild catches were already covered through the normal catch gate, and gifts were covered here, but scripted trades in both R/B/Y and Gold route through `specialAcquisitionDenied(..., "trade")` and therefore bypassed Solo Only.
+
+A player could complete an NPC trade while Solo Only was active and add a second usable party Pokémon, violating the selected challenge rule.
+
+30.1.13 extends only that final Solo Only acquisition check:
+
+- gift acquisitions: unchanged, still gated;
+- trade acquisitions: now gated by the same occupied-solo-slot check;
+- all earlier special-acquisition rule ordering is unchanged;
+- existing `acquisitionDeniedMessage(..., "solo", ...)` handling is reused, so no new dialogue plumbing is introduced.
+
+## Validation
+- All four Lua files parser PASS.
+- Focused acquisition-gate harness PASS:
+  - gift + occupied solo slot -> `solo`;
+  - trade + occupied solo slot -> `solo`;
+  - gift/trade + available solo slot -> allowed by Solo Only;
+  - unrelated acquisition kind is not newly blocked by this check.
+- 14-file package tree unchanged.
+
+---
+
+# 2.0.0-beta.30.1.12
+
+Stored-location recovery orphan fix, directly from 30.1.11.
+
+## Fixed — conflicting stored catch location could be falsely marked recovered
+
+`importStoredCatchLocations()` previously set `mon.nuzlockeTrackerRegistered = true` even when the stored location conflicted with a different already-established catch in that area and no tracker/area entry was written.
+
+That combination could permanently orphan the Pokémon:
+- no new area log entry;
+- no `caught_areas` restoration;
+- stale `catchLocation` still present;
+- false registered marker prevented later recovery logic from treating it as unresolved.
+
+30.1.12 now marks the mon registered only when the stored location actually restores or matches tracker state. A true conflict clears the stale `catchLocation` and false registered marker so the mon remains eligible for normal Legacy Recovery.
+
+Successful empty-area and matching-entry recovery behavior is otherwise unchanged.
+
+## Validation
+- All four Lua files parser PASS.
+- Static recovery audit confirms the conflict branch clears `catchLocation` and registration.
+- Focused three-case branch harness PASS: empty restore, matching restore, conflicting Legacy fallback.
+- No files added or removed.
+
+---
+
+# 2.0.0-beta.30.1.11
+
+Trainer Rewards split-module namespace repair, directly from 30.1.10.
+
+## Fixed — Gold Mart Route Forgiveness crash
+
+`G2.installMartGate()` called `forgivenessEnabled()` as a bare global from `main.lua`. That function belongs to the separately loaded `trainer_rewards.lua` module and is exported through `mod.exports.__beta26.TrainerRewards`.
+
+On Gold, constructing a STANDARD Mart while Route Forgiveness was enabled could therefore throw `attempt to call a nil value (global 'forgivenessEnabled')`.
+
+The Mart wrapper now calls:
+`mod.exports.__beta26.TrainerRewards.forgivenessEnabled()`.
+
+## Fixed — bare Forgiveness Token count call in rules/status presentation
+
+A second instance of the same split-module namespace bug was found in the rule-label path:
+`forgivenessTokens()` was also called as a bare global.
+
+It now calls:
+`mod.exports.__beta26.TrainerRewards.forgivenessTokens()`.
+
+This prevents the Route Forgiveness status/summary path from depending on a nonexistent main-chunk global.
+
+## Validation
+- Searched `main.lua` for unqualified `forgivenessEnabled(` and `forgivenessTokens(` calls: none remain.
+- All four Lua files parser PASS.
+- 14-file package tree unchanged.
+- Prior 30.1.8 Trainer Money fixes, 30.1.9 Gold cap order, and 30.1.10 title save-editor guard retained.
+
+---
+
+# 2.0.0-beta.30.1.10
+
+Title Setup save-editor hardening, directly from 30.1.9.
+
+## Fixed — recurring title wrapper used only install-time save-editor gating
+
+`title_setup_compat.lua` previously checked `isSaveEditorSession()` only when installing the R/B/Y title fallback wrapper. If the wrapper was installed while editor mode was inactive, later title-menu opens could still run SETUP insertion after the process/session entered a save-editor context.
+
+The R/B/Y wrapper now re-checks `isSaveEditorSession()` on every `TitleState:openMenu()` call before inspecting or modifying the final title row list.
+
+The same per-call protection is applied to the Gold recurring title-list wrapper where that adapter is present.
+
+The existing install-time checks remain as cheap early-outs, but runtime/session-sensitive editor state is no longer assumed to be permanent.
+
+## Validation
+- All four Lua files parser PASS.
+- Static wrapper audit confirms per-call editor checks are present in recurring title-menu fallback callbacks.
+- No files added or removed.
+- 30.1.8 Trainer Money provider fixes and 30.1.9 Gold cap-order repair are retained.
+
+---
+
+# 2.0.0-beta.30.1.9
+
+Gold level-cap ordering repair, directly from 30.1.8.
+
+## Fixed — Johto middle-Gym cap regression
+
+The current `gscStages` list had regressed to:
+
+`Chuck 30 -> Jasmine 35 -> Pryce 31 -> Clair 40`
+
+That reintroduced a non-monotonic raw stage ladder. The runtime cap floor could prevent the enforced value from physically dropping, but direct stage readers and boss presentation could still observe Pryce's raw 31 after Jasmine's 35.
+
+The preserved project history already records the intended repair from beta.27.15: the cap-progression order is:
+
+`Chuck -> Pryce -> Jasmine`
+
+30.1.9 restores that ordering without inventing new cap numbers:
+
+`Chuck 30 -> Pryce 31 -> Jasmine 35 -> Clair 40`
+
+### Important distinction
+
+Gold badge slot mappings are unchanged:
+- Chuck / Storm remains badge slot 5.
+- Jasmine / Mineral remains badge slot 6.
+- Pryce / Glacier remains badge slot 7.
+
+Those are save/badge identity mappings, not the ordered boss-cap ladder. Reordering `gscStages` does not rewrite or renumber Gold badges.
+
+## Previous 30.1.8 fixes retained
+
+- Trainer Money runtime scaling respects active `economy_provider` delegation.
+- Delegated Trainer Money neutral display is 100% / index 4.
+
+## Validation
+
+- All four Lua files parser PASS.
+- Static stage-order audit PASS.
+- Gold Johto Gym fallback cap sequence is monotonic: 9, 16, 20, 25, 30, 31, 35, 40.
+- No files added or removed.
+
+---
+
+# 2.0.0-beta.30.1.8
+
+Provider-delegation bugfix child of 30.1.7.
+
+## Fixed — Trainer Money provider delegation
+
+Two related defects remained in the 30.0 provider-delegation system.
+
+1. Runtime Trainer Money scaling ignored `externalRuleDelegation`.
+   - The Rules UI could correctly show the control as externally owned while `trainer_rewards.lua` still applied Nuzlocke's stored multiplier after battle.
+   - This could stack Nuzlocke payout scaling on top of an active `economy_provider`.
+   - `scaleTrainerMoney()` now checks the same delegation seam and, when delegated, leaves the provider's final wallet result completely untouched.
+
+2. Delegated numeric UI assumed `spec.min` was always the neutral value.
+   - Trainer Money has `min = 0`, but index 0 means 0% payout.
+   - Its actual neutral/vanilla value is index 4 = 100%.
+   - Numeric rule specs can now declare `neutral`.
+   - Trainer Money declares `neutral = 4`.
+   - `getConfigValue()` resolves delegated numerics as `spec.neutral` first, then falls back to `spec.min`.
+
+## Compatibility
+
+- No provider: Trainer Money behavior remains unchanged.
+- Active `economy_provider`: Nuzlocke performs no Trainer Money wallet rewrite.
+- Delegated Trainer Money displays 100%, not 0%.
+- Existing Gold Pokégear work from 30.1.7 is unchanged and remains runtime TEST REQUIRED.
+- No files added or removed.
+
+## Validation
+
+- All four Lua files parser PASS.
+- Dedicated mocked Trainer Money delegation test PASS:
+  - delegated payout left untouched;
+  - nondelegated 50% payout still scales correctly.
+- Static neutral-value check PASS: delegated Trainer Money resolves to index 4.
+
+---
+
+# 2.0.0-beta.30.1.7
+
+Gold Pokégear integration development build, directly from 30.1.6.
+
+## New — optional Pokegear Cards integration
+
+When active `pokegear_cards` API v1 is available on Gold, Nuzlocke now integrates through its append-only `mod.exports` API.
+
+### NUZ Pokégear card
+- Adds a `NUZ` strip card.
+- Four pages: Run Status, Encounters, Rules, Caps & Difficulty.
+- Live catches, deaths, Route Forgiveness Tokens, active Nuzlocke loadout, area counts, failed encounters, Gold rule names, next authoritative cap/boss, and selected difficulty provider.
+- UP/DOWN changes pages. A on Rules advances additional rule rows. B returns through the provider's normal card behavior.
+
+### MAP overlay
+- Adds encounter-state markers without replacing the vanilla MAP.
+- Aggregates visited/open, failed, and caught/claimed tracker state by Gen 2 landmark.
+- Caught takes precedence over failed, which takes precedence over visited/open when several maps share a landmark.
+- Filters Johto/Kanto landmark markers to the currently displayed regional map.
+- Uses the provider's scissored overlay helper and does not own MAP input.
+
+### RADIO World Building
+- Adds one short Nuzlocke broadcast/status line when World Building is enabled.
+- T1 is direct status, T2 uses Johto-report framing, T3 uses deterministic landmark/run-state flavor.
+- Cosmetic only: never changes tuning, station availability, music, story flags, encounters, or enforcement.
+
+### Compatibility
+- PHONE intentionally untouched because Pokegear Cards documents visible phone appends as an input-loop fork.
+- Detection is `mod.find("pokegear_cards")`: installed-but-disabled is not treated as active.
+- Stable IDs: `nuzlocke_status`, `nuzlocke_map_status`, `nuzlocke_radio_world`.
+- `pokegear_cards` added as an optional dependency.
+- New focused `pokegear_integration.lua` uses sandbox-safe sibling loading.
+- R/B/Y behavior unchanged.
+
+## Validation
+- Existing 30.1.6 Setup sandbox repair unchanged.
+- Package tree expands from 13 to 14 files with the focused integration module; nothing removed.
+- All four Lua files parser PASS.
+- Mock provider registration PASS: one card, MAP append, RADIO append, zero PHONE appends.
+- New Gold Pokégear paths remain TEST REQUIRED.
+
+---
+
+# 2.0.0-beta.30.1.6
+
+Release candidate built directly from 30.1.5 with no intended gameplay behavior changes beyond version identity/documentation.
+
+## Runtime-confirmed current-engine compatibility
+
+- **Gold fresh NEW GAME -> Nuzlocke SETUP: RUNTIME PASS.**
+- **Yellow fresh NEW GAME -> Nuzlocke SETUP: RUNTIME PASS.**
+- **Blue fresh NEW GAME proceeds into the player's bedroom: RUNTIME PASS.**
+
+These passes confirm the 30.1.5 fresh-Setup sandbox repair on the tested current Gen1Recomp line.
+
+## Confirmed crash repair
+
+The fresh-game Setup CTD was traced to legacy pre-game Setup-profile persistence touching the filesystem facade directly. Gen1Recomp 0.1.86 blocks that facade in sandboxed mods. The forbidden access occurred before `NuzlockeConfigScreen` was pushed, which is why earlier screen-level crash guards did not intercept it.
+
+30.1.5 replaced that path with per-session Gen1/Gold Setup-profile storage. 30.1.6 preserves that implementation unchanged and records the successful runtime validation.
+
+## Remaining limitation
+
+- Setup-profile preferences currently persist only for the running Gen1Recomp session.
+- Fully closing/reopening the application resets those pre-game Setup preferences to defaults.
+- Rules committed to an actual game save continue using their normal save-backed persistence.
+
+## Protected runtime evidence retained
+
+- Yellow existing-save boot: PASS.
+- Yellow Nuzlocke menus visible: PASS.
+- Yellow in-game Nuz Rules: PASS.
+- Yellow tested Gym Lock-In boundary rejection: PASS / protected.
+- Yellow tested Poké Mart duplicate-dialogue regression case: PASS after the active-TextBox World Building guard.
+- Gold and Yellow fresh Setup: PASS.
+- Blue fresh NEW GAME bedroom entry: PASS.
+- Permanent Rule Seal remains WIP / unselectable.
+- Yellow `NUZ` vertical position remains a deferred cosmetic issue.
+
+## Validation
+
+- Direct child of 30.1.5.
+- No older branch restored.
+- Repository tree retained at 13 files.
+- Lua sources: `main.lua`, `title_setup_compat.lua`, `trainer_rewards.lua`.
+- All Lua files pass the real Lua parser.
+
+---
+
+# 2.0.0-beta.30.1.5
+
+Fresh Setup sandbox compatibility repair, built directly from 30.1.4.
+
+- Identified a concrete current-engine incompatibility before the Setup screen is pushed.
+- The legacy Setup profile loader/saver directly accessed the mod-blocked filesystem facade.
+- Gen1Recomp 0.1.86 explicitly blocks that facade inside sandboxed mods and directs mod authors to public mod persistence/read APIs instead.
+- Because those accesses occurred before `NuzlockeConfigScreen` opened, earlier construction/update/draw crash guards could not intercept the failure.
+- Replaced cross-restart Setup-profile file I/O with session-local Gen1/Gold profile copies.
+- Fresh Setup no longer touches the blocked filesystem facade.
+- Normal active-save rule persistence is otherwise unchanged.
+- Temporary limitation: closing the application resets saved Setup-profile preferences to defaults until a later pass chooses a deliberate public cross-restart preference-storage contract.
+- No additional Lua module split was added.
+
+---
+
+# 2.0.0-beta.30.1.4
+
+Runtime-method crash diagnostic, built directly from 30.1.3.
+
+- 30.1.3 still crashed without showing its guarded-construction error box.
+- This strongly suggests `NuzlockeConfigScreen` is constructing/pushing successfully and failing on its first runtime frame rather than during `mod.ui.push`.
+- Wrapped the configuration screen instance's `update()` and `draw()` methods with protected calls.
+- On a Lua runtime failure, the faulty instance disables itself, attempts to pop, and shows `NUZ SETUP UPDATE ERROR` or `NUZ SETUP DRAW ERROR` containing the underlying error.
+- `lastConfigScreenError` is updated with the phase and traceback/error.
+- No additional module split or gameplay-rule change.
+
+---
+
+# 2.0.0-beta.30.1.3
+
+Setup/Nuz Rules crash-containment diagnostic based directly on 30.1.2.
+
+- The same Setup crash was reproduced using unchanged, **unsplit** published 29.3.0 gameplay Lua on the current engine. The existing split therefore is not sufficient evidence for the crash cause.
+- Current Gen1Recomp's screen resolver pcall-isolates a failed mod screen factory and then attempts a built-in fallback. `NuzlockeConfigScreen` is custom-only, so a construction failure can become a missing-builtin desktop crash.
+- Every Nuzlocke Setup/Nuz Rules open now goes through a protected public `mod.ui.push` transaction.
+- If construction fails, the game should stay alive and show `NUZLOCKE SETUP ERROR` with the underlying error text.
+- The error is retained in `mod.exports.__beta26.lastConfigScreenError`.
+- While implementing this guard, adding one more top-level local caused Lua's **200-local compile limit** to fire. The guard is therefore export-backed rather than local. This confirms the monolithic chunk has essentially no local-variable headroom and strengthens the case for another carefully planned split later, but does not by itself explain the current Setup crash.
+- No additional split is included in this diagnostic build.
+
+---
+
+# 2.0.0-beta.30.1.2
+
+Release/documentation child of `2.0.0-beta.30.1.1`. **No intended gameplay/code behavior change beyond version identity.**
+
+## Accepted known bug for this beta release
+
+- **KNOWN RUNTIME CRASH — Gold fresh NEW GAME -> SETUP selection.**
+- Runtime retest on 30.1.1 still crashes when selecting the Nuzlocke SETUP entry on Gold.
+- The earlier attempt to withdraw the newer Gold `MainMenu:buildList()` compatibility fallback did **not** resolve the crash.
+- The disabled fallback remains preserved in comments for future investigation.
+- Do **not** claim Gold fresh-game SETUP is working in this release.
+- Gold remains BETA/experimental and this specific startup configuration path is a known broken path accepted for release due to development pause.
+
+## Runtime evidence retained
+
+- Yellow existing-save boot: PASS.
+- Yellow Nuzlocke menu visibility: PASS.
+- Yellow in-game Nuz Rules: PASS.
+- Yellow tested Gym Lock-In boundary rejection: PASS / protected.
+- Yellow specific Poké Mart duplicate-dialogue regression case: PASS after the active-TextBox World Building guard.
+- Permanent Rule Seal remains WIP / grey / unselectable.
+- Yellow `NUZ` status vertical placement remains a known deferred cosmetic issue.
+
+## Release discipline
+
+- This build descends directly from 30.1.1.
+- No older branch was restored.
+- No additional Lua split was performed.
+- All current repository files are retained.
+- Lua parser validation passes for all three Lua sources.
+
+---
+
+# 2.0.0-beta.30.1.1
+
+Gold NEW GAME -> SETUP crash containment, built directly from `2.0.0-beta.30.1.0`.
+
+- Runtime FAIL: selecting the Nuzlocke Setup entry during a fresh Gold NEW GAME crashed the 30.1.0 candidate.
+- Compared the current Gold title path against the last published `2.0.0-beta.29.1.0`.
+- The published/runtime-PASS design already used the shared `ui.title_menu.items` injection plus the small Gold `src.ui.gen2.MainMenu:choose()` adapter.
+- Disabled only the later 0.1.86-era Gold `MainMenu:buildList()` compatibility fallback from `title_setup_compat.lua`.
+- The disabled `installGold()` implementation is preserved verbatim inside a Lua long comment for future diagnosis/recovery; it was not deleted.
+- R/B/Y `title_setup_compat.lua` fallback remains active.
+- No broader Gold gameplay systems, rules, tracker, randomizer, battle, item, mart, encounter, or provider changes were reverted.
+- Gold NEW GAME -> SETUP is now RETEST REQUIRED.
+- `2.0.0-beta.30.1.0` should be treated as a rejected runtime-crash candidate, not the release build.
+
+---
+
+# 2.0.0-beta.30.1.0
+
+Promotion release based directly on `2.0.0-beta.30.0.0.21`.
+
+## Runtime-confirmed Yellow results carried into this release
+- **PASS — existing-save boot and Nuzlocke menu visibility.**
+- **PASS — in-game Nuz Rules opens on an existing Yellow save.**
+- **PASS — Gym Lock-In boundary enforcement.** The tested Yellow Gym boundary correctly prevented the prohibited entry/exit transition. This runtime-confirmed behavior is protected against casual rewrite.
+- **PASS — duplicate-dialogue regression target, tested NPC.** The Yellow Poké Mart NPC that previously repeated trailing phrases across textbox pages no longer reproduced the defect after the 30.0.0.20 active-TextBox World Building guard.
+- The active-TextBox guard is retained as a **protected presentation compatibility safeguard**: optional Nuzlocke World Building text must not be layered over an already-active engine/other-mod TextBox. This is presentation-only and must never become required for mechanical enforcement.
+
+## Promoted development work
+- Gen1Recomp 0.1.86–0.1.90 compatibility target.
+- First approved modularization retained:
+  - `title_setup_compat.lua`
+  - `trainer_rewards.lua`
+- Permanent Rule Seal remains **WIP / grey / unselectable**. Its dormant implementation and recovery map remain preserved for later work.
+- Trainer Money/status percentage presentation uses explicit `%` labels.
+- Maximum BST uses preset selection: **OFF / 400 / 450 / 500 / 550** while preserving legacy custom thresholds until changed.
+- Yellow `NUZ` status placement remains a known deferred cosmetic issue: it is currently slightly too low and should later move upward a little, but not back to the previous overly-high position.
+
+## Validation
+- `main.lua`, `title_setup_compat.lua`, and `trainer_rewards.lua` pass the available Lua parser/compiler check before packaging.
+- Static success is not promoted to runtime PASS unless explicitly listed above.
+- Blue/Gold fresh-game SETUP behavior and modularized Trainer Money/Forgiveness/progression paths remain runtime-test targets where not already confirmed.
+
+---
+
+# 2.0.0-beta.30.0.0.21
+
+- Percentage-based rule presentation is now consistent across Rules/Setup and Nuzlocke status surfaces.
+- Trainer Money uses one shared percentage-label table everywhere: 0%, 25%, 50%, 75%, 100%, 150%, 200%, 300%, 500%.
+- Maximum BST is no longer a free-form three-digit editor.
+- Maximum BST now cycles through **OFF / 400 / 450 / 500 / 550** with A or Left/Right like other preset controls.
+- The enforcement/API contract still uses the actual BST threshold value, not a preset index.
+- Older development saves containing a non-preset custom BST value preserve that exact enforcement value until the player changes Maximum BST; the UI marks it CUSTOM, and the next change snaps to the nearest point on the preset ladder before moving in the requested direction.
+- No new Lua modules/files added or removed.
+- Yellow NUZ vertical placement remains deferred; duplicate-dialogue `.20` fix remains independently RETEST REQUIRED.
+
+---
+
+# 2.0.0-beta.30.0.0.20
+
+- Yellow runtime on 30.0.0.16 reconfirmed the recurring dialogue-page overlap/duplication defect: unrelated vanilla NPC text repeated trailing phrases at the start of subsequent pages.
+- This is the second occurrence in the current testing conversation and is now tracked as a recurring protected regression target rather than a one-off.
+- Added a global **World Building presentation invariant**: `pushWorldText()` refuses to push optional Nuzlocke flavor text if any `TextBox` is already active on the game state stack.
+- Rationale: Gen1Recomp textboxes are foreground/blocking states. Optional nested Nuzlocke text must not interrupt a vanilla dialogue transaction and then resume it at an already-presented page/scroll boundary.
+- This guard affects cosmetic World Building presentation only. Mechanical enforcement must not depend on `pushWorldText()` and remains unchanged.
+- Direct rule-denial flows that intentionally replace a blocked action remain separate and are not globally suppressed.
+- Yellow `NUZ` trainer-card/status vertical placement remains a known deferred cosmetic issue: current position is too low and should later move slightly upward, but not back to its previous overly-high position.
+- Permanent Rule Seal remains WIP/grey/unselectable from 30.0.0.19.
+- No Lua files/modules added or removed.
+
+---
+
+# 2.0.0-beta.30.0.0.19
+
+- **Permanent Rule Seal moved to WIP/dormant status.**
+- The row remains visible but is grey, displays `WIP`, is skipped by cursor navigation, and cannot be activated, matching Wonderlocke's placeholder behavior.
+- The complete confirmation, immediate `mod.storage` durability, durable-read, and lifecycle reconciliation implementation remains in `main.lua` behind `mod.exports.__beta26.permanentRuleSealWip = true`; it was not deleted.
+- Existing `.17/.18` development-test seals are **not enforced while WIP**, so challenge rules become editable again. Their `rules_permanently_locked` and `rules/permanent_seal` markers are preserved rather than erased.
+- Generic setters/presets cannot activate the effective `rules_locked` state while WIP.
+- No additional Lua module split was made and no files were added/removed.
+
+---
+
+# 2.0.0-beta.30.0.0.18
+
+- Yellow runtime PASS on 30.0.0.17: Permanent Rule Seal correctly prevented modification of challenge-rule sections while leaving QoL, World Building, and UI/presentation sections editable.
+- Yellow runtime FAIL on 30.0.0.17: the permanent seal did not survive exiting/reloading when no subsequent ordinary Pokémon SAVE had persisted `mod.save`.
+- Root cause aligned with Gen1Recomp 0.1.86's documented persistence model: `mod.save` is stored inside normal progress and therefore requires an ordinary Pokémon SAVE to become durable.
+- Permanent Rule Seal now mirrors its irreversible commitment immediately to playthrough-scoped `mod.storage` under `rules/permanent_seal`.
+- On `save.loaded` and `game.ready`, Nuzlocke reconciles the durable storage marker back into `rules_permanently_locked` + `rules_locked`.
+- Older saves that already contain the permanent `mod.save` marker are automatically mirrored into durable storage when loaded.
+- If playthrough storage is temporarily unavailable, current-session `mod.save` locking still occurs and lifecycle reconciliation retries later.
+- No other rule is moved to independent storage; ordinary configurable rules continue to follow the Pokémon SAVE model.
+- No new Lua files/modules added or removed.
+
+---
+
+# 2.0.0-beta.30.0.0.17
+
+- Yellow runtime PASS on 30.0.0.16: existing save booted, Nuzlocke menu entries were visible, and in-game Nuz Rules opened successfully.
+- Yellow runtime observation: Permanent Rule Seal correctly remained irreversible after activation, but activation safety was too weak.
+- Replaced the old one-warning/two-press seal with **two explicit warning stages plus a third deliberate SEAL activation**.
+- Warning 1/2 explains irreversibility; Warning 2/2 is a final confirmation; only the next activation commits the permanent seal.
+- Moving the cursor away, collapsing/expanding a section, activating another control, or pressing B cancels the staged confirmation.
+- Added a short input debounce between confirmation stages to reduce accidental keyboard/gamepad double advancement.
+- The description panel now shows the active warning stage in both R/B/Y and Gold, including title Setup where overworld/world-text presentation is unavailable.
+- No new Lua modules were added and no existing files were removed.
+- Permanent Rule Seal persistence remains monotonic by design once the final confirmation is committed.
+
+---
+
+# 2.0.0-beta.30.0.0.16
+
+- **Approved second Lua module split.** Added `trainer_rewards.lua`; no existing file was removed.
+- A real Lua parser reproduced 30.0.0.15's failure exactly: `too many local variables (limit is 200) in function at line 23`.
+- The first narrow wallet-only extraction was intentionally rejected before packaging because parser validation showed `main.lua` still exceeded the limit.
+- The completed second module therefore uses the originally approved cohesive boundary: trainer-money scaling, Forgiveness Token counters/shop bridge/Gym-trainer awards, trainer reward identity helpers, and Gym/E4/Champion progression bookkeeping.
+- Core battle/death rules, encounter legality, failed-encounter finalization, tracker, randomizers, title setup, general provider policy, and Gold gameplay systems remain in `main.lua`.
+- `trainer_rewards.lua` uses Gen1Recomp's documented sandbox-safe `load(mod:read(...))` multi-file pattern.
+- Directly affected systems are Trainer Money, Forgiveness Tokens/shop presentation/awards, and trainer progression used by level-cap reporting. These are RETEST REQUIRED.
+- Other systems have no intentional logic change but remain smoke-test targets after the structural compile repair.
+- Every Lua file and `manifest.json` are validated before packaging.
+- Further Lua splitting requires new explicit user approval.
+
+- Added a non-module structural safeguard after the approved second split: the late runtime-installer section now executes inside a nested function stored temporarily on `mod.exports.__beta26`. This creates a separate Lua local scope without adding another repository file or changing system ownership.
+- This was necessary because parser validation showed the approved trainer-reward extraction alone still left `main.lua` above the 200-active-local ceiling.
+- Final packaged state passes the available Lua parser for `main.lua`, `title_setup_compat.lua`, and `trainer_rewards.lua`.
+
+- Added a non-module structural safeguard after the approved second split: the late runtime-installer section executes inside a nested function stored temporarily on `mod.exports.__beta26`. This creates a separate Lua local scope without adding another repository file or changing system ownership.
+- Parser validation showed the approved trainer-reward extraction alone still left `main.lua` above the 200-active-local ceiling; the nested scope supplies the remaining compiler headroom.
+- Final packaged state passes the available Lua parser for `main.lua`, `title_setup_compat.lua`, and `trainer_rewards.lua`.
+
+---
+
+# 2.0.0-beta.30.0.0.15
+
+- **Approved first Lua module split.** Added `title_setup_compat.lua`; no existing file was removed.
+- Moved only the 0.1.86 fresh-game title SETUP compatibility fallback out of `main.lua`.
+- Uses Gen1Recomp 0.1.86's documented sandbox-safe multi-file pattern: source is read with `mod:read(...)`, compiled with sandboxed `load(...)`, and therefore inherits the mod's sandbox environment.
+- Fixes 30.0.0.14's `ambiguous syntax` parser failure by removing the IIFE entirely rather than applying another parser workaround.
+- Rationale: 30.0.0.13 hit the large main chunk's parser/local pressure; 30.0.0.14 then introduced an ambiguous statement boundary. Isolating this self-contained compatibility adapter lowers main-chunk pressure and follows upstream's supported multi-file design.
+- Expected impact is limited to title/startup SETUP injection. Core rules, saves, encounters, battles, tracker, randomizers, compatibility providers, and Gold gameplay are not intentionally changed.
+- **Compatibility confidence is temporarily reduced until runtime tests confirm Blue and Gold startup, Setup selection, existing-save behavior, and representative gameplay.**
+- Further Lua splitting requires new explicit user approval.
+
+---
+
+# 2.0.0-beta.30.0.0.14
+
+- Fixed a load-blocking Lua parser failure introduced in 30.0.0.13.
+- Root cause: the 0.1.86 title-menu compatibility fallback added enough locals to the already-large top-level `main.lua` chunk to exceed the runtime parser's local-variable ceiling.
+- Moved the complete title fallback implementation into a nested immediately-invoked function so its helper locals belong to a separate Lua function prototype instead of the top-level chunk.
+- No title-menu behavior was intentionally changed from 30.0.0.13.
+- No gameplay rules, save schema, provider behavior, randomizer behavior, or documentation file set changed.
+- Fresh Blue and Gold SETUP runtime test remains required after confirming the mod now loads.
+
+---
+
+# 2.0.0-beta.30.0.0.13
+
+- Compatibility repair for runtime-confirmed missing Nuzlocke SETUP on genuinely fresh Blue and Gold boots under Gen1Recomp 0.1.86.
+- Preserves `ui.title_menu.items` as the primary public title-menu integration.
+- Adds conservative generation-specific title-list fallbacks that run after normal menu construction and insert SETUP only when there is no CONTINUE row and no existing SETUP row.
+- R/B/Y fallback wraps `src.ui.TitleState:openMenu`; Gold fallback wraps `src.ui.gen2.MainMenu:buildList`.
+- Fallbacks are idempotent and explicitly refuse duplicate SETUP insertion.
+- Existing-save behavior remains unchanged: SETUP stays hidden when CONTINUE/a save is present.
+- Narrowed the experimental 30.0.0.12 `<1.0.0` engine range to the actively investigated `>=0.1.86 <0.1.91` family.
+- No gameplay-rule, save-schema, randomizer, tracker, or provider-policy behavior intentionally changed.
+- Runtime retest required on fresh Blue and Gold saves.
+
+---
+
+# 2.0.0-beta.30.0.0.12
+
+- Future-proofed the manifest engine range from `>=0.1.81 <0.1.85` to `>=0.1.81 <1.0.0`.
+- Future Gen1Recomp 0.x patch/minor releases will no longer be rejected solely because their version number crossed our previous ceiling.
+- Kept a deliberate `<1.0.0` major compatibility boundary: a future 1.0 may legitimately change contracts and should be reviewed rather than silently trusted.
+- Remains Mod API 2 and save schema 4; no gameplay rules or save semantics changed.
+- This does not claim unknown future engine releases are runtime-certified. It changes loader policy from exact-patch allowlisting to API-family compatibility.
+- No files added or removed.
+
+---
+
+# 2.0.0-beta.30.0.0.11
+
+- Compatibility-only child of 2.0.0-beta.30.0.0.10.
+- Expanded the engine compatibility range from `>=0.1.81 <0.1.84` to `>=0.1.81 <0.1.85`, allowing Gen1Recomp 0.1.84 to load the mod.
+- Gen1Recomp 0.1.84 still documents Mod API 2 as the current standard, so no API-level migration was made.
+- No gameplay rules, save schema, compatibility providers, randomizers, tracker logic, UI behavior, or protected fixes were intentionally changed.
+- This build is a minimal boot-compatibility checkpoint so broader 30.0.0.10 work remains preserved for subsequent children.
+- Runtime validation on 0.1.84 is required.
+
+---
+
+# 2.0.0-beta.30.0.0.10
 
 ### Fixed / hardened
 - Made external-provider delegation effective at runtime for the delegated boolean mechanics, not UI-only.
@@ -1316,7 +2940,125 @@ Confirmed during the 2.3.13–2.3.35 development line:
 - Randomizer restoration must be tested with providers that mutate encounter/learnset registries after Nuzlocke snapshots them.
 - Passive external acquisition reconciliation is now pointed at the correct save shape, but provider-specific acquisition timing still needs runtime proof.
 
-## 2.0.0-beta.29.3.16 — Nuz Info / Compatibility API 27
+---
+
+# 2.0.0-beta.30.0.0.9
+
+- Added provider-owned non-core feature delegation in the Nuzlocke Setup/Rules UI.
+- When an active provider explicitly owns a duplicate non-core mechanic, Nuzlocke shows its duplicate control as effective OFF, greys the row, and prevents toggling.
+- Delegated rows remain selectable so the description panel identifies the handling mod/provider and version.
+- Stored Nuzlocke preferences are preserved dormant and automatically become effective again if the external provider is disabled/removed.
+- Core Nuzlocke challenge policy is never implicitly delegated: death, One Per Area, Dupes, catch legality, Type Locke, item bans, lock-ins, legendary/mythical/pseudo bans, etc. remain Nuzlocke-owned.
+- Initial delegated duplicate mechanics include level caps, starter/encounter/learnset randomizers, running shoes, default naming/tutorial-skip QoL, trainer-money provider, and starting-resource provider capabilities.
+- Explicit providers take precedence; legacy/automatic adapters remain fallback-only.
+- Added automatic recognition hints for Randomizer, Level Cap, and Running Shoes behavior families.
+- Preserved all 30.0.0.8 compatibility consolidation and the Yellow tracker crash repair.
+
+---
+
+# 2.0.0-beta.30.0.0.8
+
+- Consolidated the 30.0.0.3–30.0.0.7 compatibility architecture without adding a new gameplay feature.
+- Added canonical provider capability families: `item_provider`, `storage_provider`, `encounter_provider`, `exp_provider`, `registry_consumer`, and `quest_content_provider`.
+- Existing legacy capability names remain additive aliases; no provider integration was intentionally broken.
+- Added `interop.resolveCapability()` with explicit-provider precedence over automatic legacy adapters.
+- Documented provider-owned mechanics vs Nuzlocke-owned challenge policy/provenance.
+- Preserved the Yellow Encounter Tracker REMOVE ENTRY serialization repair.
+- Preserved FAFF0x QoL, content-provider, randomizer opt-out, and automatic-adapter work.
+- No repository files added or removed.
+- Compatibility changes remain TEST REQUIRED until the planned runtime certification pass.
+
+---
+
+# 2.0.0-beta.30.0.0.7
+
+- Added the FAFF0x automatic/legacy compatibility adapter layer.
+- Scans the active mod graph after `mods.loaded` and describes common behavior families (alternate Bag/item UI, automatic item use, PC UI, external encounter starters, registry consumers, EXP distributors, quest providers, reusable machines) without using those names as enforcement branches.
+- Explicit provider registration still wins; automatic adapters only fill gaps for released mods that predate the Nuzlocke API.
+- Added passive Pokémon acquisition reconciliation after game/save readiness so externally granted Pokémon can be surfaced as scripted/provider acquisitions instead of being silently treated as vanilla catches.
+- Added convenience adapter gates for external item use, encounter starts, PC actions, and effective-registry snapshots.
+- Automatic acquisition reconciliation is observational and never deletes externally granted Pokémon.
+- Preserved 30.0.0.5 Yellow tracker crash repair and 30.0.0.6 quest/content provider APIs.
+- Runtime certification remains deferred.
+
+---
+
+# 2.0.0-beta.30.0.0.6
+
+- Added the FAFF0x quest/content provider layer to Interop API v1.
+- Added dynamic area registration that feeds the existing Encounter Tracker catalogue.
+- Added provider-declared dungeon families so Gym/Dungeon Lock-In can recognize mod-added dungeons without hardcoded quest names.
+- Added custom boss metadata registration for future difficulty/cap consumers.
+- Added quest gift and scripted/repeatable encounter source registration.
+- Acquisition policy can now fill missing kind/species/area metadata from registered content sources.
+- Added randomizer opt-out policies for story-critical encounters and species learnsets.
+- Random Encounter Tables honors encounter-record/provider `randomizable=false` policies.
+- Random Learnsets honors provider/species preservation policies.
+- Added `content.registerBundle()` so quest packs can register areas, dungeons, bosses, gifts, encounters, and randomizer policies in one call.
+- Preserved the 30.0.0.5 Yellow Encounter Tracker serialization repair unchanged.
+- Runtime certification remains deferred / TEST REQUIRED.
+
+---
+
+# 2.0.0-beta.30.0.0.5
+
+- Fixed a fatal Encounter Tracker recovery/removal path reported on an existing Yellow save originating from beta.29.3.16.
+- Root cause: the legacy-recovery UI could attach a live Pokémon object directly to a persisted `tracker_log.__LEGACY__` entry, then serialize that contaminated tracker table during REMOVE ENTRY.
+- Legacy recovery rows are now detached UI views; live Pokémon references never mutate persisted tracker records.
+- Added a narrow migration sanitizer that removes only known transient UI fields (`mon`, `logEntry`, `savedEntry`) from legacy tracker records before tracker serialization.
+- Manual recovery now maps detached UI rows back to their original saved record explicitly.
+- No catch history, provenance, encounter-rule semantics, or unrelated tracker behavior was rewritten.
+- Runtime status: FIX IMPLEMENTED / RETEST REQUIRED, especially Yellow existing-save REMOVE ENTRY.
+
+---
+
+# 2.0.0-beta.30.0.0.4
+
+- Expanded Interop API v1 for the FAFF0x QoL compatibility pass.
+- Added `itemPolicy.beforeUse/canUse/check/checkUse` for Modern Bag, Item Shortcut, Repel Reuse, favorites and other alternate item-use paths.
+- Added `acquisitionPolicy.begin/commit` and explicit acquisition kinds for DexNav, Summon and scripted providers.
+- Added `encounterPolicy.evaluate` convenience entry for external encounter starters.
+- Added `pcPolicy.evaluate/can` for alternate PC/box UIs; dead Pokémon remain unusable without trapping ordinary PC navigation.
+- Added registry revision counters and `registry.describe()` for Pokédex Plus/Moves Manager-style consumers.
+- Added EXP cap discovery helper while preserving provider-owned distribution.
+- Bridged selected new APIs through legacy `nuzlocke_compat` exports.
+- No hardcoded FAFF0x IDs added. All runtime certification remains deferred.
+
+---
+
+# 2.0.0-beta.30.0.0.3
+
+- Added public `mod.exports.nuzlocke` interoperability API v1.
+- Added capability/provider registration instead of hardcoded mod-name compatibility.
+- Added acquisition classification/evaluation for wild, gift, trade, starter, scripted, editor, summon, quest, forced, and Wonder Trade sources.
+- Added public item-policy evaluation for alternate Bag/shortcut/automatic-use UIs.
+- Added effective Pokémon/encounter/move/learnset registry access plus registry-change notifications.
+- Added a post-distribution EXP ownership seam so EXP providers can own distribution while Nuzlocke retains cap enforcement.
+- Random Encounter/Learnset transforms now notify registry consumers.
+- FAFF0x collection is now an explicit first-class compatibility target, implemented through capabilities rather than FAFF0x IDs.
+- All new interop paths are TEST REQUIRED.
+
+---
+
+# 2.0.0-beta.30.0.0.2
+
+- Added **No Fishing** under Field Items; blocks rod use before fishing begins while leaving rod ownership and non-fishing encounters untouched. Includes tiered Kanto/Johto world-building. Gold is TEST REQUIRED.
+
+---
+
+# 2.0.0-beta.30.0.0.1
+
+- Added Random Encounters with persistent per-slot species rolls.
+- Added Random Learnsets with persistent per-species/per-slot move rolls.
+- Added Learnset Gen: AUTO / GEN1 / GEN2.
+- Preserves encounter levels/structure and learnset levels/size.
+- Reversible runtime-registry transforms reapply after load/provider lifecycle events.
+- No repository files added or removed.
+- New paths are TEST REQUIRED.
+
+---
+
+# 2.0.0-beta.29.3.16 — Nuz Info / Compatibility API 27
 
 - Direct child of `2.0.0-beta.29.3.15`.
 - Replaced the single-purpose party Catch Info row with composable NUZ INFO.
@@ -1329,7 +3071,9 @@ Confirmed during the 2.3.13–2.3.35 development line:
 - Save schema remains 4; Mod API remains 2.
 - Changed UI/API paths remain TEST REQUIRED.
 
-## 2.0.0-beta.29.3.15 — Rule UI / Dialogue / Gold QoL
+---
+
+# 2.0.0-beta.29.3.15 — Rule UI / Dialogue / Gold QoL
 
 - Direct child of `2.0.0-beta.29.3.14`.
 - Added a LEVELS section for Game Difficulty, Level Cap Scope, and EXP Edging.
@@ -1341,7 +3085,9 @@ Confirmed during the 2.3.13–2.3.35 development line:
 - Compatibility API remains 26; save schema remains 4.
 - Changed paths remain TEST REQUIRED.
 
-## 2.0.0-beta.29.3.14 — Gold Runtime Repair
+---
+
+# 2.0.0-beta.29.3.14 — Gold Runtime Repair
 
 - Direct child of `2.0.0-beta.29.3.13`.
 - Fixed Gold START-menu compact-label selection using the hook-supplied game.
@@ -1352,7 +3098,9 @@ Confirmed during the 2.3.13–2.3.35 development line:
 - Repository tree, save schema 4, Compatibility API 26, Mod API 2, and engine range are unchanged.
 - Changed paths remain TEST REQUIRED until runtime retest.
 
-## 2.0.0-beta.29.3.13 — migration / master-switch / compatibility hardening
+---
+
+# 2.0.0-beta.29.3.13 — migration / master-switch / compatibility hardening
 
 - Rolled directly from `2.0.0-beta.29.3.12`; exact 11-file repository tree preserved.
 - Fixed the legacy `ball_use_ban_tier` → `no_catching` migration. Partial historical Ball restrictions no longer become an absolute capture ban; an absent new key defaults OFF and explicit `no_catching` state is preserved. Already-migrated ambiguous saves are flagged for review instead of being destructively guessed back OFF.
@@ -1375,7 +3123,9 @@ Confirmed during the 2.3.13–2.3.35 development line:
 - Save schema remains 4; Gen1Recomp Mod API remains 2; engine range remains `>=0.1.81 <0.1.84`.
 - Targeted static/semantic smoke passes; normal standalone Lua `loadfile` still reaches the inherited >200-local outer-function limit, so no standard-Lua compile PASS is claimed. Changed gameplay/UI paths remain **TEST REQUIRED** in Gen1Recomp.
 
-## 2.0.0-beta.29.3.12 — Type Locke / encounter accounting stabilization
+---
+
+# 2.0.0-beta.29.3.12 — Type Locke / encounter accounting stabilization
 
 - Rolled directly from `2.0.0-beta.29.3.11`; repository tree unchanged.
 - Added RANDOM Type 1/Type 2 selection for Monolocke/Duolocke. Rolls resolve once and persist concrete types; Duo rolls are always distinct.
@@ -1388,7 +3138,9 @@ Confirmed during the 2.3.13–2.3.35 development line:
 - Compatibility API 25, save schema 4, Mod API 2, engine range `>=0.1.81 <0.1.84`.
 - New behavior remains TEST REQUIRED pending in-engine runtime validation.
 
-## 2.0.0-beta.29.3.11 — Pokemon Bois Club world-building pass
+---
+
+# 2.0.0-beta.29.3.11 — Pokemon Bois Club world-building pass
 
 - Rolled directly from `2.0.0-beta.29.3.10`; repository files remain the same set.
 - Added a **Tier 3 World Building** cosmetic rebrand for Vermilion's **Pokemon Fan Club**, presenting it as the **Pokemon Bois Club** when World Building is set to T3.
@@ -1397,7 +3149,9 @@ Confirmed during the 2.3.13–2.3.35 development line:
 - This pass is cosmetic only; no rules, encounter legality, save schema, or compatibility API behavior changed.
 - New Pokemon Bois Club presentation paths are **TEST REQUIRED** until runtime validated.
 
-## 2.0.0-beta.29.3.10 — Type Locke + No Day Care
+---
+
+# 2.0.0-beta.29.3.10 — Type Locke + No Day Care
 
 - Rolled directly from `2.0.0-beta.29.3.9`; repository tree unchanged.
 - Added **Type Locke** as a shared `OFF / MONO / DUO` framework for Monolocke and Duolocke runs.
@@ -1414,7 +3168,9 @@ Confirmed during the 2.3.13–2.3.35 development line:
 - Compatibility API remains 25, save schema remains 4, Mod API remains 2, and engine range remains `>=0.1.81 <0.1.84`.
 - New Type Locke and No Day Care paths are **TEST REQUIRED** until runtime validated.
 
-## 2.0.0-beta.29.3.9 — Gold-native custom UI integration
+---
+
+# 2.0.0-beta.29.3.9 — Gold-native custom UI integration
 
 - Rolled directly from `2.0.0-beta.29.3.8`; repository tree unchanged.
 - Replaced R/B/Y-style pixel-positioned rendering on Nuzlocke-owned Gold screens with Gen1Recomp's native Gen 2 `src.ui.gen2.Chrome` vocabulary.
@@ -1428,7 +3184,9 @@ Confirmed during the 2.3.13–2.3.35 development line:
 - New Gold-native presentation is **TEST REQUIRED** until runtime validated.
 - Compatibility API remains 25, save schema remains 4, Mod API remains 2, and engine range remains `>=0.1.81 <0.1.84`.
 
-## 2.0.0-beta.29.3.8 — World Building parity + cleanup
+---
+
+# 2.0.0-beta.29.3.8 — World Building parity + cleanup
 
 - Rolled directly from `2.0.0-beta.29.3.7`; repository tree unchanged.
 - Expanded World Building OFF/T1/T2/T3 presentation to Gold/Johto with region-aware Tier 3 text instead of forcing the Gold backend to Tier 0.
@@ -1441,7 +3199,9 @@ Confirmed during the 2.3.13–2.3.35 development line:
 - Updated stale internal build metadata and player documentation.
 - Existing runtime-PASS behavior remains protected; new Gold flavor and IronMON preset behavior are TEST REQUIRED.
 
-## 2.0.0-beta.29.3.7 — split Nuzlocke loadout / game difficulty
+---
+
+# 2.0.0-beta.29.3.7 — split Nuzlocke loadout / game difficulty
 
 - Separates **Nuzlocke Loadout** from **Game Difficulty**. Difficulty selection no longer changes Permadeath, encounter, healing, or other Nuzlocke rules.
 - Game Difficulty defaults to **VANILLA** and is changeable mid-game until the Permanent Rule Seal is applied.
@@ -1452,11 +3212,23 @@ Confirmed during the 2.3.13–2.3.35 development line:
 - Renames the irreversible configuration control to **Permanent Rule Seal** in the player-facing UI while retaining the existing save representation.
 - All new difficulty behavior is **TEST REQUIRED**.
 
-## 2.0.0-beta.29.3.7
+### Historical subrecord — 2.0.0-beta.29.3.7
 
 - Added optional EXP Edging: cap-blocked EXP is banked per Pokemon and released through the normal EXP path when a later authoritative cap allows it.
 - Added Difficulty selector groundwork: VANILLA / NUZ / HARD / EXT, with capability-first discovery of active external difficulty/cap providers. External providers are never enabled, disabled, or guessed solely by mod name.
 - Gold exposes both systems through its separate backend; all new behavior is TEST REQUIRED.
+
+
+### Reconciled historical record: 2.0.0-beta.29.3.7 — Gold compatibility smoke pass
+
+
+- Rolled directly from 2.0.0-beta.29.3.4; no repository files added or removed.
+- Static smoke audit rechecked Gold-specific capture, nickname, Mart, field-item, catch-tutorial, gift, static, gambling, Whiteout, egg, roamer, and Nuz Status adapters.
+- Gold adapters remain generation-scoped and fail-open when an upstream seam is unavailable.
+- Route Forgiveness and No Catching remain TEST REQUIRED on Gold pending runtime validation.
+- Existing R/B/Y runtime-PASS behavior was not intentionally changed.
+
+---
 
 # 2.0.0-beta.29.3.3
 
@@ -1468,7 +3240,7 @@ Confirmed during the 2.3.13–2.3.35 development line:
 - Published the Forgiveness Token aspirational shop price as 1,000,000 (one above the native 999,999 wallet ceiling) for shop/UI integrations. Native cross-generation Mart stock injection remains TEST REQUIRED and is not claimed as runtime PASS.
 - New behavior in this build is TEST REQUIRED; existing runtime-confirmed PASS behavior remains protected.
 
-## 2.0.0-beta.29.3.3
+### Historical subrecord — 2.0.0-beta.29.3.3
 
 Development repair build based directly on `2.0.0-beta.29.3.0`.
 
@@ -1487,7 +3259,9 @@ Development repair build based directly on `2.0.0-beta.29.3.0`.
 - Static release gate: **95/95 PASS**.
 - Runtime testing is still required, especially for Gold cap progression and Legacy Recovery migrations.
 
-## 2.0.0-beta.29.3.0
+---
+
+# 2.0.0-beta.29.3.0
 
 Full beta release roll-up from the development line after `2.0.0-beta.29.1.0`.
 
@@ -1557,14 +3331,20 @@ Full beta release roll-up from the development line after `2.0.0-beta.29.1.0`.
 - Gym/Dungeon Lock-In still needs broader cross-game runtime coverage.
 - Gold support remains beta.
 
-## 2.0.0-beta.29.2.7
+---
+
+# 2.0.0-beta.29.2.7
+
 - R/B Random Starter selection confirmation now names the persisted randomized species, with the existing Dex preview and actual grant bound to the same roll.
 - Added protected pre-battle trainer-party preview for known runtime trainer-balance composition so Trainer Card and Encounter Log can show the actual next boss ace before the fight starts.
 - Gym Lock-In and Dungeon Lock-In moved from World to the Ironmon/Hardcore challenge section; rule behavior is unchanged.
 - Cleaned up the optional early Oak-lab Rival line to avoid repeating the later post-battle "toughen it up" idea.
 - Preserves Yellow in-game section glyphs and Running Shoes/QoL placement confirmed by runtime testing.
 
-## 2.0.0-beta.29.2.6
+---
+
+# 2.0.0-beta.29.2.6
+
 - Audited compatibility with Indigo Plateau Conference v1.0.2 (Gold).
 - Trainer-party observation now runs outside normal priority-0 content wrappers, so Nuzlocke records the final composed tournament party rather than observing vanilla before a downstream replacement.
 - Gold trainer-data inspection now understands the canonical `game.data.gen2Trainers.classes` shape while retaining the existing R/B/Y trainer registry path.
@@ -1572,21 +3352,10 @@ Full beta release roll-up from the development line after `2.0.0-beta.29.1.0`.
 - Scripted post-battle healing is allowed for surviving Pokemon, while already Nuzlocke-dead party members are reasserted at 0 HP after battle/map reconciliation.
 - No IPC map, NPC, trainer, event-flag, tournament-state, or save keys are patched or overwritten.
 
-# Changelog
+---
 
-## 2.0.0-beta.30.1.21
+# 2.0.0-beta.29.2.5 — focused common-route split rules
 
-- Added spoiler-safe randomizer ownership context to Encounter Tracker.
-- Added dedicated MOD COMPAT ownership diagnostics screen.
-- Expanded translation-safe semantic menu matching.
-- Added merged external species metadata export.
-- Added adaptive compatibility/tracker presentation helpers.
-- Added context-sensitive World Building guidance API.
-
-
-This file is the permanent cumulative development/release history. A known revision is retained even when its exact per-build delta is only partially recoverable; uncertain history is labeled rather than guessed. A beta.29.2.0 history-recovery pass reconciled preserved source, packages, runtime evidence, and retained development records; newly recovered details are added only where their version attribution is supportable.
-
-## 2.0.0-beta.29.2.5 — focused common-route split rules
 - Gold START-menu labels for Nuz Status, Encounter Tracker, and Nuz Rules now use compact native-width labels so they do not draw through the menu border.
 - Gold Nuz Status now uses the native Gen 2 down-arrow glyph for additional rule rows.
 - Hardened Gold randomized-starter registration so numeric species IDs are resolved before tracker/history writes and explicit starter events canonicalize to New Bark Town.
@@ -1601,7 +3370,9 @@ This file is the permanent cumulative development/release history. A known revis
 - Mt. Moon and Safari split behavior is unchanged.
 - Runtime migration and ON/OFF reprojection tests are required before public release.
 
-## 2.0.0-beta.29.2.3 — finite-number and review hardening
+---
+
+# 2.0.0-beta.29.2.3 — finite-number and review hardening
 
 - Built directly from beta.29.2.2.
 - Sanitizes non-finite numeric Setup/profile inputs (`NaN`, positive infinity, negative infinity) at rule normalization and profile-copy boundaries, falling back to established defaults before clamping/persistence.
@@ -1610,7 +3381,9 @@ This file is the permanent cumulative development/release history. A known revis
 - Preserves beta.29.2.2 Gym/Dungeon Lock-In, trainer-cap compatibility hardening, and all beta.29.2.1 determinism/Permadeath fixes.
 - Expands repository-only review rationale and regression obligations for investigated technical edge cases that did not justify production changes.
 
-## 2.0.0-beta.29.2.2 — lock-in and trainer-cap compatibility hardening
+---
+
+# 2.0.0-beta.29.2.2 — lock-in and trainer-cap compatibility hardening
 
 ### Goal
 
@@ -1645,14 +3418,18 @@ Build directly from beta.29.2.1 and add the missing Gym/Dungeon Lock-In rule fam
 - Existing/older save loaded inside a dungeon must fail open rather than trap the player.
 - Trainer-content compatibility: verify a modified Brock/early boss roster changes the displayed/enforced live cap instead of falling back to the vanilla value.
 
-## 2.0.0-beta.29.2.1 — determinism and Gym-Leader Permadeath hardening
+---
+
+# 2.0.0-beta.29.2.1 — determinism and Gym-Leader Permadeath hardening
 
 - Built directly from beta.29.2.0.
 - Made split-area re-projection deterministic instead of allowing merged representative encounter state to depend on Lua table iteration order.
 - Added a post-finish Permadeath reconciliation pass so special/Gym trainer teardown cannot restore a Pokémon already marked dead during battle.
 - Structural release-gate coverage was expanded for both fixes; exact runtime validation remained required.
 
-## 2.0.0-beta.29.2.0 — status semantics and native UI polish
+---
+
+# 2.0.0-beta.29.2.0 — status semantics and native UI polish
 
 ### Goal
 
@@ -1685,7 +3462,9 @@ Turn the narrow beta.29.1.1 money checkpoint into a broader player-facing update
 
 - A runtime report shows Permadeath working in an ordinary fight but failing to leave a Pokémon unusable after it faints against a Gym Leader (reported against Misty); the Pokémon remained in the party and could be healed at a Pokémon Center. This is treated as a current release-blocking reconciliation bug until the Gym Leader/special-trainer post-battle path is reproduced and fixed.
 
-## 2.0.0-beta.29.1.1 — fresh-start money default hotfix
+---
+
+# 2.0.0-beta.29.1.1 — fresh-start money default hotfix
 
 ### Goal
 
@@ -1708,7 +3487,9 @@ Fix the runtime-confirmed R/B/Y NEW GAME regression found in the published beta.
 - Static release gate includes explicit assertions for the $3,000 missing-value fallback and the preservation of explicit $0.
 - Exact in-game R/B/Y fresh-start retest remains required; runtime evidence is authoritative.
 
-## 2.0.0-beta.29.1.0 — Gen1Recomp 0.1.83 compatibility profile
+---
+
+# 2.0.0-beta.29.1.0 — Gen1Recomp 0.1.83 compatibility profile
 
 ### Goal
 
@@ -1746,7 +3527,9 @@ Prepare the beta.29.0.2 gameplay candidate for release testing on the current Ge
 - Upstream modkit validate/lint/gen2check: **NOT EXECUTED in this workspace** because a complete local Gen1Recomp 0.1.83 source/imported-data tree is not available.
 - Required next step: runtime certification of beta.29.1.0 on Gen1Recomp 0.1.83, beginning with Mod Manager Ready status/startup smoke and the beta.29.0.2 four-fix regression matrix.
 
-## 2.0.0-beta.29.0.2 — reviewed acquisition and provenance bug fixes
+---
+
+# 2.0.0-beta.29.0.2 — reviewed acquisition and provenance bug fixes
 
 ### Goal
 
@@ -1774,7 +3557,9 @@ Apply the four pre-runtime code-review decisions with the smallest practical cha
 - Upstream modkit validate/lint/gen2check: **NOT EXECUTED in this workspace** because a complete compatible Gen1Recomp checkout/imported-data tree is not available.
 - Targeted in-game runtime matrix remains required before approval.
 
-## 2.0.0-beta.29.0.1 — release-candidate packaging and developer documentation
+---
+
+# 2.0.0-beta.29.0.1 — release-candidate packaging and developer documentation
 
 - Built directly from beta.29.0.0 with no intended gameplay behavior change.
 - Reorganized the release around a lean player distribution and a separate repository/tooling layout.
@@ -1786,48 +3571,64 @@ Apply the four pre-runtime code-review decisions with the smallest practical cha
 - Rebuilt the cumulative changelog so every known revision remains represented, including revisions whose exact per-build delta is only partially recoverable.
 - Current candidate remains targeted to the audited Gen1Recomp 0.1.81 line; newer engine compatibility is not claimed by this build.
 
-## 2.0.0-beta.29.0.0 — beta.29 development-line baseline
+---
+
+# 2.0.0-beta.29.0.0 — beta.29 development-line baseline
 
 - Created directly from beta.28.20 with no intended gameplay changes.
 - Began the beta.29 development line and consolidated the player-facing documentation/package baseline.
 - Recorded current runtime evidence for Gold Setup/collapsible sections and Yellow existing-save navigation/collapsible sections.
 
-## 2.0.0-beta.28.20 — temporary-party compatibility hardening
+---
+
+# 2.0.0-beta.28.20 — temporary-party compatibility hardening
 
 - Built directly from beta.28.19.
 - Hardened Permadeath against trainer systems that temporarily narrow/reorder the player party and restore it during battle teardown.
 - Whiteout now re-evaluates the restored real post-battle party so healthy reserves prevent a false run-ending Whiteout.
 - Restored dead Pokémon are reconciled after temporary-party restoration rather than remaining usable.
 
-## 2.0.0-beta.28.19 — preserved development revision
+---
+
+# 2.0.0-beta.28.19 — preserved development revision
 
 - This revision is explicitly preserved by the forward source lineage.
 - The exact build-specific delta has not been fully recovered from surviving release records. Preserved later history places beta.28.17–28.19 in an aggregate hardening period that included party-menu composition protection, checkpoint/savestate reconciliation of runtime-only observations, and additional wrapper/restoration safeguards before beta.28.20's temporary-party fix.
 - Those aggregate changes are deliberately **not** assigned to one specific .17/.18/.19 build without stronger evidence.
 
-## 2.0.0-beta.28.18 — preserved development revision
+---
+
+# 2.0.0-beta.28.18 — preserved development revision
 
 - This revision is explicitly preserved by the forward source lineage.
 - The exact build-specific delta has not been fully recovered from surviving release records. Preserved later history places beta.28.17–28.19 in an aggregate hardening period that included party-menu composition protection, checkpoint/savestate reconciliation of runtime-only observations, and additional wrapper/restoration safeguards before beta.28.20's temporary-party fix.
 - Those aggregate changes are deliberately **not** assigned to one specific .17/.18/.19 build without stronger evidence.
 
-## 2.0.0-beta.28.17 — preserved development revision
+---
+
+# 2.0.0-beta.28.17 — preserved development revision
 
 - This revision is explicitly preserved by the forward source lineage.
 - The exact build-specific delta has not been fully recovered from surviving release records. Preserved later history places beta.28.17–28.19 in an aggregate hardening period that included party-menu composition protection, checkpoint/savestate reconciliation of runtime-only observations, and additional wrapper/restoration safeguards before beta.28.20's temporary-party fix.
 - Those aggregate changes are deliberately **not** assigned to one specific .17/.18/.19 build without stronger evidence.
 
-## 2.0.0-beta.28.16 — menu-label clarity
+---
+
+# 2.0.0-beta.28.16 — menu-label clarity
 
 - Renamed the in-game mod-menu entries to **ENC TRACKER** and **NUZ RULES**.
 - No intentional gameplay behavior change was associated with the label cleanup.
 
-## 2.0.0-beta.28.15 — numeric-rule correctness
+---
+
+# 2.0.0-beta.28.15 — numeric-rule correctness
 
 - Corrected Maximum BST and the Player/Wild/Trainer Stat EXP selectors being treated as booleans instead of numeric/multi-state rules.
 - Retained the lexically scoped Stat EXP/DV implementation used to stay below Lua 5.1 active-local limits.
 
-## 2.0.0-beta.28.14 — compiler/runtime regression repair
+---
+
+# 2.0.0-beta.28.14 — compiler/runtime regression repair
 
 - Confirmed that the reported missing Blue SETUP entry and Gold Mod Manager syntax error were one Lua compilation regression: beta.28.11's Stat EXP/DV additions crossed Lua 5.1's 200-active-local limit, so the mod failed before either UI path could register.
 - Lexically scoped the Stat EXP/DV implementation behind the existing beta export namespace so the full mod could compile without adding long-lived main-function locals.
@@ -1836,17 +3637,23 @@ Apply the four pre-runtime code-review decisions with the smallest practical cha
 - Preserved HP semantics when creation-time Stat EXP/DV changes alter maximum HP: full-health starters/gifts remain full, while damaged catches retain their actual battle HP.
 - Preserved release-gate evidence from the test package while keeping Gold's new Stat EXP/DV paths runtime TEST REQUIRED.
 
-## 2.0.0-beta.28.13 — compiler/runtime diagnosis iteration
+---
+
+# 2.0.0-beta.28.13 — compiler/runtime diagnosis iteration
 
 - Preserved development revision in the beta.28 compiler-repair sequence.
 - Exact per-build diagnostic changes are only partially recovered; the sequence addressed the active-local compiler failure introduced after beta.28.11.
 
-## 2.0.0-beta.28.12 — compiler/runtime diagnosis iteration
+---
+
+# 2.0.0-beta.28.12 — compiler/runtime diagnosis iteration
 
 - Preserved development revision in the beta.28 compiler-repair sequence.
 - Exact per-build diagnostic changes are only partially recovered; the sequence addressed the active-local compiler failure introduced after beta.28.11.
 
-## 2.0.0-beta.28.11 — Stat EXP and DV rule family
+---
+
+# 2.0.0-beta.28.11 — Stat EXP and DV rule family
 
 - Added independent Player/Wild/Trainer starting Stat EXP presets: 0%, 25%, 50%, 75%, 100%, and 200%.
 - Added No Player Stat EXP Gain while preserving ordinary EXP and levels; battle Stat EXP is blocked before mutation and Stat EXP vitamins are vetoed before consumption.
@@ -1857,62 +3664,86 @@ Apply the four pre-runtime code-review decisions with the smallest practical cha
 - Creation-time rules were designed not to rewrite existing Pokémon merely because the rules were loaded or enabled.
 - The original layout crossed Lua 5.1's 200-active-local limit, leading to the beta.28.12–28.14 repair sequence.
 
-## 2.0.0-beta.28.10 — No Pseudos
+---
+
+# 2.0.0-beta.28.10 — No Pseudos
 
 - Added the No Pseudos acquisition restriction with supported pseudo-legendary classification.
 - Existing owned Pokémon are preserved rather than removed when the rule is enabled.
 
-## 2.0.0-beta.28.9 — 0.1.81 compatibility targeting and local-scope cleanup
+---
+
+# 2.0.0-beta.28.9 — 0.1.81 compatibility targeting and local-scope cleanup
 
 - Targeted the Gen1Recomp 0.1.81 compatibility profile.
 - Continued removing/restructuring unreachable long-lived locals to keep the large Lua chunk within compiler limits.
 
-## 2.0.0-beta.28.8 — preserved beta.28 development revision
+---
+
+# 2.0.0-beta.28.8 — preserved beta.28 development revision
 
 - This revision is explicitly preserved by the forward source lineage.
 - Exact per-build attribution is not fully recovered. The beta.28.0–28.9 line collectively expanded Gold support, compatibility/API metadata, starter randomization, default-name setup, Gold catch-demo skipping, B-button running, translation support, and engine/transaction hardening.
 
-## 2.0.0-beta.28.7 — preserved beta.28 development revision
+---
+
+# 2.0.0-beta.28.7 — preserved beta.28 development revision
 
 - This revision is explicitly preserved by the forward source lineage.
 - Exact per-build attribution is not fully recovered. The beta.28.0–28.9 line collectively expanded Gold support, compatibility/API metadata, starter randomization, default-name setup, Gold catch-demo skipping, B-button running, translation support, and engine/transaction hardening.
 
-## 2.0.0-beta.28.6 — preserved beta.28 development revision
+---
+
+# 2.0.0-beta.28.6 — preserved beta.28 development revision
 
 - This revision is explicitly preserved by the forward source lineage.
 - Exact per-build attribution is not fully recovered. The beta.28.0–28.9 line collectively expanded Gold support, compatibility/API metadata, starter randomization, default-name setup, Gold catch-demo skipping, B-button running, translation support, and engine/transaction hardening.
 
-## 2.0.0-beta.28.5 — preserved beta.28 development revision
+---
+
+# 2.0.0-beta.28.5 — preserved beta.28 development revision
 
 - This revision is explicitly preserved by the forward source lineage.
 - Exact per-build attribution is not fully recovered. The beta.28.0–28.9 line collectively expanded Gold support, compatibility/API metadata, starter randomization, default-name setup, Gold catch-demo skipping, B-button running, translation support, and engine/transaction hardening.
 
-## 2.0.0-beta.28.4 — preserved beta.28 development revision
+---
+
+# 2.0.0-beta.28.4 — preserved beta.28 development revision
 
 - This revision is explicitly preserved by the forward source lineage.
 - Exact per-build attribution is not fully recovered. The beta.28.0–28.9 line collectively expanded Gold support, compatibility/API metadata, starter randomization, default-name setup, Gold catch-demo skipping, B-button running, translation support, and engine/transaction hardening.
 
-## 2.0.0-beta.28.3 — preserved beta.28 development revision
+---
+
+# 2.0.0-beta.28.3 — preserved beta.28 development revision
 
 - This revision is explicitly preserved by the forward source lineage.
 - Exact per-build attribution is not fully recovered. The beta.28.0–28.9 line collectively expanded Gold support, compatibility/API metadata, starter randomization, default-name setup, Gold catch-demo skipping, B-button running, translation support, and engine/transaction hardening.
 
-## 2.0.0-beta.28.2 — preserved beta.28 development revision
+---
+
+# 2.0.0-beta.28.2 — preserved beta.28 development revision
 
 - This revision is explicitly preserved by the forward source lineage.
 - Exact per-build attribution is not fully recovered. The beta.28.0–28.9 line collectively expanded Gold support, compatibility/API metadata, starter randomization, default-name setup, Gold catch-demo skipping, B-button running, translation support, and engine/transaction hardening.
 
-## 2.0.0-beta.28.1 — preserved beta.28 development revision
+---
+
+# 2.0.0-beta.28.1 — preserved beta.28 development revision
 
 - This revision is explicitly preserved by the forward source lineage.
 - Exact per-build attribution is not fully recovered. The beta.28.0–28.9 line collectively expanded Gold support, compatibility/API metadata, starter randomization, default-name setup, Gold catch-demo skipping, B-button running, translation support, and engine/transaction hardening.
 
-## 2.0.0-beta.28 — beta.28 development-line start
+---
+
+# 2.0.0-beta.28 — beta.28 development-line start
 
 - Started the beta.28 development line directly after beta.27.16.
 - The early beta.28 sequence collectively expanded Gold integration, compatibility reporting, setup/QoL features, and engine-version hardening; some exact per-build allocation remains partially reconstructed.
 
-## 2.0.0-beta.27.16 — final beta.27 reported-bug hardening
+---
+
+# 2.0.0-beta.27.16 — final beta.27 reported-bug hardening
 
 - Hardened Gold Game Corner `Specials.HANDLERS`/`Specials.ALL` capture and restoration independently, without manufacturing a handler where vanilla or another mod left a registry entry absent.
 - Restored/exposed the Gold Nickname Rule and required non-empty nicknames for supported catches and scripted gifts.
@@ -1922,7 +3753,9 @@ Apply the four pre-runtime code-review decisions with the smallest practical cha
 - Preserved the generation-specific R/B/Y versus Gold Game Corner map IDs after review showed they were intentionally different, not a typo.
 - The preserved beta.27.16 package recorded an expanded **66-check structural/engine gate** and **49-check headless interaction smoke suite**.
 
-## 2.0.0-beta.27.15 — repository and release-candidate hardening
+---
+
+# 2.0.0-beta.27.15 — repository and release-candidate hardening
 
 - Fixed Gold boss progression to recognize Gen 2 trainer-battle shapes rather than requiring Gen 1's `battle.kind == "trainer"`.
 - Seeded existing R/B/Y Elite Four/Champion completion and Gold Johto/Kanto Gym/League progression from supported story/badge state.
@@ -1934,41 +3767,55 @@ Apply the four pre-runtime code-review decisions with the smallest practical cha
 - Expanded provider method/result aliases, Gold World Building queue compatibility, and title-menu save/new-game detection while preventing duplicate Setup insertion.
 - Added the first preserved dependency-free Node release gate and headless Lua smoke harness for this line.
 
-## 2.0.0-beta.27.14 — live boss-cap compatibility
+---
+
+# 2.0.0-beta.27.14 — live boss-cap compatibility
 
 - Centralized authoritative next-cap calculation across enforcement and status UI.
 - Read merged trainer rosters and observed composed trainer-party results so runtime trainer-level edits can feed cap calculation.
 - Added public `getNextLevelCapInfo` compatibility output.
 
-## 2.0.0-beta.27.13 — encounter-area splits
+---
+
+# 2.0.0-beta.27.13 — encounter-area splits
 
 - Added OFF/CARDINAL splitting for Routes 1–25.
 - Added OFF/COMMON Mt. Moon floor splitting and Safari Zone area splitting.
 - Added physical-map provenance and reversible projection across tracker/history/catch-state views.
 
-## 2.0.0-beta.27.12 — preserved beta.27 rule/interaction revision
+---
+
+# 2.0.0-beta.27.12 — preserved beta.27 rule/interaction revision
 
 - This revision is explicitly preserved by the forward source lineage.
 - Exact per-build attribution is not fully recovered. The beta.27.6–27.12 sequence collectively covered World Building cleanup, Maximum BST, glitch/MissingNo handling, opening Rival mercy, static-encounter policy, Game Corner restrictions, and broader compatibility/Save Editor/item/acquisition/Gold audits.
 
-## 2.0.0-beta.27.11 — preserved beta.27 rule/interaction revision
+---
+
+# 2.0.0-beta.27.11 — preserved beta.27 rule/interaction revision
 
 - This revision is explicitly preserved by the forward source lineage.
 - Exact per-build attribution is not fully recovered. The beta.27.6–27.12 sequence collectively covered World Building cleanup, Maximum BST, glitch/MissingNo handling, opening Rival mercy, static-encounter policy, Game Corner restrictions, and broader compatibility/Save Editor/item/acquisition/Gold audits.
 
-## 2.0.0-beta.27.10 — preserved beta.27 rule/interaction revision
+---
+
+# 2.0.0-beta.27.10 — preserved beta.27 rule/interaction revision
 
 - This revision is explicitly preserved by the forward source lineage.
 - Exact per-build attribution is not fully recovered. The beta.27.6–27.12 sequence collectively covered World Building cleanup, Maximum BST, glitch/MissingNo handling, opening Rival mercy, static-encounter policy, Game Corner restrictions, and broader compatibility/Save Editor/item/acquisition/Gold audits.
 
-## 2.0.0-beta.27.9 — glitch/MissingNo acquisition handling
+---
+
+# 2.0.0-beta.27.9 — glitch/MissingNo acquisition handling
 
 - Added conservative MissingNo/glitch-species classification for known MissingNo identities plus flagged, malformed, or unregistered species records.
 - Added the player-facing **Allow Glitches** rule: OFF blocks new glitch-species acquisitions on supported R/B/Y and Gold paths while preserving already-owned Pokémon.
 - Normalized Catch Info/tracker/history handling for supported glitch-species records instead of assuming every acquisition maps cleanly to ordinary registered species data.
 - Classification remained conservative/fail-open when incomplete modded metadata could not prove a species was a glitch.
 
-## 2.0.0-beta.27.8 — Maximum BST acquisition rule
+---
+
+# 2.0.0-beta.27.8 — Maximum BST acquisition rule
 
 - Added numeric **Maximum BST** with `000/OFF` or `001–999` selection.
 - Applied supported BST acquisition checks to wild catches, scripted gifts, and trades while keeping mandatory starters exempt from rejection.
@@ -1977,27 +3824,37 @@ Apply the four pre-runtime code-review decisions with the smallest practical cha
 - Preserved Dupes evaluation ahead of the BST gate and exposed the rule through Nuzlocke Compatibility API v15-era metadata.
 - Lua 5.1 structural validation passed for the implementation; representative in-game numeric/acquisition coverage remained required.
 
-## 2.0.0-beta.27.7 — preserved beta.27 rule/interaction revision
+---
+
+# 2.0.0-beta.27.7 — preserved beta.27 rule/interaction revision
 
 - This revision is explicitly preserved by the forward source lineage.
 - Exact per-build attribution is not fully recovered. The beta.27.6–27.12 sequence collectively covered World Building cleanup, Maximum BST, glitch/MissingNo handling, opening Rival mercy, static-encounter policy, Game Corner restrictions, and broader compatibility/Save Editor/item/acquisition/Gold audits.
 
-## 2.0.0-beta.27.6 — preserved beta.27 rule/interaction revision
+---
+
+# 2.0.0-beta.27.6 — preserved beta.27 rule/interaction revision
 
 - This revision is explicitly preserved by the forward source lineage.
 - Exact per-build attribution is not fully recovered. The beta.27.6–27.12 sequence collectively covered World Building cleanup, Maximum BST, glitch/MissingNo handling, opening Rival mercy, static-encounter policy, Game Corner restrictions, and broader compatibility/Save Editor/item/acquisition/Gold audits.
 
-## 2.0.0-beta.27.5 — Gold compatibility-surface refinement
+---
+
+# 2.0.0-beta.27.5 — Gold compatibility-surface refinement
 
 - Added Gen2Compat coverage/member inspection for compatibility reporting.
 - Stopped trying to replace Gold's already multi-page Trainer Card for Nuzlocke status; Gold status moved to its own Start-menu screen path.
 
-## 2.0.0-beta.27.4 — Save Editor and compatibility-layer hardening
+---
+
+# 2.0.0-beta.27.4 — Save Editor and compatibility-layer hardening
 
 - Detected Gen1Recomp's embedded Save Editor loader session and avoided installing gameplay-bound runtime monkey patches there.
 - Separated engine-version compatibility metadata from inter-mod compatibility relationships.
 
-## 2.0.0-beta.27.3 — shared-seam compatibility negotiation
+---
+
+# 2.0.0-beta.27.3 — shared-seam compatibility negotiation
 
 - Built directly from beta.27.2 and audited against the Gen1Recomp 0.1.79 line.
 - Repaired the shared `ItemEffects.use` seam used by item-rule enforcement.
@@ -2005,105 +3862,137 @@ Apply the four pre-runtime code-review decisions with the smallest practical cha
 - Began separating encounter-loss presentation from owned-Pokémon death presentation with **LOST ENC.** / **DEATHS** terminology, while the deeper legacy-history status overlap remained for the later beta.29.2.0 migration.
 - Advanced the additive compatibility surface to Nuzlocke Compatibility API v11 while retaining backward-compatible older provider expectations.
 
-## 2.0.0-beta.27.2 — preserved beta.27 development revision
+---
+
+# 2.0.0-beta.27.2 — preserved beta.27 development revision
 
 - This revision is explicitly preserved by the forward source lineage.
 - The exact build-specific delta has not yet been recovered from surviving records; no history is inferred beyond its confirmed place in the sequence.
 
-## 2.0.0-beta.27.1 — preserved beta.27 development revision
+---
+
+# 2.0.0-beta.27.1 — preserved beta.27 development revision
 
 - This revision is explicitly preserved by the forward source lineage.
 - The exact build-specific delta has not yet been recovered from surviving records; no history is inferred beyond its confirmed place in the sequence.
 
-## 2.0.0-beta.27 — promoted public baseline
+---
+
+# 2.0.0-beta.27 — promoted public baseline
 
 - Promoted directly from the runtime-tested beta.26.6 line without an intentional gameplay change during promotion.
 - Gold fresh startup/New Game, RULES, TRACKER, Catch Info, and Cyndaquil starter acquisition had runtime PASS evidence at promotion.
 - Yellow RULES/TRACKER/catch behavior and prior 1st Catch toggle behavior carried runtime PASS evidence.
 - Save schema remained 4.
 
-## 2.0.0-beta.26.6 — Gold gift enforcement and Whiteout consequence
+---
+
+# 2.0.0-beta.26.6 — Gold gift enforcement and Whiteout consequence
 
 - Ran supported Gold `givepoke` gift legality checks before story/party mutation while preserving mandatory starter handling.
 - Added the Gen 2 `finishBattle` consumer for the Nuzlocke Whiteout path while leaving Whiteout OFF on the native path.
 - Gold ordinary gift denial and destructive Whiteout still required dedicated runtime confirmation at this revision.
 
-## 2.0.0-beta.26.5 — acquisition and Whiteout correctness
+---
+
+# 2.0.0-beta.26.5 — acquisition and Whiteout correctness
 
 - Corrected fallback gift/trade acquisition classification and generation-gated R/B/Y starting resources.
 - Reworked Whiteout teardown to preserve the engine's wrapped finish chain instead of duplicating public teardown operations.
 
-## 2.0.0-beta.26.4 — Tracker clarity and progression-aware TV
+---
+
+# 2.0.0-beta.26.4 — Tracker clarity and progression-aware TV
 
 - Replaced cryptic failed-encounter labels with `FAILED <species>` and renamed the Tracker result column for clarity.
 - Added failed-result marquee presentation and progression-aware Tier 3 home-TV run recaps.
 - Preserved runtime evidence for Yellow UI controls, failed encounters, next-cap display, and fresh No Buying/No Selling.
 
-## 2.0.0-beta.26.3 — early-game dialogue and TV polish
+---
+
+# 2.0.0-beta.26.3 — early-game dialogue and TV polish
 
 - Clarified Pokédex activation messaging and added adaptive Tier 3 home-TV flavor.
 - Preserved runtime evidence for Yellow Setup/bedroom startup, starter Catch Info, No Mom Heal, PokéCenter behavior, and opening-rival flavor timing.
 
-## 2.0.0-beta.26.2 — Gym Guide alignment and runtime-evidence rollup
+---
+
+# 2.0.0-beta.26.2 — Gym Guide alignment and runtime-evidence rollup
 
 - Re-centered the R/B/Y Gym Guide Rare Candy quantity screen without changing service mechanics.
 - Recorded runtime PASS evidence for existing Red/Blue No Buying/No Selling, Red Gym Guide service, Blue No Field Heal, and nickname-aware catch flavor.
 
-## 2.0.0-beta.26.1 — dialogue and starter-metadata polish
+---
+
+# 2.0.0-beta.26.1 — dialogue and starter-metadata polish
 
 - Improved No Mom Heal dialogue ownership, starting-Ball wording, early R/B/Y starter Catch Info canonicalization, and Nuzlocke battle-message wrapping/paging.
 
-## 2.0.0-beta.26 — runtime-tested canonical baseline
+---
+
+# 2.0.0-beta.26 — runtime-tested canonical baseline
 
 - Promoted the runtime-tested 26B10 development revision and retired the prior lettered internal-revision convention.
 - Carried the published 25D4-RBY2 title/startup repair, Soft Start, Pokédex handoff, starting resources, two-view R/B/Y Trainer Card, Gold beta Setup, nickname handling, and first-rival timing.
 - Save schema remained 4.
 
-## 26B10 — runtime-tested beta.26 promotion candidate
+---
+
+# 26B10 — runtime-tested beta.26 promotion candidate
 
 - Known internal development revision directly descended from the published 25D4-RBY2 startup/menu hotfix and promoted forward as `2.0.0-beta.26`.
 - This era accumulated runtime-driven verification/fixes around Gold Setup, PP-item restrictions, Pokémon Center restrictions, No Buying/No Selling, Gym Guide behavior, Repels, X Items, startup/menu lifecycle, and related compatibility paths.
 - Exact per-change attribution inside the B-series is incomplete, so only the confirmed `26B10` promotion point is given its own heading.
 - Its runtime PASS evidence became protected baseline evidence for later beta.26/27 development.
 
-## 2.0.0-beta.25 — 25D4-RBY2 — R/B/Y startup/menu hotfix
+---
+
+# 2.0.0-beta.25 — 25D4-RBY2 — R/B/Y startup/menu hotfix
 
 - Runtime-confirmed Blue and Yellow title SETUP plus Oak-intro-to-bedroom startup.
 - Runtime-reconfirmed Gold Setup/New Game and smoke-tested an existing Red save.
 - Restored the proven title Setup injection and removed an unsafe optional post-intro screen push that caused a white screen.
 
-## 2.0.0-beta.25 — 25D2 — Gym Guide handoff diagnostic
+### Historical subrecord — 2.0.0-beta.25 — 25D2 — Gym Guide handoff diagnostic
 
 - The Gym Guide Rare Candy offer/registration path was functioning, but runtime testing still failed at the quantity-screen handoff.
 - The failure was isolated to selector lifecycle/continuation rather than the long-lived direct-row Gym Guide composition or candy policy.
 
-## 2.0.0-beta.25 — 25D3 — Gym Guide selector lifecycle repair
+### Historical subrecord — 2.0.0-beta.25 — 25D3 — Gym Guide selector lifecycle repair
 
 - Changed only the failing quantity-screen lifecycle to use Gen1Recomp's current blocking `push_screen` script-command behavior.
 - Preserved NPC registration, vanilla dialogue composition, quantity choices, and candy-grant policy.
 - Runtime testing reported the 1/10/25/50/99 selector working after this repair.
 
-## 2.0.0-beta.25 — 25D4 — item-rule and Gym Guide stabilization
+### Historical subrecord — 2.0.0-beta.25 — 25D4 — item-rule and Gym Guide stabilization
 
 - Runtime-confirmed No Repels and No X Items and retained established passes for No Escape, healing/field restrictions, nickname, Center, shops, and Gym Guide quantity selection.
 - Hardened item recognition, PP-item coverage, acquisition/recovery paths, and Whiteout teardown while preserving save schema 4.
 
-## 2.0.0-beta.24 — Gold Setup experiment
+---
+
+# 2.0.0-beta.24 — Gold Setup experiment
 
 - Attempted Gold automatic New Game Setup through an intro hook; runtime evidence showed the attempt remained vanilla, leading to the later title-menu design.
 
-## 2.0.0-beta.23 — early Gold status and provenance work
+---
+
+# 2.0.0-beta.23 — early Gold status and provenance work
 
 - Added experimental Gold Trainer Card status integration and Gen 2 Egg/Day Care/roaming provenance support.
 - Generation-gated the R/B/Y Gym Guide integration.
 
-## 2.0.0-beta.22 — conflicting surviving records
+---
+
+# 2.0.0-beta.22 — conflicting surviving records
 
 - A directly surviving committed beta.22 source identifies itself as **"static integrity + version/persistence hardening"**, carries save schema 4 and Nuzlocke Compatibility API v7, and does not contain the later Gold/Gen2 adapter markers visible in beta.25-era source.
 - A later reconstructed beta.25 changelog attributes generation-native Gold capture, permadeath, nickname, Mart, starter/gift, area-tracking adapters, and Gen 1 + Gold manifest targeting to a beta.22 stage.
 - Because these records conflict, the current history preserves both facts without pretending they describe the same exact code snapshot. The Gold adapter work was present by the later beta.23–25 line, but its precise first beta.22 build/revision is unresolved.
 
-## 2.0.0-beta.21 — Gold/GSC architecture groundwork
+---
+
+# 2.0.0-beta.21 — Gold/GSC architecture groundwork
 
 - Reconstructed directly from beta.20 while preserving save schema 4 and existing rule/save behavior.
 - Added version-profile architecture and experimental Gold/GSC targeting groundwork; the surviving reconstruction audited against Gen1Recomp 0.1.78.
@@ -2111,12 +4000,16 @@ Apply the four pre-runtime code-review decisions with the smallest practical cha
 - Preserved a two-row R/B/Y Trainer Card rule display and expanded World Building Tier 1/2/3 labels in the reconstructed build.
 - The reconstructed beta.21 compatibility surface is recorded as Nuzlocke Compatibility API v9; later planned semantics not proven present in that source remain unassigned.
 
-## 2.0.0-beta.20 — compatibility and regression hardening
+---
+
+# 2.0.0-beta.20 — compatibility and regression hardening
 
 - Built as a surgical update from beta.19 rather than a branch replacement.
 - Centralized item/capture/shop policy exports, improved provider surfaces, persistent identity/recovery, Trainer Card/Catch Info, and Gym Guide behavior while preserving save schema 4.
 
-## 2.0.0-beta.19 — protected reconciliation baseline
+---
+
+# 2.0.0-beta.19 — protected reconciliation baseline
 
 - Served as the protected canonical baseline for the beta.20 surgical update line.
 - Recovered project-log evidence identifies beta.19 as the point where split **No Buying** / **No Selling** replaced the retired combined shop rule, persistent Pokémon identities were established, and Dupes supported OFF / SPECIES / FAMILY modes.
@@ -2125,821 +4018,85 @@ Apply the four pre-runtime code-review decisions with the smallest practical cha
 - Wonderlocke remained visible/dormant and forced OFF; the baseline also carried the v0.1.77-era audit work, Blue/Yellow Setup/cursor fixes, and removal of the old NEXT BOSS display.
 - Some earlier feature-by-feature introduction points remain unrecovered, so this entry records known beta.19 baseline properties rather than claiming every listed feature originated in beta.19.
 
-## 2.0.0-beta.16 — reconstructed from surviving source/release records
+---
+
+# 2.0.0-beta.16 — reconstructed from surviving source/release records
 
 - Fixed Setup-menu helper scoping/order behavior and retained the established Gym Guide architecture.
 
-## 2.0.0-beta.15 — surviving source with conflicting later reconstruction
+---
+
+# 2.0.0-beta.15 — surviving source with conflicting later reconstruction
 
 - The directly surviving committed beta.15 source identifies itself as **"Menu crash fix"**, carries **save schema 2**, and exports **Nuzlocke Compatibility API v6**.
 - A later reconstructed beta.25 changelog instead attributes a Gen1Recomp 0.1.77 compatibility pass and the move to save schema 3 to beta.15.
 - The conflict is retained explicitly. Current evidence does not safely identify which later beta.15/internal revision first carried schema 3, so the changelog no longer states that transition as certain.
 - Wonderlocke remained disabled/dormant through the surviving records.
 
-## 2.0.0-beta.14 — reconstructed save-schema revision
+---
+
+# 2.0.0-beta.14 — reconstructed save-schema revision
 
 - Surviving history shows the future-safe migration framework at **save schema 2** by this snapshot.
 - Continued tracker/recovery hardening while keeping unfinished Wonderlocke behavior non-active.
 
-## 2.0.0-beta.12 — first surviving versioned save-schema baseline
+---
+
+# 2.0.0-beta.12 — first surviving versioned save-schema baseline
 
 - Added the first surviving future-safe persistent save-schema baseline at **schema 1**.
 - Used an idempotent marker-only migration so older/vanilla saves could establish a versioned migration boundary without rewriting unrelated gameplay data.
 - Preserved the established beta.8-era Gym Guide direct-row composition/selector and the existing Setup, provenance/recovery, level-cap, Tracker/Catch Info, and Trainer Card systems.
 
-## 2.0.0-beta.11 — surviving development snapshot
+---
+
+# 2.0.0-beta.11 — surviving development snapshot
 
 - Improved catch-location recovery for human-readable saved locations.
 - Changed the Rare Candy selector cursor presentation to the native theme cursor without changing selector lifecycle.
 - Only source-supported history is retained; broader exact delta is not inferred.
 
-## 2.0.0-beta.10 — surviving development snapshot
+---
+
+# 2.0.0-beta.10 — surviving development snapshot
 
 - Added native cursor/scroll presentation work and Trainer Card refinements.
 - Continued the established Gym Guide direct-row + dedicated-selector behavior and dormant Wonderlocke-era infrastructure.
 - Only source-supported history is retained; broader exact delta is not inferred.
 
-## 2.0.0-beta.8 — surviving development snapshot
+---
+
+# 2.0.0-beta.8 — surviving development snapshot
 
 - Experimental provider/Wonderlocke-era infrastructure was present by this revision.
 - The Gym Guide direct-row composition architecture that survived into later releases was already established by this period.
 
-## 2.0.0-beta.5 — surviving legacy-reconciliation snapshot
+---
+
+# 2.0.0-beta.5 — surviving legacy-reconciliation snapshot
 
 - Added legacy catch-location reconciliation/recovery work.
 - Gym Guide behavior remained on the earlier implementation of that period.
 - Only source-supported history is retained; broader exact delta is not inferred.
 
-## 2.0.0-beta.4 — World Building introduction
+---
+
+# 2.0.0-beta.4 — World Building introduction
 
 - Added World Building tiers and associated optional flavor/mechanic messaging.
 - Added level-cap-aware Gym Guide feedback before the Rare Candy selector.
 
-## 2.0.0-beta.3 — surviving logic-audit snapshot
+---
+
+# 2.0.0-beta.3 — surviving logic-audit snapshot
 
 - Added/expanded provenance-aware catch recovery and compatibility work by this surviving snapshot.
 - The Gym Guide Rare Candy feature was already present with its dedicated **1 / 10 / 25 / 50 / 99** quantity selector.
 - Only source-supported history is retained; broader exact delta is not inferred.
 
-## 2.0.0-beta.1 — surviving Whiteout-fix snapshot
+---
+
+# 2.0.0-beta.1 — surviving Whiteout-fix snapshot
 
 - A surviving source snapshot identifies this revision as an early Whiteout-fix stage.
 - Only source-supported history is retained; broader exact delta is not inferred.
-
-
-## 2.0.0-beta.29.3.7 — Gold compatibility smoke pass
-
-- Rolled directly from 2.0.0-beta.29.3.4; no repository files added or removed.
-- Static smoke audit rechecked Gold-specific capture, nickname, Mart, field-item, catch-tutorial, gift, static, gambling, Whiteout, egg, roamer, and Nuz Status adapters.
-- Gold adapters remain generation-scoped and fail-open when an upstream seam is unavailable.
-- Route Forgiveness and No Catching remain TEST REQUIRED on Gold pending runtime validation.
-- Existing R/B/Y runtime-PASS behavior was not intentionally changed.
-
-## 2.0.0-beta.30.0.0.1
-- Added Random Encounters with persistent per-slot species rolls.
-- Added Random Learnsets with persistent per-species/per-slot move rolls.
-- Added Learnset Gen: AUTO / GEN1 / GEN2.
-- Preserves encounter levels/structure and learnset levels/size.
-- Reversible runtime-registry transforms reapply after load/provider lifecycle events.
-- No repository files added or removed.
-- New paths are TEST REQUIRED.
-
-## 2.0.0-beta.30.0.0.2
-- Added **No Fishing** under Field Items; blocks rod use before fishing begins while leaving rod ownership and non-fishing encounters untouched. Includes tiered Kanto/Johto world-building. Gold is TEST REQUIRED.
-
-## 2.0.0-beta.30.0.0.3
-- Added public `mod.exports.nuzlocke` interoperability API v1.
-- Added capability/provider registration instead of hardcoded mod-name compatibility.
-- Added acquisition classification/evaluation for wild, gift, trade, starter, scripted, editor, summon, quest, forced, and Wonder Trade sources.
-- Added public item-policy evaluation for alternate Bag/shortcut/automatic-use UIs.
-- Added effective Pokémon/encounter/move/learnset registry access plus registry-change notifications.
-- Added a post-distribution EXP ownership seam so EXP providers can own distribution while Nuzlocke retains cap enforcement.
-- Random Encounter/Learnset transforms now notify registry consumers.
-- FAFF0x collection is now an explicit first-class compatibility target, implemented through capabilities rather than FAFF0x IDs.
-- All new interop paths are TEST REQUIRED.
-
-## 2.0.0-beta.30.0.0.4
-- Expanded Interop API v1 for the FAFF0x QoL compatibility pass.
-- Added `itemPolicy.beforeUse/canUse/check/checkUse` for Modern Bag, Item Shortcut, Repel Reuse, favorites and other alternate item-use paths.
-- Added `acquisitionPolicy.begin/commit` and explicit acquisition kinds for DexNav, Summon and scripted providers.
-- Added `encounterPolicy.evaluate` convenience entry for external encounter starters.
-- Added `pcPolicy.evaluate/can` for alternate PC/box UIs; dead Pokémon remain unusable without trapping ordinary PC navigation.
-- Added registry revision counters and `registry.describe()` for Pokédex Plus/Moves Manager-style consumers.
-- Added EXP cap discovery helper while preserving provider-owned distribution.
-- Bridged selected new APIs through legacy `nuzlocke_compat` exports.
-- No hardcoded FAFF0x IDs added. All runtime certification remains deferred.
-
-## 2.0.0-beta.30.0.0.5
-- Fixed a fatal Encounter Tracker recovery/removal path reported on an existing Yellow save originating from beta.29.3.16.
-- Root cause: the legacy-recovery UI could attach a live Pokémon object directly to a persisted `tracker_log.__LEGACY__` entry, then serialize that contaminated tracker table during REMOVE ENTRY.
-- Legacy recovery rows are now detached UI views; live Pokémon references never mutate persisted tracker records.
-- Added a narrow migration sanitizer that removes only known transient UI fields (`mon`, `logEntry`, `savedEntry`) from legacy tracker records before tracker serialization.
-- Manual recovery now maps detached UI rows back to their original saved record explicitly.
-- No catch history, provenance, encounter-rule semantics, or unrelated tracker behavior was rewritten.
-- Runtime status: FIX IMPLEMENTED / RETEST REQUIRED, especially Yellow existing-save REMOVE ENTRY.
-
-## 2.0.0-beta.30.0.0.6
-- Added the FAFF0x quest/content provider layer to Interop API v1.
-- Added dynamic area registration that feeds the existing Encounter Tracker catalogue.
-- Added provider-declared dungeon families so Gym/Dungeon Lock-In can recognize mod-added dungeons without hardcoded quest names.
-- Added custom boss metadata registration for future difficulty/cap consumers.
-- Added quest gift and scripted/repeatable encounter source registration.
-- Acquisition policy can now fill missing kind/species/area metadata from registered content sources.
-- Added randomizer opt-out policies for story-critical encounters and species learnsets.
-- Random Encounter Tables honors encounter-record/provider `randomizable=false` policies.
-- Random Learnsets honors provider/species preservation policies.
-- Added `content.registerBundle()` so quest packs can register areas, dungeons, bosses, gifts, encounters, and randomizer policies in one call.
-- Preserved the 30.0.0.5 Yellow Encounter Tracker serialization repair unchanged.
-- Runtime certification remains deferred / TEST REQUIRED.
-
-## 2.0.0-beta.30.0.0.7
-- Added the FAFF0x automatic/legacy compatibility adapter layer.
-- Scans the active mod graph after `mods.loaded` and describes common behavior families (alternate Bag/item UI, automatic item use, PC UI, external encounter starters, registry consumers, EXP distributors, quest providers, reusable machines) without using those names as enforcement branches.
-- Explicit provider registration still wins; automatic adapters only fill gaps for released mods that predate the Nuzlocke API.
-- Added passive Pokémon acquisition reconciliation after game/save readiness so externally granted Pokémon can be surfaced as scripted/provider acquisitions instead of being silently treated as vanilla catches.
-- Added convenience adapter gates for external item use, encounter starts, PC actions, and effective-registry snapshots.
-- Automatic acquisition reconciliation is observational and never deletes externally granted Pokémon.
-- Preserved 30.0.0.5 Yellow tracker crash repair and 30.0.0.6 quest/content provider APIs.
-- Runtime certification remains deferred.
-
-## 2.0.0-beta.30.0.0.8
-- Consolidated the 30.0.0.3–30.0.0.7 compatibility architecture without adding a new gameplay feature.
-- Added canonical provider capability families: `item_provider`, `storage_provider`, `encounter_provider`, `exp_provider`, `registry_consumer`, and `quest_content_provider`.
-- Existing legacy capability names remain additive aliases; no provider integration was intentionally broken.
-- Added `interop.resolveCapability()` with explicit-provider precedence over automatic legacy adapters.
-- Documented provider-owned mechanics vs Nuzlocke-owned challenge policy/provenance.
-- Preserved the Yellow Encounter Tracker REMOVE ENTRY serialization repair.
-- Preserved FAFF0x QoL, content-provider, randomizer opt-out, and automatic-adapter work.
-- No repository files added or removed.
-- Compatibility changes remain TEST REQUIRED until the planned runtime certification pass.
-
-## 2.0.0-beta.30.0.0.9
-- Added provider-owned non-core feature delegation in the Nuzlocke Setup/Rules UI.
-- When an active provider explicitly owns a duplicate non-core mechanic, Nuzlocke shows its duplicate control as effective OFF, greys the row, and prevents toggling.
-- Delegated rows remain selectable so the description panel identifies the handling mod/provider and version.
-- Stored Nuzlocke preferences are preserved dormant and automatically become effective again if the external provider is disabled/removed.
-- Core Nuzlocke challenge policy is never implicitly delegated: death, One Per Area, Dupes, catch legality, Type Locke, item bans, lock-ins, legendary/mythical/pseudo bans, etc. remain Nuzlocke-owned.
-- Initial delegated duplicate mechanics include level caps, starter/encounter/learnset randomizers, running shoes, default naming/tutorial-skip QoL, trainer-money provider, and starting-resource provider capabilities.
-- Explicit providers take precedence; legacy/automatic adapters remain fallback-only.
-- Added automatic recognition hints for Randomizer, Level Cap, and Running Shoes behavior families.
-- Preserved all 30.0.0.8 compatibility consolidation and the Yellow tracker crash repair.
-
-## 2.0.0-beta.30.0.0.11
-- Compatibility-only child of 2.0.0-beta.30.0.0.10.
-- Expanded the engine compatibility range from `>=0.1.81 <0.1.84` to `>=0.1.81 <0.1.85`, allowing Gen1Recomp 0.1.84 to load the mod.
-- Gen1Recomp 0.1.84 still documents Mod API 2 as the current standard, so no API-level migration was made.
-- No gameplay rules, save schema, compatibility providers, randomizers, tracker logic, UI behavior, or protected fixes were intentionally changed.
-- This build is a minimal boot-compatibility checkpoint so broader 30.0.0.10 work remains preserved for subsequent children.
-- Runtime validation on 0.1.84 is required.
-
-## 2.0.0-beta.30.0.0.12
-- Future-proofed the manifest engine range from `>=0.1.81 <0.1.85` to `>=0.1.81 <1.0.0`.
-- Future Gen1Recomp 0.x patch/minor releases will no longer be rejected solely because their version number crossed our previous ceiling.
-- Kept a deliberate `<1.0.0` major compatibility boundary: a future 1.0 may legitimately change contracts and should be reviewed rather than silently trusted.
-- Remains Mod API 2 and save schema 4; no gameplay rules or save semantics changed.
-- This does not claim unknown future engine releases are runtime-certified. It changes loader policy from exact-patch allowlisting to API-family compatibility.
-- No files added or removed.
-
-## 2.0.0-beta.30.0.0.13
-- Compatibility repair for runtime-confirmed missing Nuzlocke SETUP on genuinely fresh Blue and Gold boots under Gen1Recomp 0.1.86.
-- Preserves `ui.title_menu.items` as the primary public title-menu integration.
-- Adds conservative generation-specific title-list fallbacks that run after normal menu construction and insert SETUP only when there is no CONTINUE row and no existing SETUP row.
-- R/B/Y fallback wraps `src.ui.TitleState:openMenu`; Gold fallback wraps `src.ui.gen2.MainMenu:buildList`.
-- Fallbacks are idempotent and explicitly refuse duplicate SETUP insertion.
-- Existing-save behavior remains unchanged: SETUP stays hidden when CONTINUE/a save is present.
-- Narrowed the experimental 30.0.0.12 `<1.0.0` engine range to the actively investigated `>=0.1.86 <0.1.91` family.
-- No gameplay-rule, save-schema, randomizer, tracker, or provider-policy behavior intentionally changed.
-- Runtime retest required on fresh Blue and Gold saves.
-
-## 2.0.0-beta.30.0.0.14
-- Fixed a load-blocking Lua parser failure introduced in 30.0.0.13.
-- Root cause: the 0.1.86 title-menu compatibility fallback added enough locals to the already-large top-level `main.lua` chunk to exceed the runtime parser's local-variable ceiling.
-- Moved the complete title fallback implementation into a nested immediately-invoked function so its helper locals belong to a separate Lua function prototype instead of the top-level chunk.
-- No title-menu behavior was intentionally changed from 30.0.0.13.
-- No gameplay rules, save schema, provider behavior, randomizer behavior, or documentation file set changed.
-- Fresh Blue and Gold SETUP runtime test remains required after confirming the mod now loads.
-
-## 2.0.0-beta.30.0.0.15
-- **Approved first Lua module split.** Added `title_setup_compat.lua`; no existing file was removed.
-- Moved only the 0.1.86 fresh-game title SETUP compatibility fallback out of `main.lua`.
-- Uses Gen1Recomp 0.1.86's documented sandbox-safe multi-file pattern: source is read with `mod:read(...)`, compiled with sandboxed `load(...)`, and therefore inherits the mod's sandbox environment.
-- Fixes 30.0.0.14's `ambiguous syntax` parser failure by removing the IIFE entirely rather than applying another parser workaround.
-- Rationale: 30.0.0.13 hit the large main chunk's parser/local pressure; 30.0.0.14 then introduced an ambiguous statement boundary. Isolating this self-contained compatibility adapter lowers main-chunk pressure and follows upstream's supported multi-file design.
-- Expected impact is limited to title/startup SETUP injection. Core rules, saves, encounters, battles, tracker, randomizers, compatibility providers, and Gold gameplay are not intentionally changed.
-- **Compatibility confidence is temporarily reduced until runtime tests confirm Blue and Gold startup, Setup selection, existing-save behavior, and representative gameplay.**
-- Further Lua splitting requires new explicit user approval.
-
-## 2.0.0-beta.30.0.0.16
-- **Approved second Lua module split.** Added `trainer_rewards.lua`; no existing file was removed.
-- A real Lua parser reproduced 30.0.0.15's failure exactly: `too many local variables (limit is 200) in function at line 23`.
-- The first narrow wallet-only extraction was intentionally rejected before packaging because parser validation showed `main.lua` still exceeded the limit.
-- The completed second module therefore uses the originally approved cohesive boundary: trainer-money scaling, Forgiveness Token counters/shop bridge/Gym-trainer awards, trainer reward identity helpers, and Gym/E4/Champion progression bookkeeping.
-- Core battle/death rules, encounter legality, failed-encounter finalization, tracker, randomizers, title setup, general provider policy, and Gold gameplay systems remain in `main.lua`.
-- `trainer_rewards.lua` uses Gen1Recomp's documented sandbox-safe `load(mod:read(...))` multi-file pattern.
-- Directly affected systems are Trainer Money, Forgiveness Tokens/shop presentation/awards, and trainer progression used by level-cap reporting. These are RETEST REQUIRED.
-- Other systems have no intentional logic change but remain smoke-test targets after the structural compile repair.
-- Every Lua file and `manifest.json` are validated before packaging.
-- Further Lua splitting requires new explicit user approval.
-
-- Added a non-module structural safeguard after the approved second split: the late runtime-installer section now executes inside a nested function stored temporarily on `mod.exports.__beta26`. This creates a separate Lua local scope without adding another repository file or changing system ownership.
-- This was necessary because parser validation showed the approved trainer-reward extraction alone still left `main.lua` above the 200-active-local ceiling.
-- Final packaged state passes the available Lua parser for `main.lua`, `title_setup_compat.lua`, and `trainer_rewards.lua`.
-
-- Added a non-module structural safeguard after the approved second split: the late runtime-installer section executes inside a nested function stored temporarily on `mod.exports.__beta26`. This creates a separate Lua local scope without adding another repository file or changing system ownership.
-- Parser validation showed the approved trainer-reward extraction alone still left `main.lua` above the 200-active-local ceiling; the nested scope supplies the remaining compiler headroom.
-- Final packaged state passes the available Lua parser for `main.lua`, `title_setup_compat.lua`, and `trainer_rewards.lua`.
-
-## 2.0.0-beta.30.0.0.17
-- Yellow runtime PASS on 30.0.0.16: existing save booted, Nuzlocke menu entries were visible, and in-game Nuz Rules opened successfully.
-- Yellow runtime observation: Permanent Rule Seal correctly remained irreversible after activation, but activation safety was too weak.
-- Replaced the old one-warning/two-press seal with **two explicit warning stages plus a third deliberate SEAL activation**.
-- Warning 1/2 explains irreversibility; Warning 2/2 is a final confirmation; only the next activation commits the permanent seal.
-- Moving the cursor away, collapsing/expanding a section, activating another control, or pressing B cancels the staged confirmation.
-- Added a short input debounce between confirmation stages to reduce accidental keyboard/gamepad double advancement.
-- The description panel now shows the active warning stage in both R/B/Y and Gold, including title Setup where overworld/world-text presentation is unavailable.
-- No new Lua modules were added and no existing files were removed.
-- Permanent Rule Seal persistence remains monotonic by design once the final confirmation is committed.
-
-## 2.0.0-beta.30.0.0.18
-- Yellow runtime PASS on 30.0.0.17: Permanent Rule Seal correctly prevented modification of challenge-rule sections while leaving QoL, World Building, and UI/presentation sections editable.
-- Yellow runtime FAIL on 30.0.0.17: the permanent seal did not survive exiting/reloading when no subsequent ordinary Pokémon SAVE had persisted `mod.save`.
-- Root cause aligned with Gen1Recomp 0.1.86's documented persistence model: `mod.save` is stored inside normal progress and therefore requires an ordinary Pokémon SAVE to become durable.
-- Permanent Rule Seal now mirrors its irreversible commitment immediately to playthrough-scoped `mod.storage` under `rules/permanent_seal`.
-- On `save.loaded` and `game.ready`, Nuzlocke reconciles the durable storage marker back into `rules_permanently_locked` + `rules_locked`.
-- Older saves that already contain the permanent `mod.save` marker are automatically mirrored into durable storage when loaded.
-- If playthrough storage is temporarily unavailable, current-session `mod.save` locking still occurs and lifecycle reconciliation retries later.
-- No other rule is moved to independent storage; ordinary configurable rules continue to follow the Pokémon SAVE model.
-- No new Lua files/modules added or removed.
-
-## 2.0.0-beta.30.0.0.19
-- **Permanent Rule Seal moved to WIP/dormant status.**
-- The row remains visible but is grey, displays `WIP`, is skipped by cursor navigation, and cannot be activated, matching Wonderlocke's placeholder behavior.
-- The complete confirmation, immediate `mod.storage` durability, durable-read, and lifecycle reconciliation implementation remains in `main.lua` behind `mod.exports.__beta26.permanentRuleSealWip = true`; it was not deleted.
-- Existing `.17/.18` development-test seals are **not enforced while WIP**, so challenge rules become editable again. Their `rules_permanently_locked` and `rules/permanent_seal` markers are preserved rather than erased.
-- Generic setters/presets cannot activate the effective `rules_locked` state while WIP.
-- No additional Lua module split was made and no files were added/removed.
-
-## 2.0.0-beta.30.0.0.20
-- Yellow runtime on 30.0.0.16 reconfirmed the recurring dialogue-page overlap/duplication defect: unrelated vanilla NPC text repeated trailing phrases at the start of subsequent pages.
-- This is the second occurrence in the current testing conversation and is now tracked as a recurring protected regression target rather than a one-off.
-- Added a global **World Building presentation invariant**: `pushWorldText()` refuses to push optional Nuzlocke flavor text if any `TextBox` is already active on the game state stack.
-- Rationale: Gen1Recomp textboxes are foreground/blocking states. Optional nested Nuzlocke text must not interrupt a vanilla dialogue transaction and then resume it at an already-presented page/scroll boundary.
-- This guard affects cosmetic World Building presentation only. Mechanical enforcement must not depend on `pushWorldText()` and remains unchanged.
-- Direct rule-denial flows that intentionally replace a blocked action remain separate and are not globally suppressed.
-- Yellow `NUZ` trainer-card/status vertical placement remains a known deferred cosmetic issue: current position is too low and should later move slightly upward, but not back to its previous overly-high position.
-- Permanent Rule Seal remains WIP/grey/unselectable from 30.0.0.19.
-- No Lua files/modules added or removed.
-
-## 2.0.0-beta.30.0.0.21
-- Percentage-based rule presentation is now consistent across Rules/Setup and Nuzlocke status surfaces.
-- Trainer Money uses one shared percentage-label table everywhere: 0%, 25%, 50%, 75%, 100%, 150%, 200%, 300%, 500%.
-- Maximum BST is no longer a free-form three-digit editor.
-- Maximum BST now cycles through **OFF / 400 / 450 / 500 / 550** with A or Left/Right like other preset controls.
-- The enforcement/API contract still uses the actual BST threshold value, not a preset index.
-- Older development saves containing a non-preset custom BST value preserve that exact enforcement value until the player changes Maximum BST; the UI marks it CUSTOM, and the next change snaps to the nearest point on the preset ladder before moving in the requested direction.
-- No new Lua modules/files added or removed.
-- Yellow NUZ vertical placement remains deferred; duplicate-dialogue `.20` fix remains independently RETEST REQUIRED.
-
-# 2.0.0-beta.30.1.0
-
-Promotion release based directly on `2.0.0-beta.30.0.0.21`.
-
-## Runtime-confirmed Yellow results carried into this release
-- **PASS — existing-save boot and Nuzlocke menu visibility.**
-- **PASS — in-game Nuz Rules opens on an existing Yellow save.**
-- **PASS — Gym Lock-In boundary enforcement.** The tested Yellow Gym boundary correctly prevented the prohibited entry/exit transition. This runtime-confirmed behavior is protected against casual rewrite.
-- **PASS — duplicate-dialogue regression target, tested NPC.** The Yellow Poké Mart NPC that previously repeated trailing phrases across textbox pages no longer reproduced the defect after the 30.0.0.20 active-TextBox World Building guard.
-- The active-TextBox guard is retained as a **protected presentation compatibility safeguard**: optional Nuzlocke World Building text must not be layered over an already-active engine/other-mod TextBox. This is presentation-only and must never become required for mechanical enforcement.
-
-## Promoted development work
-- Gen1Recomp 0.1.86–0.1.90 compatibility target.
-- First approved modularization retained:
-  - `title_setup_compat.lua`
-  - `trainer_rewards.lua`
-- Permanent Rule Seal remains **WIP / grey / unselectable**. Its dormant implementation and recovery map remain preserved for later work.
-- Trainer Money/status percentage presentation uses explicit `%` labels.
-- Maximum BST uses preset selection: **OFF / 400 / 450 / 500 / 550** while preserving legacy custom thresholds until changed.
-- Yellow `NUZ` status placement remains a known deferred cosmetic issue: it is currently slightly too low and should later move upward a little, but not back to the previous overly-high position.
-
-## Validation
-- `main.lua`, `title_setup_compat.lua`, and `trainer_rewards.lua` pass the available Lua parser/compiler check before packaging.
-- Static success is not promoted to runtime PASS unless explicitly listed above.
-- Blue/Gold fresh-game SETUP behavior and modularized Trainer Money/Forgiveness/progression paths remain runtime-test targets where not already confirmed.
-
-# 2.0.0-beta.30.1.1
-
-Gold NEW GAME -> SETUP crash containment, built directly from `2.0.0-beta.30.1.0`.
-
-- Runtime FAIL: selecting the Nuzlocke Setup entry during a fresh Gold NEW GAME crashed the 30.1.0 candidate.
-- Compared the current Gold title path against the last published `2.0.0-beta.29.1.0`.
-- The published/runtime-PASS design already used the shared `ui.title_menu.items` injection plus the small Gold `src.ui.gen2.MainMenu:choose()` adapter.
-- Disabled only the later 0.1.86-era Gold `MainMenu:buildList()` compatibility fallback from `title_setup_compat.lua`.
-- The disabled `installGold()` implementation is preserved verbatim inside a Lua long comment for future diagnosis/recovery; it was not deleted.
-- R/B/Y `title_setup_compat.lua` fallback remains active.
-- No broader Gold gameplay systems, rules, tracker, randomizer, battle, item, mart, encounter, or provider changes were reverted.
-- Gold NEW GAME -> SETUP is now RETEST REQUIRED.
-- `2.0.0-beta.30.1.0` should be treated as a rejected runtime-crash candidate, not the release build.
-
-# 2.0.0-beta.30.1.2
-
-Release/documentation child of `2.0.0-beta.30.1.1`. **No intended gameplay/code behavior change beyond version identity.**
-
-## Accepted known bug for this beta release
-
-- **KNOWN RUNTIME CRASH — Gold fresh NEW GAME -> SETUP selection.**
-- Runtime retest on 30.1.1 still crashes when selecting the Nuzlocke SETUP entry on Gold.
-- The earlier attempt to withdraw the newer Gold `MainMenu:buildList()` compatibility fallback did **not** resolve the crash.
-- The disabled fallback remains preserved in comments for future investigation.
-- Do **not** claim Gold fresh-game SETUP is working in this release.
-- Gold remains BETA/experimental and this specific startup configuration path is a known broken path accepted for release due to development pause.
-
-## Runtime evidence retained
-
-- Yellow existing-save boot: PASS.
-- Yellow Nuzlocke menu visibility: PASS.
-- Yellow in-game Nuz Rules: PASS.
-- Yellow tested Gym Lock-In boundary rejection: PASS / protected.
-- Yellow specific Poké Mart duplicate-dialogue regression case: PASS after the active-TextBox World Building guard.
-- Permanent Rule Seal remains WIP / grey / unselectable.
-- Yellow `NUZ` status vertical placement remains a known deferred cosmetic issue.
-
-## Release discipline
-
-- This build descends directly from 30.1.1.
-- No older branch was restored.
-- No additional Lua split was performed.
-- All current repository files are retained.
-- Lua parser validation passes for all three Lua sources.
-
-# 2.0.0-beta.30.1.3
-
-Setup/Nuz Rules crash-containment diagnostic based directly on 30.1.2.
-
-- The same Setup crash was reproduced using unchanged, **unsplit** published 29.3.0 gameplay Lua on the current engine. The existing split therefore is not sufficient evidence for the crash cause.
-- Current Gen1Recomp's screen resolver pcall-isolates a failed mod screen factory and then attempts a built-in fallback. `NuzlockeConfigScreen` is custom-only, so a construction failure can become a missing-builtin desktop crash.
-- Every Nuzlocke Setup/Nuz Rules open now goes through a protected public `mod.ui.push` transaction.
-- If construction fails, the game should stay alive and show `NUZLOCKE SETUP ERROR` with the underlying error text.
-- The error is retained in `mod.exports.__beta26.lastConfigScreenError`.
-- While implementing this guard, adding one more top-level local caused Lua's **200-local compile limit** to fire. The guard is therefore export-backed rather than local. This confirms the monolithic chunk has essentially no local-variable headroom and strengthens the case for another carefully planned split later, but does not by itself explain the current Setup crash.
-- No additional split is included in this diagnostic build.
-
-# 2.0.0-beta.30.1.4
-
-Runtime-method crash diagnostic, built directly from 30.1.3.
-
-- 30.1.3 still crashed without showing its guarded-construction error box.
-- This strongly suggests `NuzlockeConfigScreen` is constructing/pushing successfully and failing on its first runtime frame rather than during `mod.ui.push`.
-- Wrapped the configuration screen instance's `update()` and `draw()` methods with protected calls.
-- On a Lua runtime failure, the faulty instance disables itself, attempts to pop, and shows `NUZ SETUP UPDATE ERROR` or `NUZ SETUP DRAW ERROR` containing the underlying error.
-- `lastConfigScreenError` is updated with the phase and traceback/error.
-- No additional module split or gameplay-rule change.
-
-# 2.0.0-beta.30.1.5
-
-Fresh Setup sandbox compatibility repair, built directly from 30.1.4.
-
-- Identified a concrete current-engine incompatibility before the Setup screen is pushed.
-- The legacy Setup profile loader/saver directly accessed the mod-blocked filesystem facade.
-- Gen1Recomp 0.1.86 explicitly blocks that facade inside sandboxed mods and directs mod authors to public mod persistence/read APIs instead.
-- Because those accesses occurred before `NuzlockeConfigScreen` opened, earlier construction/update/draw crash guards could not intercept the failure.
-- Replaced cross-restart Setup-profile file I/O with session-local Gen1/Gold profile copies.
-- Fresh Setup no longer touches the blocked filesystem facade.
-- Normal active-save rule persistence is otherwise unchanged.
-- Temporary limitation: closing the application resets saved Setup-profile preferences to defaults until a later pass chooses a deliberate public cross-restart preference-storage contract.
-- No additional Lua module split was added.
-
-# 2.0.0-beta.30.1.6
-
-Release candidate built directly from 30.1.5 with no intended gameplay behavior changes beyond version identity/documentation.
-
-## Runtime-confirmed current-engine compatibility
-
-- **Gold fresh NEW GAME -> Nuzlocke SETUP: RUNTIME PASS.**
-- **Yellow fresh NEW GAME -> Nuzlocke SETUP: RUNTIME PASS.**
-- **Blue fresh NEW GAME proceeds into the player's bedroom: RUNTIME PASS.**
-
-These passes confirm the 30.1.5 fresh-Setup sandbox repair on the tested current Gen1Recomp line.
-
-## Confirmed crash repair
-
-The fresh-game Setup CTD was traced to legacy pre-game Setup-profile persistence touching the filesystem facade directly. Gen1Recomp 0.1.86 blocks that facade in sandboxed mods. The forbidden access occurred before `NuzlockeConfigScreen` was pushed, which is why earlier screen-level crash guards did not intercept it.
-
-30.1.5 replaced that path with per-session Gen1/Gold Setup-profile storage. 30.1.6 preserves that implementation unchanged and records the successful runtime validation.
-
-## Remaining limitation
-
-- Setup-profile preferences currently persist only for the running Gen1Recomp session.
-- Fully closing/reopening the application resets those pre-game Setup preferences to defaults.
-- Rules committed to an actual game save continue using their normal save-backed persistence.
-
-## Protected runtime evidence retained
-
-- Yellow existing-save boot: PASS.
-- Yellow Nuzlocke menus visible: PASS.
-- Yellow in-game Nuz Rules: PASS.
-- Yellow tested Gym Lock-In boundary rejection: PASS / protected.
-- Yellow tested Poké Mart duplicate-dialogue regression case: PASS after the active-TextBox World Building guard.
-- Gold and Yellow fresh Setup: PASS.
-- Blue fresh NEW GAME bedroom entry: PASS.
-- Permanent Rule Seal remains WIP / unselectable.
-- Yellow `NUZ` vertical position remains a deferred cosmetic issue.
-
-## Validation
-
-- Direct child of 30.1.5.
-- No older branch restored.
-- Repository tree retained at 13 files.
-- Lua sources: `main.lua`, `title_setup_compat.lua`, `trainer_rewards.lua`.
-- All Lua files pass the real Lua parser.
-
-# 2.0.0-beta.30.1.7
-
-Gold Pokégear integration development build, directly from 30.1.6.
-
-## New — optional Pokegear Cards integration
-
-When active `pokegear_cards` API v1 is available on Gold, Nuzlocke now integrates through its append-only `mod.exports` API.
-
-### NUZ Pokégear card
-- Adds a `NUZ` strip card.
-- Four pages: Run Status, Encounters, Rules, Caps & Difficulty.
-- Live catches, deaths, Route Forgiveness Tokens, active Nuzlocke loadout, area counts, failed encounters, Gold rule names, next authoritative cap/boss, and selected difficulty provider.
-- UP/DOWN changes pages. A on Rules advances additional rule rows. B returns through the provider's normal card behavior.
-
-### MAP overlay
-- Adds encounter-state markers without replacing the vanilla MAP.
-- Aggregates visited/open, failed, and caught/claimed tracker state by Gen 2 landmark.
-- Caught takes precedence over failed, which takes precedence over visited/open when several maps share a landmark.
-- Filters Johto/Kanto landmark markers to the currently displayed regional map.
-- Uses the provider's scissored overlay helper and does not own MAP input.
-
-### RADIO World Building
-- Adds one short Nuzlocke broadcast/status line when World Building is enabled.
-- T1 is direct status, T2 uses Johto-report framing, T3 uses deterministic landmark/run-state flavor.
-- Cosmetic only: never changes tuning, station availability, music, story flags, encounters, or enforcement.
-
-### Compatibility
-- PHONE intentionally untouched because Pokegear Cards documents visible phone appends as an input-loop fork.
-- Detection is `mod.find("pokegear_cards")`: installed-but-disabled is not treated as active.
-- Stable IDs: `nuzlocke_status`, `nuzlocke_map_status`, `nuzlocke_radio_world`.
-- `pokegear_cards` added as an optional dependency.
-- New focused `pokegear_integration.lua` uses sandbox-safe sibling loading.
-- R/B/Y behavior unchanged.
-
-## Validation
-- Existing 30.1.6 Setup sandbox repair unchanged.
-- Package tree expands from 13 to 14 files with the focused integration module; nothing removed.
-- All four Lua files parser PASS.
-- Mock provider registration PASS: one card, MAP append, RADIO append, zero PHONE appends.
-- New Gold Pokégear paths remain TEST REQUIRED.
-
-# 2.0.0-beta.30.1.8
-
-Provider-delegation bugfix child of 30.1.7.
-
-## Fixed — Trainer Money provider delegation
-
-Two related defects remained in the 30.0 provider-delegation system.
-
-1. Runtime Trainer Money scaling ignored `externalRuleDelegation`.
-   - The Rules UI could correctly show the control as externally owned while `trainer_rewards.lua` still applied Nuzlocke's stored multiplier after battle.
-   - This could stack Nuzlocke payout scaling on top of an active `economy_provider`.
-   - `scaleTrainerMoney()` now checks the same delegation seam and, when delegated, leaves the provider's final wallet result completely untouched.
-
-2. Delegated numeric UI assumed `spec.min` was always the neutral value.
-   - Trainer Money has `min = 0`, but index 0 means 0% payout.
-   - Its actual neutral/vanilla value is index 4 = 100%.
-   - Numeric rule specs can now declare `neutral`.
-   - Trainer Money declares `neutral = 4`.
-   - `getConfigValue()` resolves delegated numerics as `spec.neutral` first, then falls back to `spec.min`.
-
-## Compatibility
-
-- No provider: Trainer Money behavior remains unchanged.
-- Active `economy_provider`: Nuzlocke performs no Trainer Money wallet rewrite.
-- Delegated Trainer Money displays 100%, not 0%.
-- Existing Gold Pokégear work from 30.1.7 is unchanged and remains runtime TEST REQUIRED.
-- No files added or removed.
-
-## Validation
-
-- All four Lua files parser PASS.
-- Dedicated mocked Trainer Money delegation test PASS:
-  - delegated payout left untouched;
-  - nondelegated 50% payout still scales correctly.
-- Static neutral-value check PASS: delegated Trainer Money resolves to index 4.
-
-# 2.0.0-beta.30.1.9
-
-Gold level-cap ordering repair, directly from 30.1.8.
-
-## Fixed — Johto middle-Gym cap regression
-
-The current `gscStages` list had regressed to:
-
-`Chuck 30 -> Jasmine 35 -> Pryce 31 -> Clair 40`
-
-That reintroduced a non-monotonic raw stage ladder. The runtime cap floor could prevent the enforced value from physically dropping, but direct stage readers and boss presentation could still observe Pryce's raw 31 after Jasmine's 35.
-
-The preserved project history already records the intended repair from beta.27.15: the cap-progression order is:
-
-`Chuck -> Pryce -> Jasmine`
-
-30.1.9 restores that ordering without inventing new cap numbers:
-
-`Chuck 30 -> Pryce 31 -> Jasmine 35 -> Clair 40`
-
-### Important distinction
-
-Gold badge slot mappings are unchanged:
-- Chuck / Storm remains badge slot 5.
-- Jasmine / Mineral remains badge slot 6.
-- Pryce / Glacier remains badge slot 7.
-
-Those are save/badge identity mappings, not the ordered boss-cap ladder. Reordering `gscStages` does not rewrite or renumber Gold badges.
-
-## Previous 30.1.8 fixes retained
-
-- Trainer Money runtime scaling respects active `economy_provider` delegation.
-- Delegated Trainer Money neutral display is 100% / index 4.
-
-## Validation
-
-- All four Lua files parser PASS.
-- Static stage-order audit PASS.
-- Gold Johto Gym fallback cap sequence is monotonic: 9, 16, 20, 25, 30, 31, 35, 40.
-- No files added or removed.
-
-# 2.0.0-beta.30.1.10
-
-Title Setup save-editor hardening, directly from 30.1.9.
-
-## Fixed — recurring title wrapper used only install-time save-editor gating
-
-`title_setup_compat.lua` previously checked `isSaveEditorSession()` only when installing the R/B/Y title fallback wrapper. If the wrapper was installed while editor mode was inactive, later title-menu opens could still run SETUP insertion after the process/session entered a save-editor context.
-
-The R/B/Y wrapper now re-checks `isSaveEditorSession()` on every `TitleState:openMenu()` call before inspecting or modifying the final title row list.
-
-The same per-call protection is applied to the Gold recurring title-list wrapper where that adapter is present.
-
-The existing install-time checks remain as cheap early-outs, but runtime/session-sensitive editor state is no longer assumed to be permanent.
-
-## Validation
-- All four Lua files parser PASS.
-- Static wrapper audit confirms per-call editor checks are present in recurring title-menu fallback callbacks.
-- No files added or removed.
-- 30.1.8 Trainer Money provider fixes and 30.1.9 Gold cap-order repair are retained.
-
-# 2.0.0-beta.30.1.11
-
-Trainer Rewards split-module namespace repair, directly from 30.1.10.
-
-## Fixed — Gold Mart Route Forgiveness crash
-
-`G2.installMartGate()` called `forgivenessEnabled()` as a bare global from `main.lua`. That function belongs to the separately loaded `trainer_rewards.lua` module and is exported through `mod.exports.__beta26.TrainerRewards`.
-
-On Gold, constructing a STANDARD Mart while Route Forgiveness was enabled could therefore throw `attempt to call a nil value (global 'forgivenessEnabled')`.
-
-The Mart wrapper now calls:
-`mod.exports.__beta26.TrainerRewards.forgivenessEnabled()`.
-
-## Fixed — bare Forgiveness Token count call in rules/status presentation
-
-A second instance of the same split-module namespace bug was found in the rule-label path:
-`forgivenessTokens()` was also called as a bare global.
-
-It now calls:
-`mod.exports.__beta26.TrainerRewards.forgivenessTokens()`.
-
-This prevents the Route Forgiveness status/summary path from depending on a nonexistent main-chunk global.
-
-## Validation
-- Searched `main.lua` for unqualified `forgivenessEnabled(` and `forgivenessTokens(` calls: none remain.
-- All four Lua files parser PASS.
-- 14-file package tree unchanged.
-- Prior 30.1.8 Trainer Money fixes, 30.1.9 Gold cap order, and 30.1.10 title save-editor guard retained.
-
-# 2.0.0-beta.30.1.12
-
-Stored-location recovery orphan fix, directly from 30.1.11.
-
-## Fixed — conflicting stored catch location could be falsely marked recovered
-
-`importStoredCatchLocations()` previously set `mon.nuzlockeTrackerRegistered = true` even when the stored location conflicted with a different already-established catch in that area and no tracker/area entry was written.
-
-That combination could permanently orphan the Pokémon:
-- no new area log entry;
-- no `caught_areas` restoration;
-- stale `catchLocation` still present;
-- false registered marker prevented later recovery logic from treating it as unresolved.
-
-30.1.12 now marks the mon registered only when the stored location actually restores or matches tracker state. A true conflict clears the stale `catchLocation` and false registered marker so the mon remains eligible for normal Legacy Recovery.
-
-Successful empty-area and matching-entry recovery behavior is otherwise unchanged.
-
-## Validation
-- All four Lua files parser PASS.
-- Static recovery audit confirms the conflict branch clears `catchLocation` and registration.
-- Focused three-case branch harness PASS: empty restore, matching restore, conflicting Legacy fallback.
-- No files added or removed.
-
-# 2.0.0-beta.30.1.13
-
-Solo Only scripted-trade enforcement fix, directly from 30.1.12.
-
-## Fixed — Solo Only gated gifts but not NPC trades
-
-`specialAcquisitionDenied()` applied the Solo Only party-slot check only when `kind == "gift"`.
-
-Wild catches were already covered through the normal catch gate, and gifts were covered here, but scripted trades in both R/B/Y and Gold route through `specialAcquisitionDenied(..., "trade")` and therefore bypassed Solo Only.
-
-A player could complete an NPC trade while Solo Only was active and add a second usable party Pokémon, violating the selected challenge rule.
-
-30.1.13 extends only that final Solo Only acquisition check:
-
-- gift acquisitions: unchanged, still gated;
-- trade acquisitions: now gated by the same occupied-solo-slot check;
-- all earlier special-acquisition rule ordering is unchanged;
-- existing `acquisitionDeniedMessage(..., "solo", ...)` handling is reused, so no new dialogue plumbing is introduced.
-
-## Validation
-- All four Lua files parser PASS.
-- Focused acquisition-gate harness PASS:
-  - gift + occupied solo slot -> `solo`;
-  - trade + occupied solo slot -> `solo`;
-  - gift/trade + available solo slot -> allowed by Solo Only;
-  - unrelated acquisition kind is not newly blocked by this check.
-- 14-file package tree unchanged.
-
-# 2.0.0-beta.30.1.14
-
-First Rival Mercy one-shot hardening, directly from 30.1.13.
-
-## Fixed — non-opening rival-shaped battle could permanently burn First Rival Mercy
-
-`armFirstRivalForgiveness()` previously persisted `nuzlocke_first_rival_battle_seen = true` immediately after the broad `isRivalBattle()` test, before the stricter `isOpeningRivalBattle()` check.
-
-A later/reordered/rewound rival-classified battle could therefore consume the durable slot even though it was not the canonical opening encounter. If the true opening battle was reached afterward, First Rival Mercy could never arm for that save.
-
-30.1.14 changes the latch semantics:
-- non-rival battle: unchanged, ignored;
-- rival but not opening rival: rejected without consuming the durable flag;
-- actual opening rival: marks `nuzlocke_first_rival_battle_seen = true`;
-- opening rival with First Rival Mercy OFF: still consumes the one-shot, preserving the original rule semantics;
-- opening rival with First Rival Mercy ON: arms the battle-local forgiveness flag as before.
-
-The existing `isOpeningRivalBattle()` old-save safeguard remains authoritative, so later rival fights on old saves are still never granted First Rival Mercy merely because the durable flag is absent.
-
-## Validation
-- All four Lua files parser PASS.
-- Focused one-shot state-machine harness PASS.
-- Static ordering audit confirms `isOpeningRivalBattle()` is evaluated before the durable save write and the save write occurs only after the `not opening` return.
-- 14-file package tree unchanged.
-
-# 2.0.0-beta.30.1.15
-
-World Building tier-fallback consistency fix, directly from 30.1.14.
-
-## Fixed — `queueTrainerFlavor` fallback ignored its caller-selected minimum tier
-
-`queueTrainerFlavor(key, message, minimumTier)` correctly checked its requested tier before trying battle-native `say` / `emit`, but its last-resort path called `worldOnce(game, key, message)`.
-
-`worldOnce` had a hardcoded Tier 3 gate. Therefore a caller such as First Rival Mercy, which explicitly requests Tier 1, could pass the outer Tier 1 gate and still lose its message on battle objects without `say` or `emit`.
-
-30.1.15 makes `worldOnce` accept an optional `minimumTier`:
-- omitted -> Tier 3, preserving its historical default;
-- supplied -> honors the caller's explicit threshold.
-
-`queueTrainerFlavor` now passes its own `minimumTier` into the fallback.
-
-This preserves the same once-per-save flag behavior and the same `pushWorldText` safety path while making all three delivery seams agree on whether the message is eligible.
-
-## Validation
-- All four Lua files parser PASS.
-- Focused fallback-tier harness PASS:
-  - Tier 1 + minimum 1 + no say/emit -> fallback displays and sets once flag;
-  - Tier 2 + minimum 1 -> fallback displays;
-  - Tier 2 + default minimum 3 -> remains blocked;
-  - failed text push -> does not consume once flag;
-  - repeated successful call -> remains once-only.
-- 14-file package tree unchanged.
-
-# 2.0.0-beta.30.1.16
-
-Type Locke canonical Fairy compatibility repair, directly from 30.1.15.
-
-## Fixed — Fairy typings could be treated as unknown by Mono/Duo Type Locke
-
-Compatible typing/content mods can add the canonical `FAIRY` type to the merged species registry. Nuzlocke's Type Locke vocabulary previously stopped at Dark/Steel, so a pure-Fairy species could produce no recognized Type Locke metadata and hit the intentional "unknown custom schema" fail-open behavior.
-
-That meant a legitimate Fairy species could be allowed by an unrelated Monolocke simply because Nuzlocke did not recognize the canonical type.
-
-30.1.16 adds canonical Fairy awareness to Type Locke.
-
-### Save-safe selector layout
-
-Existing numeric selector meaning is preserved exactly:
-- `0..16` = existing Normal through Steel values;
-- `17` = RANDOM, unchanged from every prior build;
-- `18` = FAIRY, newly appended.
-
-RANDOM is deliberately **not moved**. No migration of old saves or pending Setup profiles is required.
-
-### Runtime behavior
-
-- Fairy Monolocke is now selectable.
-- Fairy may be either side of a Duolocke.
-- Pure Fairy species are evaluated as Fairy rather than unknown/fail-open.
-- Dual types such as Water/Fairy match either appropriate allowed type.
-- RANDOM can roll Fairy only when Fairy is represented in the live merged species pool.
-- RANDOM still never persists as runtime legality state; it resolves once to concrete type(s).
-- Unknown genuinely custom type schemas continue to fail open.
-- Manual Dark/Steel/Fairy selections remain possible even when the current base species pool has no such species, preserving compatibility-mod challenge setups.
-
-### Compatibility target
-
-This specifically closes the Nuzlocke-side gap found while reviewing `steel_typing` / STEEL-FAIRY AND TYPING CHARTS 2.0.1, but the implementation is package-name agnostic and works with any mod that exposes canonical `FAIRY` through the merged Pokémon/type metadata.
-
-## Validation
-
-- All four Lua files parser PASS.
-- Selector compatibility audit PASS: RANDOM remains 17; FAIRY is 18.
-- Focused Type Locke harness PASS:
-  - Fire Mono rejects pure Fairy;
-  - Fairy Mono accepts pure Fairy;
-  - Water Mono accepts Water/Fairy;
-  - Fairy Mono accepts Water/Fairy;
-  - random viable pool includes Fairy only when a Fairy species is present;
-  - old RANDOM value 17 still resolves as RANDOM, never Fairy;
-  - DUO duplicate correction skips the RANDOM sentinel.
-- 14-file package tree unchanged.
-
-# 2.0.0-beta.30.1.17
-
-Translation-safe R/B/Y Mart enforcement, directly from 30.1.16.
-
-## Fixed — translated BUY / SELL labels could bypass No Buying / No Selling
-
-The R/B/Y ShopMenu compatibility wrapper previously identified the two shop actions by comparing the rendered menu label only to literal English `BUY` and `SELL`.
-
-Localization mods legitimately build those rows through `Strings("BUY")` and `Strings("SELL")`. For example, the Finnish translation renders them as `OSTA` and `MYY`. The old wrapper therefore failed to decorate either action, allowing purchases/sales despite the Nuzlocke rules being enabled.
-
-30.1.17 keeps the existing English recognition and additionally compares each row against the current live translated `Strings("BUY")` / `Strings("SELL")` values.
-
-No shop mechanics, stock, pricing, token behavior, or Gold Mart logic are otherwise changed.
-
-## Validation
-- All four Lua files parser PASS.
-- Focused localization harness PASS:
-  - English BUY/SELL detected;
-  - Finnish OSTA/MYY detected through translated source values;
-  - unrelated menu labels remain untouched.
-- Existing Route Forgiveness shop stock bridge remains in the same wrapper.
-- 14-file package tree unchanged.
-
-# 2.0.0-beta.30.1.18
-
-Optional Gen1 Modern UI presentation integration, directly from 30.1.17.
-
-## Added — responsive presentation for high-use Nuzlocke information screens
-
-When an active `gen1_modern_ui` provider exposes its documented `registerAdapter` API, Nuzlocke now publishes a source-owned semantic screen contract for:
-
-- Encounter Tracker / Area Guide;
-- NUZ INFO Catch / Stat / Move pages;
-- Nuzlocke Trainer Card / active-rule status page.
-
-Nuzlocke continues to own all underlying state and actions. The UI provider receives only read-only row models plus semantic navigation callbacks.
-
-### Fail-safe behavior
-
-- No hard dependency on Modern UI.
-- Provider is detected as active through `mod.find`, not installed-only.
-- Registration retries across load lifecycle events.
-- If the provider is absent, unsupported, disabled, or rejects the contract, classic Nuzlocke screens remain unchanged.
-- If a semantic model cannot be produced, the provider can fall back instead of Nuzlocke replacing mechanics.
-- Gold is not registered because the inspected Modern UI line is Gen1-only.
-
-### Deliberately not adapted yet
-
-`NuzlockeConfigScreen` (Setup / Nuz Rules editor) now has a stable screen ID but remains native. Fresh Setup is protected runtime behavior and the editor owns complex numeric editing, collapsed sections, permanent-seal confirmation, descriptions, and staged pre-game state. It will only move to an external presenter after dedicated runtime validation.
-
-### Internal classic screens retained
-
-Native R/B/Y and Gold draw/update implementations remain intact. The integration is presentation-only.
-
-## Validation
-
-- All five Lua files parser PASS.
-- 15-file package tree.
-- Mock adapter provider registration PASS.
-- Semantic model/action harness PASS for Tracker, NUZ INFO and Trainer Card.
-- `.30.1.17` localization-safe Mart gate retained.
-
-## 2.3.1 RC — Yellow New Game startup hotfix
-- Direct child of 2.3.0 RC.
-- Records 2.3.0 Yellow New Game as runtime FAIL on Gen1Recomp 0.1.98.
-- Removes eager pre-overworld `mod.battle` / `mod.world` capability probing from the title/New Game path.
-- Defers the new 0.1.98 field-action backstop until `map.entered`, when a real overworld exists.
-- Preserves the 2.3.0 No Fishing, Gold item-policy, Gen II healing classification, and battle-snapshot interoperability work.
-- Runtime retest required; static checks are not runtime PASS.

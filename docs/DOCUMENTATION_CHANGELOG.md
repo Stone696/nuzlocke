@@ -1,3 +1,310 @@
+# Documentation Changelog
+
+## 2.4.69 RC — Release Candidate consolidation — 2026-08-17
+- Updated current package/version references to 2.4.69 RC.
+- Consolidated release notes around the frozen RC feature surface and regression-test priorities.
+- Confirmed no Save Schema, Compatibility API, Diagnostics API, or package-inventory change.
+
+
+## 2.4.68 — Dev Randomizer integrity audit — 2026-08-17
+- Updated current package/version references to 2.4.68.
+- Documented live encounter-table scanning, canonical legality checks, delegation/content opt-outs, violation reporting, and public diagnostics API.
+- Recorded that the audit is read-only and does not alter encounter tables.
+
+
+## 2.4.67 — Dev rule-effectiveness audit — 2026-08-17
+- Updated current package/version references to 2.4.67.
+- Documented configured/effective/owner diagnostics, save-vs-default sourcing, delegation relationships, aggregate counts, and public diagnostics API.
+- Clarified that master-switch/schema state is reported separately from per-rule effective values.
+
+
+## 2.4.66 — Future-schema write diagnostics — 2026-08-17
+- Updated current package/version references to 2.4.66.
+- Documented transparent `mod.save:set(...)` observation during newer-schema safe-stop, per-key attempt reporting, breadcrumb behavior, self-test export, and reset/query APIs.
+- Clarified that the detector observes/delegates and does not replace 2.4.63's safe-stop guards.
+
+
+## 2.4.65 — Dev lifecycle counters — 2026-08-17
+- Updated current package/version references to 2.4.65.
+- Documented six lifecycle counters, duplicate-payload detection, lifecycle breadcrumbs, exported `[LIFECYCLE]` data, and reset/query diagnostics APIs.
+- Recorded that event registration itself is unchanged.
+
+
+## 2.4.64 — Dev hook / adapter health — 2026-08-17
+- Updated current package/version references to 2.4.64.
+- Documented the read-only hook-health states, 13-adapter scope, self-test/export integration, and public diagnostics query.
+- Documented that CHAINED is compatibility evidence rather than automatic breakage.
+
+
+## 2.4.63 — Future-schema downgrade safety — 2026-08-17
+- Updated current package/version references to 2.4.63.
+- Documented the enforced newer-schema safe stop, guarded lifecycle writers, session-only player warning, and `saveSchemaSupported()` query.
+- Preserved Save Schema 4 and Compatibility API 27.
+
+## 2.4.62 — Random Encounter rule-legality filtering — 2026-08-17
+- Updated current package/version references to 2.4.62.
+- Documented Random Encounter composition with Type Locke, species bans, and Maximum BST.
+- Recorded the inherited runtime build-metadata synchronization from the 2.4.61 package.
+- Preserved the future-schema downgrade-safety finding as queued work rather than mixing it into this build.
+
+## 2.4.60 — Runtime crash diagnostic capture — 2026-08-17
+- Documented full traceback capture for recoverable Config/Setup and NUZ STATUS screen runtime failures.
+- Confirmed no gameplay/save/API changes and preserved existing 2.4.59/2.4.58 diagnostic behavior.
+
+## 2.4.59 — Passive Dev diagnostic hardening — 2026-08-17
+- Documented `Dev.pguard()` and its intentionally limited internal instrumentation.
+- Documented new encounter-ledger and structural Shiny assertions.
+- Explicitly retained 2.4.58 export/history behavior and the no-recursive-mechanics guardrail.
+- Corrected stale `mod.card` engine-range metadata.
+
+## 2.4.58 — Provenance + diagnostic history — 2026-08-17
+- Documented pin-once encounter provenance.
+- Documented full 48-breadcrumb export and bounded 16-report history.
+- Documented READ vs READBACK semantics.
+
+## 2.4.57 — Launcher range / capture-ledger docs — 2026-08-17
+- Updated current engine range to `>=0.1.86 <2.0.0`.
+- Documented capture-state monotonic reconciliation and new save/reload regression queue.
+- Historical version entries remain unchanged.
+
+## 2.4.56 — Documentation integrity reconciliation — 2026-08-17
+- Reconciled all eight shipped docs against exact current code/manifest.
+- Repaired 2.4.35–2.4.55 historical attribution.
+- Updated Project Rules/Handoff and added per-document update rules.
+- Corrected current engine to 0.2.1 and current package/API/schema state.
+
+## 2.4.55 — Fast section navigation — 2026-08-17
+- Documented SELECT+UP/DOWN section jumps and SELECT+LEFT/RIGHT collapse/expand all.
+
+## 2.4.54 — Rule-list wraparound — 2026-08-17
+- Documented first/last selectable-row wraparound.
+
+## 2.4.53 — Historical Difficulty scope correction — 2026-08-17
+- Restored intended profile list in current docs; retained deeper mechanics.
+
+## 2.4.52 — Deeper historical Difficulty mechanics — 2026-08-17
+- Documented boss/team/move/AI/DV/held-item tuning; temporary extra names later removed.
+
+## 2.4.51 — Gold No Held Items — 2026-08-17
+- Documented Gold-only rule and runtime-test requirements.
+
+## 2.4.50 — Gen1Recomp 0.2.1 consolidation — 2026-08-17
+- Documented no extra runtime migration beyond 0.2.0.
+
+## 2.4.49 — Gen1Recomp 0.2.x storage migration — 2026-08-17
+- Documented official `mod.storage` diagnostics migration.
+
+## 2.4.48 — Native DEV cursor / wrapped info — 2026-08-17
+## 2.4.47 — Verified diagnostic export / FILE INFO — 2026-08-17
+## 2.4.46 — Deterministic self-test file — 2026-08-17
+## 2.4.45 — DEV TOOLS layout repair — 2026-08-17
+## 2.4.44 — Clipboard-first diagnostics — 2026-08-17
+## 2.4.43 — DEV TOOLS / self-test — 2026-08-17
+## 2.4.42 — Self-test + presentation-control unlock — 2026-08-17
+## 2.4.41 — Rules row collision fix — 2026-08-17
+## 2.4.40 — Lua loadability hotfix — 2026-08-17
+## 2.4.39 — Tracker death projection — 2026-08-17
+## 2.4.38 — Encounter indicator / cap messages — 2026-08-17
+## 2.4.37 — Forgiveness modal UI — 2026-08-17
+## 2.4.36 — Shiny / encounter-slot integrity — 2026-08-17
+## 2.4.35 — Developer diagnostics mode — 2026-08-17
+
+# 2.4.34 Provider Capability Architecture + Gen9Dex Hardening — 2026-08-17
+
+- Promoted 2.4.34 as the current development head, direct child of 2.4.33.
+- Documented Gen9Dex 1.2.0 as a Gold-only modern-mechanics provider and distinguished native DVs from modern IV/EV/Nature battle stats.
+- Documented the internal-only capability resolver and retained Compatibility API 27.
+- Updated Evolution Limits documentation to use the executable merged evolution graph.
+
+# 2.4.33 Save Editor / external save-state hardening — 2026-08-17
+
+- Promoted 2.4.33 as the current development head, direct child of 2.4.32.
+- Added the built-in Gen1Recomp Save Editor audit to the maintained compatibility ledger.
+- Documented non-destructive over-cap reconciliation, persistent death authority, external/unverified provenance presentation, and immutable registration-species history.
+- Added edited-save runtime validation cases.
+- Save Schema remains 4; Compatibility API remains 27.
+
+# 2.4.32 Quality of Life 1.3.0 compatibility hardening — 2026-08-17
+
+- Promoted 2.4.32 as the current development head, direct child of 2.4.31.
+- Added the Quality of Life 1.3.0 source/hook audit and compatibility-ledger entry.
+- Documented the conservative Gen 1 Easy Interactions shortcut suppression used during active Travel Restrictions / Dungeon Lock-In.
+- Documented that existing No Repels enforcement already covers the mod's Repel paths.
+- No Save Schema or Compatibility API change.
+
+# 2.4.31 compatibility ledger stale-target refresh — 2026-08-17
+
+## 2.4.31 DEV
+
+- Added QoL Toggles 1.24.1 full hook/ownership audit and adapter status.
+- Documented restriction-over-convenience precedence and option-aware Automatic Running ownership.
+- Recorded targeted runtime test requirements for overlapping QoL transactions.
+
+
+- Promoted 2.4.31 as the current development head, direct child of 2.4.29.
+- Re-audited Too Many Balls 0.6.1 and Shiny Pokémon 1.0.8 against the current Nuzlocke compatibility model.
+- Updated the maintained compatibility ledger with current versions, treatment, limitations, and re-audit triggers.
+- Marked Kanto Life and NPC Bubbles as UPSTREAM UNRESOLVED after their canonical current repositories could not be reliably identified from retained evidence.
+- Corrected stale current-head parent wording carried in 2.4.29 README/main metadata.
+- No gameplay rule, Save Schema 4, Compatibility API 27, engine range, or package file tree changed.
+
+# 2.4.29 maintained rule-parity matrix — 2026-08-17
+
+- Promoted 2.4.29 as the current development head, direct child of 2.4.28.
+- Added a permanent rule × game-family parity matrix to `docs/COMPATIBILITY.md`.
+- Matrix records R/B/Y support, Gold support, enforcement/adaptation mechanism, runtime confidence, and known generation/upstream limitations.
+- Added a release gate requiring every future rule addition/removal/rename/exposure/enforcement change to update the matrix in the same build.
+- Clarified that `✅` means an implementation exists, not that every runtime combination is certified.
+- No gameplay rule, save schema, Compatibility API contract, engine range, or package file tree changed.
+
+# 2.4.28 cross-version rule parity audit — 2026-08-17
+
+- Promoted 2.4.28 as the current development head, direct child of 2.4.27.
+- Audited every rule against R/B/Y vs Gold/Gen2 data/execution differences.
+- Documented newly exposed shared Gold rules and the intentionally generation-specific controls that remain hidden.
+- Documented the Gen2 `levelMoves` Random Learnsets repair and complete native Gen2 Legendary/Mythical fallbacks.
+- Updated Gold parity metadata to 2.4.28.
+- Save schema remains 4; Compatibility API remains 27.
+
+# 2.4.27 Gold compact rule labels — 2026-08-17
+
+- Promoted 2.4.27 as the current development head, direct child of 2.4.26.
+- Ported the R/B/Y localization-safe `shortName` / `shortTitle` fallback policy to Gold Setup and NUZ RULES.
+- Documented that Gold keeps a translated full label when the corresponding shorthand is not translated.
+- No rule semantics, save schema, Compatibility API, permissions, or package files changed.
+
+# 2.4.26 chronological changelog normalization — 2026-08-17
+
+- Promoted 2.4.26 as the current development head, direct child of 2.4.25.
+- Reordered the cumulative changelog into one newest-to-oldest chronology.
+- Reconciled duplicate version headings without discarding unique historical notes.
+- Restored the lost 2.1.19 RC heading from surviving contemporaneous documentation.
+- Restored a minimal beta.30.1.19 lineage heading from surviving package evidence while leaving its exact delta explicitly unrecovered.
+- Strengthened the append-only history release gate to validate chronology and duplicate version identities in addition to parent-heading preservation.
+- No gameplay behavior, save schema, Compatibility API, engine range, or package tree changed.
+
+# 2.4.25 full-history changelog repair — 2026-08-17
+
+- Promoted 2.4.25 as the current development head, direct child of 2.4.24.
+- Reconciled `CHANGELOG.md` against surviving earlier changelog/handoff records and added an explicit historical coverage index for the pre-2.3.1 RC development line.
+- Added the permanent append-only changelog rule: future children may prepend/correct history but may not silently truncate or wholesale replace the immediate parent's historical record.
+- Added a release-gate comparison requirement for historical version headings; approved duplicate cleanup must preserve all unique information.
+- Corrected the stale API build-contract label discovered during the audit.
+- No gameplay behavior, save schema, Compatibility API, package tree, or engine range changed.
+
+---
+
+# 2.4.24 compatibility-ledger reconciliation — 2026-08-17
+
+- Promoted 2.4.24 as the current development head, direct child of 2.4.23.
+- Added the maintained compatibility research ledger and evidence vocabulary to `COMPATIBILITY.md`.
+- Added the standing rule that every compatibility/learning pass updates that ledger in the same build and that SOURCE/STATIC, RUNTIME PASS, ARCHITECTURE/LEARNING, and DESIGN INSPIRATION are distinct evidence states.
+- Recorded All Pokémon Catchable 151, Gen1Recomp Content Editor, Trainer Talk 0.2.6, Spaceworld Sprites 1.0, and Gen2-3D-Sprites 0.2.81 alongside the previously audited/researched mod set.
+- Added the targeted Gen2-3D-Sprites Gold direct-capture/UI test matrix without adding a speculative private adapter.
+- Corrected stale 2.4.23 lineage wording: 2.4.23 is a child of 2.4.22.
+
+---
+
+# 2.4.23 documentation reconciliation — 2026-08-17
+
+- Promoted 2.4.23 as the current development head, direct child of 2.4.22.
+- Documented generic content-mod composition learned from All Pokémon Catchable 151 and Gen1Recomp Content Editor.
+- Documented encounter-registry area discovery, richer species metadata classification, and merged custom-Ball detection.
+- Preserved provider-driven boss/cap ownership and all historical 2.4.22 documentation below.
+
+---
+
+# 2.4.22 documentation reconciliation — 2026-08-17
+
+- Promoted 2.4.22 as the current development head, direct child of 2.4.21.
+- Documented Party Size Limit `1–6`, default 6, native/cooperative PC behavior, and non-destructive lowering semantics.
+- Documented independence from Solo Only, Gym Team Size, and Nuzlocke Loadouts.
+- Removed generalized Party Size Limit from the planned backlog because it is now implemented.
+- Runtime status remains TEST REQUIRED in R/B/Y and Gold.
+
+# 2.4.21 documentation reconciliation — 2026-08-17
+
+- Promoted 2.4.21 as the current development head, direct child of 2.4.20.
+- Documented Travel Restrictions `NORMAL / NO FLY / NO FLY+TELEPORT` and its player-field-move-only scope.
+- Documented that Dig, Escape Rope, scripted/story transportation, warps, trains, and ferries are intentionally untouched.
+- Kept Dungeon Lock-In independent and Loadouts non-owning.
+- Removed Travel Restrictions / No Fly from the planned backlog because it is now implemented.
+- Runtime status remains TEST REQUIRED in R/B/Y and Gold.
+
+# 2.4.20 documentation reconciliation — 2026-08-17
+
+- Promoted 2.4.20 as the current development head, direct child of 2.4.19.
+- Documented Limited Shiny Clause `OFF / 1 / 2 / 3 / UNLIMITED`, persistent successful-use counting, historical boolean migration, and non-resetting mid-run limit changes.
+- Removed Limited Shiny Clause from the planned backlog because it is now implemented.
+- Kept Shiny Clause independent of loadout preset ownership and absolute capture restrictions.
+- No unrelated backlog item was promoted. Save schema and package file set remain unchanged.
+
+# 2.4.19 documentation reconciliation — 2026-08-17
+
+- Promoted 2.4.19 as the current development head, direct child of 2.4.18.
+- Documented Evolution Limits NORMAL / NO FINAL / NO EVOLUTION and conservative live-registry terminal-stage semantics.
+- Removed Evolution Limits from the planned backlog because it is now implemented.
+- Documented `evolution.check` enforcement and loadout independence.
+- No unrelated backlog item was promoted. Save schema and package file set remain unchanged.
+
+# 2.4.18 documentation reconciliation — 2026-08-17
+
+- Promoted 2.4.18 as the current development head, direct child of 2.4.17.
+- Documented VANILLA loadout, pre-apply warnings, bidirectional exact-match classification, stable historical preset IDs, reduced loadout ownership, and external-delegation behavior.
+
+# 2.4.17 documentation reconciliation — 2026-08-17
+
+- Promoted 2.4.17 as the current development head, direct child of 2.4.16.
+- Documented the new Badge Boosts ON/OFF rule and its default-ON migration behavior.
+- Removed Badge Boosts from the planned backlog because it is now implemented.
+- Documented restrictive composition with built-in `noBadgeBoosts` difficulty profiles.
+- No unrelated backlog item was promoted to implemented status.
+- Save schema and package file set remain unchanged.
+
+# 2.4.16 documentation reconciliation — 2026-08-17
+
+- Promoted 2.4.16 as the current development head, direct child of 2.4.15.
+- Documented the R/B/Y numeric edit-mode hint repair and preserved the 2.4.15 compatibility work as inherited behavior.
+- No backlog feature was promoted or removed in this UI-only fix.
+
+# 2.4.15 documentation reconciliation — 2026-08-17
+
+- Promoted 2.4.15 as the current development head, direct child of 2.4.14.
+- Documented concrete-mon Type Locke semantics and the new `typeLockAllowsPokemon` compatibility API.
+- Documented the narrow Gold indexless-species encounter allowance without broadening starter/script/link claims.
+- Added source-audited compatibility notes for Delta Type 1.2.0, Dex Overflow 0.1.1, Safari Zone All 1.1.0, and Wonder Trade 1.2.1.
+- Kept Wonderlocke and Permanent Rule Seal correctly classified as WIP/disabled rather than planned-unimplemented or runtime-ready.
+
+# 2.4.14 documentation reconciliation — 2026-08-17
+
+- Replaced stale active README/user-guide/API/compatibility/confidence material with current 2.4.14 state while retaining historical product history in `CHANGELOG.md` and older documentation entries below.
+- Reconciled the backlog directly against current code: Mono/Duo/Tri Type Locke, Physical/Special Split, Random Encounters, Random Learnsets, No Day Care, Catch Demo skipping, Gold Radio World Building, PC Vitamins, Safari area splits, Solo Only, and Gym Team Size are documented as implemented rather than future work.
+- Corrected Permanent Rule Seal status to implemented groundwork / WIP-disabled.
+- Synchronized the current Gen1Recomp audit marker to 0.1.99 and manifest range to `>=0.1.86 <0.2.5`.
+- Documented public `item.use`, battle HUD visibility hooks, contextual field-action ownership, Gold hook gaps, and explicit link fingerprint participation.
+- Added conservative compatibility notes for AIRivials 2.1.0 and Floating Battle HUD 0.5.7 without guessing unavailable release-asset source details.
+- Repaired the human-facing `mod.card` into a valid Lua return table.
+- No new runtime PASS claimed.
+
+## 2.4.13
+- Documented the dedicated Gold parity audit.
+- Added Gold documentation for No Healing Items, No X Items, No Center Heal, and No Mom Heal.
+- Marked all four newly exposed paths TEST REQUIRED.
+- Preserved the five-versions-ahead Gen1Recomp declaration.
+
+## 2.4.12
+- Documented the Kanto Ascendant 6.5.4 source-level compatibility audit.
+- Documented external ownership of badge-phased trainer/wild difficulty.
+- Documented Trainer Card presentation ownership.
+- Added Kanto Ascendant as an optional dependency.
+- Preserved `>=0.1.86 <0.2.5`; no new runtime PASS claimed.
+
+## 2.4.11
+- Documented Wilds of Kanto 2.1.7 overworld-capture interoperability.
+- Documented Modern Party UI 0.3.8 as party-presentation ownership.
+- Added both as optional dependencies.
+- Preserved `>=0.1.86 <0.2.5`; no new runtime PASS claimed.
+
 ## 2.4.10
 - Documented the ¥1,000,000 Forgiveness Token cap-aware settlement contract.
 - Updated the manifest-policy declaration to five Gen1Recomp patch versions beyond audited 0.1.99 (`<0.2.5`).
