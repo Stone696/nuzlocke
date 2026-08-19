@@ -12,6 +12,15 @@ return function(mod, opts)
     local installedApi = nil
     local installCount = 0
 
+    local function ruleDefault(key, fallback)
+        local resolver = opts.ruleDefault
+        if type(resolver) == "function" then
+            local ok, value = pcall(resolver, key)
+            if ok and value ~= nil then return value end
+        end
+        return fallback
+    end
+
     local function S(text, ...)
         local translate = opts.translate
         if type(translate) == "function" then
@@ -265,7 +274,7 @@ return function(mod, opts)
         end
         if mod.save:get("nuzlocke_enabled", true) ~= true then return nil end
         local tier = math.max(0, math.min(3, math.floor(tonumber(
-            mod.save:get("world_building_tier", 0)) or 0)))
+            mod.save:get("world_building_tier", ruleDefault("world_building_tier", 1))) or ruleDefault("world_building_tier", 1))))
         if tier <= 0 then return nil end
 
         local state = currentLandmarkState(gear)
@@ -319,13 +328,18 @@ return function(mod, opts)
             H.text(gear, fit("LOST " .. snap.failed, 16), 2, 12)
             H.text(gear, fit("TOTAL C " .. snap.catches, 16), 2, 14)
         elseif state.page == 3 then
-            H.text(gear, "RULES", 2, 6)
-            if #snap.rules == 0 then
+            local visible = 4
+            local total = #snap.rules
+            local pageCount = math.max(1, math.ceil(total / visible))
+            local lastOffset = total > 0
+                and math.floor((total - 1) / visible) * visible or 0
+            state.ruleOffset = math.floor(state.ruleOffset / visible) * visible
+            if state.ruleOffset > lastOffset then state.ruleOffset = lastOffset end
+            local rulePage = math.floor(state.ruleOffset / visible) + 1
+            H.text(gear, fit(("RULES %d/%d"):format(rulePage, pageCount), 16), 2, 6)
+            if total == 0 then
                 H.text(gear, "NONE", 2, 8)
             else
-                local visible = 4
-                local maxOffset = math.max(0, #snap.rules - visible)
-                if state.ruleOffset > maxOffset then state.ruleOffset = maxOffset end
                 for row = 1, visible do
                     local name = snap.rules[state.ruleOffset + row]
                     if name then H.text(gear, fit(name, 16), 2, 7 + row * 2) end
@@ -340,7 +354,11 @@ return function(mod, opts)
             H.text(gear, fit("DIFF " .. snap.difficulty, 16), 2, 12)
             H.text(gear, fit("LOAD " .. snap.locke, 16), 2, 14)
         end
-        H.text(gear, fit("UP/DN PAGE B:BACK", 18), 1, 16)
+        if state.page == 3 and #snap.rules > 4 then
+            H.text(gear, fit("A:MORE U/D:PG B:X", 18), 1, 16)
+        else
+            H.text(gear, fit("UP/DN PAGE B:BACK", 18), 1, 16)
+        end
     end
 
     local function updateCard(api, gear, input)
@@ -359,10 +377,15 @@ return function(mod, opts)
         elseif input:wasPressed("a") and state.page == 3 then
             local names = ruleNames()
             local visible = 4
-            local maxOffset = math.max(0, #names - visible)
-            if maxOffset > 0 then
-                state.ruleOffset = state.ruleOffset + visible
-                if state.ruleOffset > maxOffset then state.ruleOffset = 0 end
+            local total = #names
+            if total > visible then
+                local lastOffset = math.floor((total - 1) / visible) * visible
+                state.ruleOffset = math.floor(state.ruleOffset / visible) * visible
+                if state.ruleOffset > lastOffset then state.ruleOffset = lastOffset end
+                local nextOffset = state.ruleOffset + visible
+                state.ruleOffset = nextOffset < total and nextOffset or 0
+            else
+                state.ruleOffset = 0
             end
         end
     end
@@ -454,7 +477,7 @@ return function(mod, opts)
             visible = function(gear)
                 return isGold(gear and gear.game)
                     and mod.save:get("gold_radio_world_building", false) == true
-                    and (tonumber(mod.save:get("world_building_tier", 0)) or 0) > 0
+                    and (tonumber(mod.save:get("world_building_tier", ruleDefault("world_building_tier", 1))) or ruleDefault("world_building_tier", 1)) > 0
             end,
             draw = function(gear) drawRadioOverlay(api, gear) end,
         })

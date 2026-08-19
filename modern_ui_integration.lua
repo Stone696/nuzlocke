@@ -70,22 +70,101 @@ return function(mod, deps)
             return false, kerning.lastError
         end
 
+        -- Font is a require() singleton and can outlive a Nuzlocke reload.
+        -- A marker left on that singleton is therefore not proof that the
+        -- wrapper belongs to THIS copy of the mod. Keep the same
+        -- owner/previous/wrapper identity used by the other direct wrappers.
+        local session = Font._nuzlockeKerningSession
+        local function sessionIsLive(row)
+            return type(row) == "table"
+                and type(row.advanceWrapper) == "function"
+                and Font.advanceOf == row.advanceWrapper
+                and (row.drawWrapper == nil or Font.drawCode == row.drawWrapper)
+        end
+        local function sessionIsAlreadyUnwrapped(row)
+            return type(row) == "table"
+                and type(row.previousAdvance) == "function"
+                and Font.advanceOf == row.previousAdvance
+                and (row.drawWrapper == nil or Font.drawCode == row.previousDraw)
+        end
+        local function clearSessionMarkers(row)
+            if type(row) == "table" then
+                if Font._nuzlockeAdvanceOf == row.previousAdvance then
+                    Font._nuzlockeAdvanceOf = nil
+                end
+                if Font._nuzlockeDrawCode == row.previousDraw then
+                    Font._nuzlockeDrawCode = nil
+                end
+            end
+            Font._nuzlockeKerningSession = nil
+        end
+
+        if type(session) == "table" then
+            if session.token == kerning and sessionIsLive(session) then
+                kerning.installed = true
+                kerning.externalProvider = false
+                kerning.reloadBlocked = nil
+                kerning.lastError = nil
+                return true
+            end
+            if sessionIsLive(session) then
+                -- Exact stale Nuzlocke wrappers are still top-level, so they
+                -- can be removed without disturbing a wrapper owned by another
+                -- mod. Rebind below against the now-live predecessor.
+                Font.advanceOf = session.previousAdvance
+                if session.drawWrapper ~= nil then
+                    Font.drawCode = session.previousDraw
+                end
+                clearSessionMarkers(session)
+            elseif sessionIsAlreadyUnwrapped(session) then
+                -- Another owner restored our predecessor exactly. The stale
+                -- record can be discarded safely before normal installation.
+                clearSessionMarkers(session)
+            else
+                -- A foreign wrapper may sit above the old Nuzlocke closure.
+                -- Reaching through it would risk deleting another mod's work
+                -- or double-applying kerning. A fresh process is the safe
+                -- migration boundary for this ambiguous chain.
+                kerning.installed = false
+                kerning.externalProvider = false
+                kerning.reloadBlocked = true
+                kerning.lastError = "stale kerning wrapper is not top-level; restart required"
+                return false, kerning.lastError
+            end
+        elseif Font._nuzlockeAdvanceOf ~= nil
+            or Font._nuzlockeDrawCode ~= nil then
+            -- <=2.5.21 stored only predecessor markers, not wrapper identity.
+            -- If the live methods ARE those predecessors the markers are just
+            -- stale and can be cleared. Otherwise we cannot prove whether an
+            -- old Nuzlocke wrapper is top-level or buried under a foreign one,
+            -- so do not guess: one fresh process establishes the new session.
+            local previousAdvance = Font._nuzlockeAdvanceOf
+            local previousDraw = Font._nuzlockeDrawCode
+            if Font.advanceOf == previousAdvance
+                and (previousDraw == nil or Font.drawCode == previousDraw) then
+                Font._nuzlockeAdvanceOf = nil
+                Font._nuzlockeDrawCode = nil
+            else
+                kerning.installed = false
+                kerning.externalProvider = false
+                kerning.reloadBlocked = true
+                kerning.lastError = "legacy kerning wrapper detected; restart required"
+                return false, kerning.lastError
+            end
+        end
+
         -- The reviewed standalone kerning mod publishes _origAdvanceOf. If it
         -- already owns the surface, do not stack another width transform.
-        if Font._origAdvanceOf ~= nil
-            and Font._nuzlockeAdvanceOf == nil then
+        if Font._origAdvanceOf ~= nil then
             kerning.externalProvider = true
+            kerning.reloadBlocked = nil
             kerning.lastError = nil
             return false, "existing kerning provider"
         end
-        if Font._nuzlockeAdvanceOf ~= nil then
-            kerning.installed = true
-            return true
-        end
 
         local baseAdvance = Font.advanceOf
-        Font._nuzlockeAdvanceOf = baseAdvance
-        Font.advanceOf = function(code, ...)
+        local advanceWrapper
+        advanceWrapper = function(code, ...)
             if kerningEnabled() then
                 local width = glyphAdvance[code]
                 if width ~= nil then return width end
@@ -93,10 +172,10 @@ return function(mod, deps)
             return baseAdvance(code, ...)
         end
 
+        local baseDraw, drawWrapper
         if type(Font.drawCode) == "function" then
-            local baseDraw = Font.drawCode
-            Font._nuzlockeDrawCode = baseDraw
-            Font.drawCode = function(code, x, y, ...)
+            baseDraw = Font.drawCode
+            drawWrapper = function(code, x, y, ...)
                 if kerningEnabled() then
                     local dx = glyphShift[code]
                     if dx ~= nil then x = x + dx end
@@ -105,8 +184,24 @@ return function(mod, deps)
             end
         end
 
+        Font._nuzlockeAdvanceOf = baseAdvance
+        Font.advanceOf = advanceWrapper
+        if drawWrapper ~= nil then
+            Font._nuzlockeDrawCode = baseDraw
+            Font.drawCode = drawWrapper
+        end
+        Font._nuzlockeKerningSession = {
+            owner = mod,
+            token = kerning,
+            previousAdvance = baseAdvance,
+            advanceWrapper = advanceWrapper,
+            previousDraw = baseDraw,
+            drawWrapper = drawWrapper,
+        }
+
         kerning.installed = true
         kerning.externalProvider = false
+        kerning.reloadBlocked = nil
         kerning.lastError = nil
         return true
     end
@@ -291,7 +386,8 @@ return function(mod, deps)
         -- before the first screen. The first kerning install waits for a real
         -- save load; native fixed-width rendering remains the safe fallback.
         mod.events:on("save.loaded", function()
-            if not kerning.installed and not kerning.externalProvider then
+            if not kerning.installed and not kerning.externalProvider
+                and not kerning.reloadBlocked then
                 pcall(kerning.install)
             end
         end)

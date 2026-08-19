@@ -1,7 +1,7 @@
 {
   "id": "nuzlocke",
   "name": "Nuzlocke",
-  "version": "2.4.69",
+  "version": "2.5.23-DEV",
   "api": 2,
   "entry": "main.lua",
   "profile": "content",
@@ -27,7 +27,9 @@
     "wonder_trade",
     "qol_toggles",
     "quality_of_life",
-    "g9-battle-engine"
+    "g9-battle-engine",
+    "gen1-better-menus",
+    "gen1_pt-br"
   ],
   "conflicts": [],
   "description": "Configurable Nuzlocke enforcement, encounter tracking, challenge rules, run status, and quality-of-life options for Red, Blue, Yellow, and beta Gold support.",

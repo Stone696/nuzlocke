@@ -75,41 +75,68 @@ local function compactTrainerIdentity(value)
     return tostring(value or ""):upper():gsub("[^A-Z0-9]", "")
 end
 
-local function trainerIdentityForReward(battle)
+-- 2.5.21: reward recognition and league progression must use the same
+-- trainer identity surface. Gen 1 primarily exposes oppClass, while Gold and
+-- compatibility providers may carry classId/class on battle.trainer instead.
+-- Normalize each semantic field once so sibling systems cannot drift between
+-- id/name-only and id/class/name matching.
+local function trainerIdentityKeys(battle)
     local trainer = battle and battle.trainer
-    local id = trainer and trainer.id
-        or battle and (battle.trainerId or battle.opponentId)
-    local name = trainer and trainer.name
-        or battle and (battle.trainerName or battle.opponentName)
-    local class = battle
-        and (battle.oppClass or battle.trainerClass or battle.opponentClass)
+    local function firstKey(...)
+        for i = 1, select("#", ...) do
+            local key = compactTrainerIdentity(select(i, ...))
+            if key ~= "" then return key end
+        end
+        return ""
+    end
+    return {
+        id = firstKey(
+            trainer and trainer.id,
+            battle and battle.trainerId,
+            battle and battle.opponentId),
+        class = firstKey(
+            battle and battle.oppClass,
+            battle and battle.trainerClass,
+            battle and battle.opponentClass,
+            trainer and trainer.classId,
+            trainer and trainer.class),
+        name = firstKey(
+            trainer and trainer.name,
+            battle and battle.trainerName,
+            battle and battle.opponentName),
+    }
+end
+
+local function trainerIdentityContains(identity, target)
+    local targetKey = compactTrainerIdentity(target)
+    if targetKey == "" then return false end
+    return identity.id:find(targetKey, 1, true) ~= nil
+        or identity.class:find(targetKey, 1, true) ~= nil
+        or identity.name:find(targetKey, 1, true) ~= nil
+end
+
+local function trainerIdentityEquals(identity, target)
+    local targetKey = compactTrainerIdentity(target)
+    if targetKey == "" then return false end
+    return identity.id == targetKey
+        or identity.class == targetKey
+        or identity.name == targetKey
+end
+
+local function trainerIdentityForReward(battle)
+    local identity = trainerIdentityKeys(battle)
     -- Normalize semantic fields independently, then join them. The reward
     -- ledger uses exact keys, so the boundaries must survive normalization.
-    return compactTrainerIdentity(id) .. ":"
-        .. compactTrainerIdentity(class) .. ":"
-        .. compactTrainerIdentity(name)
+    return identity.id .. ":" .. identity.class .. ":" .. identity.name
 end
 
 local function trainerMatchesLeader(battle, leader)
-    local leaderKey = compactTrainerIdentity(leader)
-    if leaderKey == "" then return false end
-    local trainer = battle and battle.trainer
-    local idKey = compactTrainerIdentity(
-        trainer and trainer.id
-            or battle and (battle.trainerId or battle.opponentId))
-    local classKey = compactTrainerIdentity(
-        battle and (battle.oppClass or battle.trainerClass
-            or battle.opponentClass))
-    local nameKey = compactTrainerIdentity(
-        trainer and trainer.name
-            or battle and (battle.trainerName or battle.opponentName))
-    return idKey:find(leaderKey, 1, true) ~= nil
-        or classKey:find(leaderKey, 1, true) ~= nil
-        or nameKey:find(leaderKey, 1, true) ~= nil
+    return trainerIdentityContains(trainerIdentityKeys(battle), leader)
 end
 
-function M.forgivenessEnabled()
-    return mod.save:get("nuzlocke_enabled", true) == true
+function M.forgivenessEnabled(game, battle)
+    game = game or d.getCurrentGame()
+    return d.shouldEnforceNuzlocke(game, battle)
         and math.floor(tonumber(
             mod.save:get("route_forgiveness", 0)) or 0) > 0
 end
@@ -120,7 +147,9 @@ function M.forgivenessTokens()
 end
 
 function M.setForgivenessTokens(n)
-    mod.save:set("route_forgiveness_tokens",
+    local game = d.getCurrentGame()
+    if not d.canWriteNuzlockeSave(game) then return false end
+    return mod.save:set("route_forgiveness_tokens",
         math.max(0, math.floor(tonumber(n) or 0)))
 end
 
@@ -148,9 +177,11 @@ local function installForgivenessTokenBagBridge()
     wrapper = function(save, itemId, count, data, ...)
         if tostring(itemId or "")
             == mod.exports.__beta26.forgivenessTokenShopId then
-            if not M.forgivenessEnabled() then return false end
+            if not M.forgivenessEnabled(d.getCurrentGame(), nil) then return false end
             local qty = math.max(1, math.floor(tonumber(count) or 1))
-            M.setForgivenessTokens(M.forgivenessTokens() + qty)
+            if M.setForgivenessTokens(M.forgivenessTokens() + qty) == false then
+                return false
+            end
             return true
         end
         return previous(save, itemId, count, data, ...)
@@ -180,7 +211,7 @@ function M.forgivenessTokenSettlementPrice(save)
 end
 
 local function withForgivenessTokenStock(game, stock)
-    if not M.forgivenessEnabled() or type(stock) ~= "table" then
+    if not M.forgivenessEnabled(game, nil) or type(stock) ~= "table" then
         return stock
     end
     if game and game.data then
@@ -268,7 +299,7 @@ function M.awardGymLeaderForgiveness(battle, result)
     -- 2.4.6: permanent Gym rewards require a real active battle.
     local game = battle and (battle.game or d.getCurrentGame()) or d.getCurrentGame()
     if not d.active(game, battle) then return false end
-    if result ~= "win" or not M.forgivenessEnabled() or not battle
+    if result ~= "win" or not M.forgivenessEnabled(game, battle) or not battle
         or not d.isTrainerBattle(battle) then
         return false
     end
@@ -314,24 +345,18 @@ function M.recordLeagueProgression(battle, result)
     end
 
     local game = battle.game or d.getCurrentGame()
+    if not d.canWriteNuzlockeSave(game) then return false end
     local save = game and game.save
     if not save then return false end
 
-    local trainer = battle.trainer
-    local trainerId = trainer and trainer.id
-    local trainerName = tostring((trainer and trainer.name)
-        or battle.trainerName or battle.opponentName or ""):upper()
-    local nameKey = compactTrainerIdentity(trainerName)
-    local idKey = compactTrainerIdentity(trainerId)
+    local identity = trainerIdentityKeys(battle)
 
     local ver = d.getGameVersion and d.getGameVersion() or "RED"
     local profile = d.VersionCompat.profiles[ver]
     if profile and profile.family == "GSC" then
-        local key = nameKey .. idKey
         local progress = d.gscProgress(save)
         for _, stage in ipairs(d.gscStages) do
-            local stageKey = compactTrainerIdentity(stage.name)
-            if stageKey ~= "" and key:find(stageKey, 1, true) then
+            if trainerIdentityContains(identity, stage.name) then
                 progress[stage.name] = true
                 mod.save:set("nuzlocke_gsc_defeated", progress)
                 return true
@@ -342,9 +367,7 @@ function M.recordLeagueProgression(battle, result)
 
     local gymProgressTable = d.gymProgress(save)
     for _, gymLeader in ipairs(d.levelCapGymLeaders) do
-        local leaderKey = compactTrainerIdentity(gymLeader)
-        if (leaderKey ~= "" and nameKey:find(leaderKey, 1, true))
-            or (leaderKey ~= "" and idKey:find(leaderKey, 1, true)) then
+        if trainerIdentityContains(identity, gymLeader) then
             gymProgressTable[gymLeader] = true
             mod.save:set(d.gymProgressKey, gymProgressTable)
             return true
@@ -352,10 +375,8 @@ function M.recordLeagueProgression(battle, result)
     end
 
     for _, entry in ipairs(d.eliteFourCaps) do
-        local entryIdKey = compactTrainerIdentity(entry.id)
-        local entryNameKey = compactTrainerIdentity(entry.name)
-        if (entryIdKey ~= "" and idKey == entryIdKey)
-            or (entryNameKey ~= "" and nameKey == entryNameKey) then
+        if trainerIdentityEquals(identity, entry.id)
+            or trainerIdentityEquals(identity, entry.name) then
             local defeated = d.eliteFourDefeated()
             defeated[entry.id] = true
             mod.save:set("nuzlocke_e4_defeated", defeated)
@@ -363,12 +384,11 @@ function M.recordLeagueProgression(battle, result)
         end
     end
 
-    local trainerKey = nameKey .. idKey
     if d.currentGymProgressCount(save) >= 8
         and not d.nextEliteFourCapInfo()
-        and (trainerKey:find("RIVAL", 1, true)
-            or trainerKey:find("BLUE", 1, true)
-            or trainerKey:find("CHAMPION", 1, true)) then
+        and (trainerIdentityContains(identity, "RIVAL")
+            or trainerIdentityContains(identity, "BLUE")
+            or trainerIdentityContains(identity, "CHAMPION")) then
         mod.save:set("nuzlocke_champion_defeated", true)
         return true
     end
@@ -380,7 +400,8 @@ function M.install(ownerMod, supplied)
     d = supplied or {}
 
     for _, key in ipairs({
-        "Strings", "active", "isTrainerBattle", "isSaveEditorSession",
+        "Strings", "active", "canWriteNuzlockeSave", "shouldEnforceNuzlocke",
+        "isTrainerBattle", "isSaveEditorSession",
         "worldMechanic", "worldRuleTriplet", "externalRuleDelegation",
         "pushWorldText",
         "worldRuleText", "getCurrentGame", "VersionCompat",
