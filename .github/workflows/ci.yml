@@ -1,0 +1,34 @@
+name: Nuzlocke CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  tests:
+    name: Static and package checks
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Show versions
+        run: |
+          node --version
+          python3 --version
+
+      - name: Run Nuzlocke invariants
+        run: node tests/invariants.js .
+
+      - name: Run package gate
+        run: bash tests/package_gate.sh "$RUNNER_TEMP/nuzlocke-package"
+
+      - name: Run release-gate compatibility entry point
+        run: node tests/release_gate.js main.lua
