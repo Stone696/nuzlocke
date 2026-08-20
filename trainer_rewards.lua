@@ -22,6 +22,107 @@ local TRAINER_MONEY_PCTS = {
 }
 local trainerMoneyStart = setmetatable({}, { __mode = "k" })
 
+-- 2.5.57: executable active()-guard contracts for gameplay-state mutation.
+-- The recurring failure class was a new reward/progression mutator being added
+-- without the master-rule enforcement guard. Keep the contract beside the
+-- subsystem it protects, and make intentional OFF-state persistence explicit.
+local ACTIVE_GUARD_CONTRACTS = {
+    rememberWallet = { guard = "d.active(", mutation = "trainerMoneyStart[battle] =", policy = "enforcement" },
+    scaleTrainerMoney = { guard = "d.active(", mutation = "setTrainerWalletValue(", policy = "enforcement" },
+    awardGymLeaderForgiveness = { guard = "d.active(", mutation = "mod.save:set(\"route_forgiveness_gym_leaders\"", policy = "enforcement" },
+    recordLeagueProgression = {
+        guard = "d.canWriteNuzlockeSave(",
+        mutation = "mod.save:set(",
+        policy = "passive_progression",
+        exception = "badge/E4/Champion sync is intentionally allowed while the master rule is off",
+    },
+    forgivenessTokens = {
+        guard = "d.canWriteNuzlockeSave(",
+        mutation = "mod.save:set(\"route_forgiveness_tokens\"",
+        policy = "compatibility_mirror",
+        exception = "inventory-to-save token mirror is maintenance, not a gameplay award",
+    },
+    setForgivenessTokens = {
+        guard = "d.canWriteNuzlockeSave(",
+        mutation = "mod.save:set(\"route_forgiveness_tokens\"",
+        policy = "compatibility_mirror",
+        exception = "shared token setter is also used by save/inventory reconciliation",
+    },
+    syncForgivenessTokenItem = {
+        guard = "game and game.save",
+        mutation = "M.ensureForgivenessTokenItem(game)",
+        policy = "compatibility_mirror",
+        exception = "save/inventory reconciliation must remain available while the master rule is off",
+    },
+}
+
+local function contractFunctionSource(source, name)
+    if type(source) ~= "string" then return nil end
+    local needle = "function M." .. tostring(name) .. "("
+    local first = source:find(needle, 1, true)
+    if not first then return nil end
+    local nextFn = source:find("\nfunction M.", first + #needle, true)
+    return source:sub(first, nextFn and (nextFn - 1) or #source)
+end
+
+function M.activeGuardAudit(source)
+    local report = { ok = true, checked = 0, failures = {}, contracts = {} }
+    local blocks = {}
+    if type(source) == "string" then
+        for name in source:gmatch("function M%.([%w_]+)%s*%(") do
+            blocks[name] = contractFunctionSource(source, name)
+        end
+    end
+
+    -- Any exported trainer-reward function that directly writes Nuzlocke save
+    -- state or the trainer wallet must have a contract. This is the piece that
+    -- catches a newly-added mutation path even when the author forgets to add
+    -- it to ACTIVE_GUARD_CONTRACTS.
+    for name, body in pairs(blocks) do
+        local mutates = name ~= "activeGuardAudit" and (
+            body:find("mod.save:set(", 1, true)
+            or body:find("setTrainerWalletValue(", 1, true)
+            or body:find("save.inventory[", 1, true))
+        if mutates and ACTIVE_GUARD_CONTRACTS[name] == nil then
+            report.ok = false
+            report.failures[#report.failures + 1] = name
+                .. ":uncontracted player-state mutation"
+        end
+    end
+
+    for name, contract in pairs(ACTIVE_GUARD_CONTRACTS) do
+        local body = blocks[name] or contractFunctionSource(source, name)
+        local present = body ~= nil
+        local guardPos = present and body:find(contract.guard, 1, true) or nil
+        local mutationPos = present and contract.mutation
+            and body:find(contract.mutation, 1, true) or nil
+        local guarded = guardPos ~= nil
+            and (contract.mutation == nil or (mutationPos ~= nil and guardPos < mutationPos))
+        local row = {
+            name = name,
+            policy = contract.policy,
+            guard = contract.guard,
+            mutation = contract.mutation,
+            exception = contract.exception,
+            present = present,
+            guarded = guarded,
+        }
+        report.contracts[#report.contracts + 1] = row
+        report.checked = report.checked + 1
+        if not present or not guarded then
+            report.ok = false
+            local reason = not present and "function missing"
+                or not guardPos and ("missing " .. contract.guard)
+                or not mutationPos and ("mutation marker missing " .. tostring(contract.mutation))
+                or "guard occurs after mutation"
+            report.failures[#report.failures + 1] = name .. ":" .. reason
+        end
+    end
+    table.sort(report.contracts, function(a, b) return a.name < b.name end)
+    table.sort(report.failures)
+    return report
+end
+
 local mod
 local d
 
@@ -141,7 +242,52 @@ function M.forgivenessEnabled(game, battle)
             mod.save:get("route_forgiveness", 0)) or 0) > 0
 end
 
+-- 2.5.40: Forgiveness Tokens are real inventory items, not synthetic Mart
+-- stock. Keep the historical mod.save counter as a compatibility mirror so
+-- existing API consumers and saves continue to work, but the carried item is
+-- the player-facing source of truth whenever a live save exists.
+function M.ensureForgivenessTokenItem(game)
+    game = game or d.getCurrentGame()
+    if not (game and game.data) then return false end
+    game.data.items = game.data.items or {}
+    local id = mod.exports.__beta26.forgivenessTokenItemId
+    local def = game.data.items[id]
+    if type(def) ~= "table" then
+        def = {}
+        game.data.items[id] = def
+    end
+    def.id = id
+    def.name = d.Strings("F. TOKEN")
+    def.price = 0
+    def.description = d.Strings(
+        "Spend to reroll a failed encounter or revive one fallen Pokemon.")
+    -- R/B/Y respects keyItem for TOSS protection. Gold uses the shared flat
+    -- inventory plus pocket metadata; ITEM keeps the quantity visible while
+    -- canToss=false removes GIVE/TOSS from its submenu.
+    def.keyItem = true
+    def.tossable = false
+    def.canToss = false
+    def.canSelect = false
+    def.pocket = "ITEM"
+    def.fieldMenu = "ITEMMENU_NOUSE"
+    def.battleMenu = "ITEMMENU_NOUSE"
+    return true
+end
+
 function M.forgivenessTokens()
+    local game = d.getCurrentGame()
+    local save = game and game.save
+    local id = mod.exports.__beta26.forgivenessTokenItemId
+    local inventory = save and save.inventory
+    if type(inventory) == "table" and inventory[id] ~= nil then
+        local count = math.max(0, math.floor(tonumber(inventory[id]) or 0))
+        local mirrored = math.max(0, math.floor(tonumber(
+            mod.save:get("route_forgiveness_tokens", 0)) or 0))
+        if count ~= mirrored and d.canWriteNuzlockeSave(game) then
+            mod.save:set("route_forgiveness_tokens", count)
+        end
+        return count
+    end
     return math.max(0, math.floor(tonumber(
         mod.save:get("route_forgiveness_tokens", 0)) or 0))
 end
@@ -149,96 +295,52 @@ end
 function M.setForgivenessTokens(n)
     local game = d.getCurrentGame()
     if not d.canWriteNuzlockeSave(game) then return false end
-    return mod.save:set("route_forgiveness_tokens",
-        math.max(0, math.floor(tonumber(n) or 0)))
-end
-
-local function installForgivenessTokenBagBridge()
-    if d.isSaveEditorSession() then return true end
-    local ok, Bag = pcall(require, "src.inventory.Bag")
-    if not ok or type(Bag) ~= "table"
-        or type(Bag.add) ~= "function" then
-        return false
-    end
-
-    local session = Bag.__nuzlockeForgivenessTokenSession
-    if type(session) == "table" and session.owner == mod
-        and Bag.add == session.wrapper then
+    n = math.max(0, math.min(99, math.floor(tonumber(n) or 0)))
+    mod.save:set("route_forgiveness_tokens", n)
+    local save = game and game.save
+    if not (save and type(save.inventory) == "table") then return true end
+    M.ensureForgivenessTokenItem(game)
+    local id = mod.exports.__beta26.forgivenessTokenItemId
+    if n <= 0 then
+        save.inventory[id] = nil
+        local order = save.bagOrder
+        if type(order) == "table" then
+            for i = #order, 1, -1 do
+                if order[i] == id then table.remove(order, i) end
+            end
+        end
         return true
     end
-    if type(session) == "table" and session.owner ~= mod
-        and Bag.add == session.wrapper
-        and type(session.previous) == "function" then
-        Bag.add = session.previous
+    -- Gym rewards are guaranteed challenge rewards. They must not disappear
+    -- merely because the ordinary Bag/ITEM pocket is at its native slot cap.
+    -- The item still obeys the engine's 99-stack ceiling above.
+    save.inventory[id] = n
+    local okBag, Bag = pcall(require, "src.inventory.Bag")
+    if okBag and type(Bag) == "table" and type(Bag.order) == "function" then
+        pcall(Bag.order, save, game and game.data)
     end
-
-    local previous = Bag.add
-    local wrapper
-    wrapper = function(save, itemId, count, data, ...)
-        if tostring(itemId or "")
-            == mod.exports.__beta26.forgivenessTokenShopId then
-            if not M.forgivenessEnabled(d.getCurrentGame(), nil) then return false end
-            local qty = math.max(1, math.floor(tonumber(count) or 1))
-            if M.setForgivenessTokens(M.forgivenessTokens() + qty) == false then
-                return false
-            end
-            return true
-        end
-        return previous(save, itemId, count, data, ...)
-    end
-
-    Bag.add = wrapper
-    Bag.__nuzlockeForgivenessTokenSession = {
-        owner = mod, previous = previous, wrapper = wrapper,
-    }
     return true
 end
 
-
--- 2.4.10: The published F. TOKEN price is intentionally ¥1,000,000, one yen
--- above the native six-digit wallet ceiling. Keep that public/design price,
--- but settle the transaction at the engine's representable wallet ceiling.
--- This is token-specific: normal Mart prices and the global wallet cap remain
--- untouched. UI integrations should continue to present ¥1,000,000.
-function M.forgivenessTokenSettlementPrice(save)
-    local advertised = math.max(0, math.floor(tonumber(
-        mod.exports.__beta26.forgivenessTokenShopPrice) or 1000000))
-    local ceiling = trainerWalletCeiling(save)
-    if advertised > ceiling then
-        return ceiling
+function M.syncForgivenessTokenItem(game)
+    game = game or d.getCurrentGame()
+    if not (game and game.save and type(game.save.inventory) == "table") then
+        return false
     end
-    return advertised
-end
-
-local function withForgivenessTokenStock(game, stock)
-    if not M.forgivenessEnabled(game, nil) or type(stock) ~= "table" then
-        return stock
+    M.ensureForgivenessTokenItem(game)
+    local id = mod.exports.__beta26.forgivenessTokenItemId
+    local inventoryCount = tonumber(game.save.inventory[id])
+    local legacy = math.max(0, math.min(99, math.floor(tonumber(
+        mod.save:get("route_forgiveness_tokens", 0)) or 0)))
+    if inventoryCount == nil then
+        if legacy > 0 then return M.setForgivenessTokens(legacy) end
+        return true
     end
-    if game and game.data then
-        game.data.items = game.data.items or {}
-        game.data.items[mod.exports.__beta26.forgivenessTokenShopId] = {
-            id = mod.exports.__beta26.forgivenessTokenShopId,
-            name = d.Strings("F. TOKEN"),
-            price = M.forgivenessTokenSettlementPrice(game and game.save),
-            nuzlockeAdvertisedPrice =
-                mod.exports.__beta26.forgivenessTokenShopPrice,
-            description = d.Strings(
-                "Restores one failed area's encounter chance. Gym Leaders award these normally."),
-            keyItem = true, tossable = false, canToss = false,
-        }
+    inventoryCount = math.max(0, math.min(99, math.floor(inventoryCount)))
+    if inventoryCount ~= legacy then
+        mod.save:set("route_forgiveness_tokens", inventoryCount)
     end
-    local out, found = {}, false
-    for i, id in ipairs(stock) do
-        out[i] = id
-        if tostring(id)
-            == mod.exports.__beta26.forgivenessTokenShopId then
-            found = true
-        end
-    end
-    if not found then
-        out[#out + 1] = mod.exports.__beta26.forgivenessTokenShopId
-    end
-    return out
+    return true
 end
 
 function M.rememberWallet(game, battle)
@@ -330,7 +432,20 @@ function M.awardGymLeaderForgiveness(battle, result)
 
     ledger[key] = true
     mod.save:set("route_forgiveness_gym_leaders", ledger)
-    M.setForgivenessTokens(M.forgivenessTokens() + 1)
+    local tokenCommitted = M.setForgivenessTokens(M.forgivenessTokens() + 1)
+    -- 2.5.85: the reward ledger and carried token are committed before Run
+    -- History observes the award. The semantic Leader key makes this bridge
+    -- idempotent across duplicate battle-finalization/provider callbacks.
+    local runHistory = d.runHistory
+    if tokenCommitted == true and type(runHistory) == "table"
+        and type(runHistory.recordForgivenessAward) == "function" then
+        pcall(runHistory.recordForgivenessAward, game, "gym_leader", key, {
+            leader = tostring(leader),
+            map = mapId,
+            tokens = M.forgivenessTokens(),
+            dedupe = "forgiveness:gym:" .. key,
+        })
+    end
     if game then
         pcall(d.pushWorldText, game,
             d.worldRuleText(game, "route_forgiveness_award"))
@@ -399,6 +514,10 @@ function M.install(ownerMod, supplied)
     mod = assert(ownerMod, "trainer rewards requires mod")
     d = supplied or {}
 
+    local guardReport = M.activeGuardAudit(d.sourceText)
+    assert(guardReport.ok, "trainer rewards active-guard contract failed: "
+        .. table.concat(guardReport.failures, ", "))
+
     for _, key in ipairs({
         "Strings", "active", "canWriteNuzlockeSave", "shouldEnforceNuzlocke",
         "isTrainerBattle", "isSaveEditorSession",
@@ -407,27 +526,27 @@ function M.install(ownerMod, supplied)
         "worldRuleText", "getCurrentGame", "VersionCompat",
         "gscProgress", "gscStages", "levelCapGymLeaders",
         "gymProgress", "gymProgressKey", "eliteFourCaps", "eliteFourDefeated",
-        "currentGymProgressCount", "nextEliteFourCapInfo",
+        "currentGymProgressCount", "nextEliteFourCapInfo", "runHistory",
     }) do
         assert(d[key] ~= nil, "trainer rewards missing dependency: " .. key)
     end
 
-    mod.exports.__beta26.forgivenessTokens = M.forgivenessTokens
-    mod.exports.__beta26.forgivenessTokenShopId =
+    mod.exports.__beta26.forgivenessTokenItemId =
         "NUZLOCKE_FORGIVENESS_TOKEN"
-    mod.exports.__beta26.forgivenessTokenShopPrice = 1000000
-    mod.exports.__beta26.forgivenessTokenSettlementPrice =
-        M.forgivenessTokenSettlementPrice
-    mod.exports.__beta26.installForgivenessTokenBagBridge =
-        installForgivenessTokenBagBridge
-    mod.exports.__beta26.withForgivenessTokenStock =
-        withForgivenessTokenStock
+    mod.exports.__beta26.forgivenessTokens = M.forgivenessTokens
+    mod.exports.__beta26.ensureForgivenessTokenItem = M.ensureForgivenessTokenItem
+    mod.exports.__beta26.syncForgivenessTokenItem = M.syncForgivenessTokenItem
 
-    pcall(installForgivenessTokenBagBridge)
+    pcall(M.syncForgivenessTokenItem, d.getCurrentGame())
     mod.events:on("game.ready",
-        function() pcall(installForgivenessTokenBagBridge) end)
+        function(ev) pcall(M.syncForgivenessTokenItem,
+            (type(ev) == "table" and ev.game) or d.getCurrentGame()) end)
     mod.events:on("save.loaded",
-        function() pcall(installForgivenessTokenBagBridge) end)
+        function(ev) pcall(M.syncForgivenessTokenItem,
+            (type(ev) == "table" and ev.game) or d.getCurrentGame()) end)
+    mod.events:on("save.created",
+        function(ev) pcall(M.syncForgivenessTokenItem,
+            (type(ev) == "table" and ev.game) or d.getCurrentGame()) end)
     return true
 end
 

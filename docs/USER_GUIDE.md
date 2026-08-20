@@ -1,3 +1,413 @@
+# 2.6.0 user-facing note
+
+**PC Catches** is now the first option in **QOL**. The feature itself has not changed: when enabled, compatible progression/completion-required captures that would otherwise be Nuzlocke-illegal can be sent directly to PC storage as permanently **PC LOCKED** without consuming the normal encounter slot. They still cannot be withdrawn into the active party or released.
+
+# 2.5.92 user-facing note
+
+No intended gameplay change. Run History/Graveyard-style consumers should no longer receive duplicate rows if the same faint is processed twice internally, while a Pokémon revived with an F. TOKEN can still have a later second death recorded normally.
+
+# 2.5.91 user-facing note
+
+No intended player-facing behavior change. Migration diagnostics are more accurate when older saves contain table-valued state.
+
+# 2.5.90 user-facing note
+
+No intended user-facing behavior changes. Gift and in-game Trade area attribution should behave exactly as in 2.5.89; this release only moves the underlying vanilla source catalog out of `main.lua`.
+
+# 2.5.89 user-facing note
+
+No intended user-facing behavior changes. DEV REPORT should look and behave exactly as it did in 2.5.88; this release only moves its implementation out of `main.lua` to reduce monolithic load/compiler pressure.
+
+# 2.5.88 UI navigation QoL
+
+During the current game/mod session, NUZ RULES/Setup, ENC TRACKER, MOD COMPAT, and DEV REPORT remember where you were when you close and reopen them. Collapsed NUZ RULES/Setup sections also stay collapsed for that session. These are convenience preferences only; they do not alter or persist as Nuzlocke challenge rules.
+
+# 2.5.87 UI rollback / compatibility maintenance
+
+The temporary 2.5.86 `O/X/-/*` Encounter Tracker marker experiment has been removed. ENC TRACKER uses the established pre-2.5.86 result presentation again. True graphical encounter-status symbols remain planned for a later font/glyph-aware implementation. Gameplay rules and saved encounter state are unchanged.
+
+# 2.5.86 Encounter Tracker status markers
+
+> **2.5.86 note:** ENC TRACKER now uses font-safe `O CAUGHT`, `X FAILED`, `- OPEN`, `* SHINY`, and `X DEAD` labels across classic R/B/Y, native Gold/Silver, and Modern UI presentation. Text remains explicit for accessibility; encounter mechanics and stored state are unchanged.
+
+# 2.5.85 Run History producer completion
+
+There is still no separate Run History player menu. The backend chronology is now wired for ordinary successful catches, Pokémon deaths, Gym Leader F. TOKEN awards, and successful F. TOKEN area/revive spends. This is groundwork for later Graveyard/Almanac/Run Recap presentation; existing ENC TRACKER, NUZ STATUS, and F. TOKEN controls behave the same as before.
+
+## 2.5.83 compatibility-only update
+
+> **2.5.84 note:** RS-CACHE-DEDUP-001 is fixed: unseeded Random Starter distinct-choice bookkeeping ignores scoped cache/internal marker rows and counts only canonical bare starter-slot mirrors. Seeded/deterministic starter behavior is unchanged. Gen1Recomp 0.2.14 is exact-runtime boot/DEV REPORT PASS.
+
+
+2.5.83 does not add or change a player-facing rule or control. It updates Nuzlocke's audited Gen1Recomp marker to **0.2.14** after confirming that the engine's 0.2.13→0.2.14 changes are platform packaging/app metadata only. Existing Setup, NUZ RULES, encounters, Random Starter, save behavior, and compatibility-provider behavior are unchanged.
+
+## 2.5.82 architecture-only update
+
+2.5.82 does not add or change a player-facing rule. It moves the internal Public Interop / Capability API and automatic compatibility adapter infrastructure out of `main.lua` to reduce entry-file load/compiler pressure. Setup/rules behavior remains the runtime-confirmed 2.5.81 behavior.
+
+A quick boot plus MOD COMPAT/provider smoke test is required for this extraction.
+
+## 2.5.81 architecture-only update
+
+2.5.81 does not add or change a player-facing rule. It moves the internal rule/settings catalog out of `main.lua` to reduce entry-file size and load/compiler pressure while preserving the same settings, defaults, descriptions, and save behavior.
+
+The prior Gold runtime test confirmed 2.5.80 loads on Gen1Recomp 0.2.13 and Elm Random Starter shows and awards a randomized starter. Silver still needs its own separate confirmation.
+
+## 2.5.80 Gold/Silver Random Starter retest
+
+With **Random Starter** ON, inspect each of Elm's three Poké Balls before choosing. The displayed portrait and cry should match the randomized species that will be awarded from that Ball. A fixed Randomizer Seed should reproduce the same three choices on an unchanged fresh run. If Dev diagnostics are enabled, the Random Starter transaction health detail also reports whether the latest preview used the script-intent path or the native callback fallback.
+
+Gold and Silver require separate runtime confirmation. R/B/Y behavior is unchanged.
+
+## 2.5.78 save-safety update
+
+2.5.78 does not add or change a player-facing rule. It hardens upgrades from older supported Nuzlocke save schemas so a numbered schema migration is preflighted before live writes, creates a verified three-deep pre-migration save snapshot rotation, and can recover from a recorded partial transition without treating it as committed. Save Schema remains 4.
+
+Players normally do not interact with this system. If a migration cannot complete or recover safely, Nuzlocke pauses its own writes and rule enforcement rather than continuing on uncertain state. If a save was written by a **newer unsupported Nuzlocke schema**, the existing protective pause still applies rather than attempting a downgrade or guessing at unknown data.
+
+## 2.5.77 release-safety update
+
+2.5.77 does not add or change a player-facing Nuzlocke rule. It adds a fail-fast static release-safety gate for development/build validation. Existing runtime-known issues and exact-edition test requirements are unchanged.
+
+## 2.5.76 documentation-only update
+
+2.5.76 does not change player-facing rules, controls, save behavior, randomization, or UI mechanics. Public documentation was sanitized for durable release/technical provenance only.
+
+## 2.5.75 process-only update
+
+2.5.75 does not change player-facing rules, controls, save behavior, randomization, or UI mechanics. It formalizes the project's development/review workflow only.
+
+The known Gold/Silver Random Starter presentation issue remains open: a randomized Pokémon can be awarded while Elm's pre-selection portrait/cry still needs exact-edition runtime repair/confirmation. Blue's 2.5.71 randomized starter portrait behavior remains protected.
+
+## 2.5.74 documentation-only update
+
+2.5.74 does not change rule behavior or add player-facing mechanics. It refreshes project documentation and planning only.
+
+### Important current test note
+
+On the tested Gold/Silver Random Starter path, the Pokémon actually awarded can be randomized while Elm's pre-selection Poké Ball portrait still shows the vanilla Johto starter. This is a known open Gen 2 presentation defect. Blue's randomized starter portraits were runtime-confirmed working on 2.5.71.
+
+### Already implemented items that should not be confused with future plans
+
+- **Physical/Special Split** is already available as a rule/QoL option.
+- **Nickname Rule** already requires non-default nicknames on supported acquisition paths.
+
+The newly documented ideas such as Smart Trainer AI, Catch-Up Training, battle-speed QoL, Move Relearner access, party HUDs, trainer-team redesigns and postgame facilities are **planned/investigation items only** unless a later release explicitly says otherwise.
+
+## 2.5.73 Run History foundation
+
+There is **no new Run History menu yet**. This build begins recording a bounded chronological backend for later Graveyard, Almanac/Run Recap and Confessional pages. Current Encounter Tracker and NUZ STATUS controls do not change.
+
+The first recorded event families are successful catches, Permadeath deaths and F. TOKEN uses. Exact game edition is stored with the events so future recaps can distinguish Red, Blue, Yellow, Gold and Silver instead of collapsing by generation. If 2.5.73 is installed on an already-progressed run, the journal is marked partial rather than inventing older events; fresh runs started with the feature active are full-coverage.
+
+## 2.5.71 Gold/Silver Random Starter retest
+
+With **Random Starter** ON, inspect Elm's Ball preview, select that same Ball, and verify the Pokemon actually received is the exact displayed species. Use a fixed Randomizer Seed to confirm the same three previews repeat on an unchanged fresh run.
+
+## 2.5.70 Gold/Silver Random Starter retest
+
+With **Random Starter ON**, Elm's three Ball previews should no longer be forced to the vanilla Johto trio. At least one choice should normally be a different legal species; the Pokemon actually received must exactly match the selected preview. Starter Style and challenge bans still constrain the candidate pool. With a fixed Randomizer Seed and unchanged settings, the same three choices should repeat. The selected physical Ball still controls the normal story/rival branch.
+
+## 2.5.69 Gold/Silver Random Starter retest
+
+For a fresh Gold or Silver run with **Random Starter ON**, Elm's three Ball previews should show their persisted randomized choices and the Pokemon actually received from the selected Ball should match that preview. The selected vanilla Ball still determines the normal story/rival branch. Nickname behavior remains controlled by the Nickname Rule. With a fixed Randomizer Seed and unchanged settings, repeating the run should produce the same three starter choices.
+
+## 2.5.65 Silver beta support
+
+On Gen1Recomp 0.2.11, Nuzlocke can now load on **Pokémon Silver**. Silver is beta/test-required and currently follows the same Gen 2 rule/UI architecture as Gold. A fresh Silver game should expose the same Nuzlocke **SETUP** entry used by Gold, while an existing Silver save should hide that new-game-only Setup row. Silver and Gold keep separate staged Setup profiles.
+
+Automatic default names follow the running edition: Gold uses **GOLD** for the player and **SILVER** for the Rival; Silver uses **SILVER** for the player and **GOLD** for the Rival. Normal Pokémon nickname prompts remain controlled by the Nickname Rule.
+
+## 2.5.63 Dev/recovery retest
+
+Yellow runtime testing should retry Dev Tools **VIEW REPORT**, **RUN + SAVE**, and Encounter Tracker reassignment. The prior `reportCodeHash` nil error and compatibility `table index is nil` error are specifically repaired in this build. If an unexpected error remains, preserve the exact `NZERR-2.5.63-xxxxx` code.
+
+## 2.5.62 Dev/recovery error behavior
+
+Dev Tools **RUN + SAVE** and **VIEW REPORT** now use Gen1Recomp's bound mod-storage API correctly. If an unexpected Dev error remains, the Dev Tools screen shows an `NZERR-2.5.62-xxxxx` code and A/B/Start returns immediately. Encounter Tracker recovery/reassignment invalid combinations remain no-op and now show their feedback inside the editor; A/B/Start dismisses it.
+
+## 2.5.61 safe recovery edits and Dev error codes
+
+When **Recover Catches / Encounter Tracker editing** rejects an impossible or stale change, it now explains the problem and leaves the saved encounter data unchanged. This is normal validation and does not produce a bug code.
+
+If the recovery screen or Dev Tools **RUN + SAVE** hits an unexpected internal error, Nuzlocke now attempts to keep the game alive and displays a code such as `NZERR-2.5.61-12345`. Please include the exact code and the action you were performing in the bug report. Full diagnostic detail is retained in Dev Mode when available.
+
+## 2.5.59 reliability-only build
+
+2.5.59 does not intentionally change player-facing controls, rules, or dialogue. It adds an internal lint that rejects unreachable fallback dialogue when a Nuzlocke world-text catalog entry already supplies the message.
+
+## 2.5.58 reliability-only build
+
+2.5.58 does not intentionally change player-facing controls or challenge behavior. It adds internal consistency checks for duplicated progression data used by level caps and badge tracking.
+
+## 2.5.57 reliability-only build
+
+2.5.57 does not intentionally change player-facing controls or challenge behavior. It adds internal regression protection so trainer rewards cannot silently lose their Nuzlocke-active enforcement checks, while background progression/reconciliation paths that are intentionally valid with the master rule OFF remain unchanged.
+
+## 2.5.56 reliability-only build
+
+2.5.56 does not intentionally change player-facing controls or challenge behavior. It continues the reliability refactor so ordinary numeric rule values are validated from the same rule definitions that already own their defaults and ranges. Existing saves and Setup/NUZ RULES choices keep the same meanings.
+
+## 2.5.55 reliability-only build
+
+2.5.55 does not intentionally change player-facing controls or challenge behavior. It begins a reliability refactor so each ordinary rule has one authoritative registration record for its default/type/range/UI metadata. Existing saves and Setup/NUZ RULES choices keep the same meanings and defaults.
+
+## 2.5.54 stability-only build
+
+2.5.54 does not intentionally change player-facing rules or controls. It is a compiler-budget refactor that gives the existing Lua code room to grow safely. Dev Report codes remain `NZR5-` as introduced in 2.5.53.
+
+## 2.5.53 Dev Report codes
+
+Fresh Dev Report codes now begin with `NZR5-`. Old `NZR4-` codes are still valid for diagnosis. NZR5 removes redundant health bits so a single code cannot say PASS while its own encoded counters say otherwise.
+
+## 2.5.51 Gold Random Starter repair
+
+Gold Random Starter still works the same from the player's perspective: turn it on before receiving Elm's starter, inspect the three balls, and choose normally. 2.5.51 changes only the internal handoff that makes the selected randomized preview become the Pokemon actually granted.
+
+## 2.5.50 F. TOKEN rerolls
+
+Choose **F. TOKEN → REROLL ENCOUNTER** to see every currently eligible FAILED encounter area; you do not need to travel back to that location first. You can also highlight an eligible FAILED area in **ENC TRACKER** and press **A:REROLL**. Both routes open the same confirmation page. No choice is selected initially: move to **YES** and press A to spend the token, or press B to cancel.
+
+## 2.5.49 F. TOKEN selection
+
+On R/B/Y, the currently highlighted F. TOKEN action and revive target are marked by the native sideways selection arrow. Use Up/Down to move, A to choose, and B to cancel.
+
+## 2.5.48 F. TOKEN and Gym Guide text
+
+On R/B/Y, F. TOKEN uses a full native Nuzlocke page for both the spend-choice and revive-selection screens. Gym Guide Rare Candy messages are player-paced: press A/B to advance each page before the quantity selector appears.
+
+## 2.5.47 F. TOKEN screen repair
+On R/B/Y, using an F. TOKEN now hands screen ownership to the Nuzlocke selector instead of leaving the native item-use UI underneath it. Gold continues to use its native Gen 2 Pack/Chrome presentation.
+
+## 2.5.46 Gold Dev Mode
+
+In Gold, enabling **Dev Mode** in NUZ RULES should make **DEV** appear in the START menu immediately when you return to it. Turning Dev Mode OFF should remove the row. If either behavior fails, record a runtime report before changing other settings.
+
+## 2.5.45 F. TOKEN screen repair
+On R/B/Y, the F. TOKEN spend selector and revival list now use the protected native-size Nuzlocke screen layout. Using the item should open a clean full custom screen rather than overlapping the Bag/item-target interface. Gold continues to use its native Gen 2 presentation.
+
+## 2.5.44 Dev Report Code reliability
+
+VIEW REPORT still shows an `NZR4` code. The code is now distributed across balanced hyphen-grouped rows so short trailing checksum characters are not stranded alone. Join the visible groups with hyphens when sharing the code.
+
+When decoded through the Dev API, `consistent=true` means the code's redundant PASS/WARN summary bits agree with its own hook/lifecycle/safe-stop/rule/randomizer counters. `consistent=false` identifies an internally contradictory legacy/copied code and should be treated as diagnostic evidence requiring the full report or a fresh code.
+
+## 2.5.43 Gold dialogue reliability
+
+Gold Nuzlocke battle-rule refusals keep the player-paced A/B behavior from 2.5.42, but now leave the battle's own pending message/action queue untouched. After the final page, the battle returns to the exact state it was in before the refusal appeared.
+
+## 2.5.42 gameplay text behavior
+
+Nuzlocke-added gameplay dialogue that interrupts or denies an action is player-paced. It remains on screen until A/B is pressed. When the message needs more than the native two-line text area, A/B is required between pages. This applies to the Gold battle-rule refusal paths hardened in 2.5.42 and preserves the existing R/B/Y behavior.
+
+## 2.5.41 — recent-feature repairs
+
+F. TOKEN revival now fully respects a Party Size Limit that was lowered after a death. If another compatible system kept the dead Pokemon in your active party and reviving it there would leave the party above the current limit, the revived Pokemon is sent to a PC box with room instead. If no legal storage exists, the token is not spent.
+
+Trade Evolutions still work only as the intended level-up alternative at level 40+. 2.5.41 tightens the internal trigger so link trades, evolution items, forced evolution paths, and other non-level-up checks stay native.
+
+When Area Splits are OFF and several physical subsections are merged into one logical encounter area, spending an F. TOKEN forgives that **merged logical slot**. All failed subsection rows currently feeding that slot are cleared; turning splits ON later does not restore those forgiven failures.
+
+Build/release names use only the numeric version from now on.
+
+## 2.5.40 — F. TOKEN / Route Forgiveness
+
+Route Forgiveness now gives you a real **F. TOKEN** item instead of prompting automatically or selling tokens in Marts. The setting still controls whether Gym Leaders award tokens and whether you may use them; its `0`/`1` NEW GAME modes still choose the starting quantity.
+
+Use F. TOKEN **outside battle** and choose one action:
+
+- **REROLL ENCOUNTER:** opens a list of every eligible FAILED encounter area in the tracker, regardless of where you are standing. Select an area, deliberately confirm YES, and one token reopens that area so its next legal encounter is another attempt. It cannot erase a completed catch.
+- **REVIVE POKEMON:** choose a fallen Pokemon preserved by the Permadeath archive. It returns at half HP. If your party has room under Party Size Limit it rejoins the party; otherwise it is sent to a PC box with room. A full PC refuses the revival without consuming the token.
+
+The token cannot be bought, sold, tossed, or given. Deaths recorded from 2.5.40 onward have exact revival snapshots; older tracker/history-only losses cannot safely be rebuilt because those records do not contain the full Pokemon state.
+
+## 2.5.39+DEV — Trade Evolutions
+
+A new **Trade Evolutions** option appears under **QOL** and defaults **OFF**. ON changes only otherwise trade-required evolutions:
+
+- Ordinary trade evolutions become eligible on the next level-up at **level 40+**.
+- In Gold, evolutions that normally require trading while holding an item still require that held item; it is consumed when the evolution succeeds.
+- Holding the relevant Gold trade item preserves that branch when the species also has a normal level branch. For example, Slowpoke holding King's Rock waits for Slowking at level 40 instead of becoming Slowbro at 37. Remove King's Rock if you want the normal Slowbro evolution.
+- Everstone still prevents the level-triggered trade evolution.
+- Real link trades still work normally.
+- Evolution Limits are separate challenge rules and can still block the evolution.
+
+## 2.5.38+DEV feedback notes
+
+- The battle `AREA:SPENT` encounter indicator is unchanged; a broader encounter-HUD redesign is planned separately.
+- When Party Size Limit is **6**, PC behavior/messages are native. Nuzlocke-specific "party limit" refusal text appears only when you selected a challenge limit of **1-5**.
+- With Gym Guide Rare Candy enabled, the post-Champion MAX-cap World Building reminder becomes **"You've earned it."**
+- Starting with 2.5.38, DEV builds use `+DEV` build-metadata notation instead of `-DEV`; this is intentional and keeps the installed version equal in precedence to its own numeric release.
+
+## 2.5.37-DEV bug-fix notes
+
+This build does not add a new rule. It hardens recently added Random Field Items, PC-aware Whiteout, PC-Only Catches, and World/QoL lock behavior.
+
+- With **Random Field Items ON**, HMs remain exactly where the base game authored them. In Gold, the Ice Path HM07 WATERFALL item ball must still award HM07.
+- Gold storage may contain later Box tables even when an earlier Box table has never been created. Whiteout and Nuzlocke ownership/history scans now see those later boxes correctly.
+- A **PC-Only Catch** made with five party members may temporarily become party member six; if the current Gold box is full but another box has room, Nuzlocke files it into the available box instead of leaving a PC-locked Pokemon on the active team.
+- **Radio Nuzlocke** remains adjustable while Rule Lock is active.
+- The **SOLO** loadout is destructive on a total wipe and is now described as **run-ending Blackout** in the loadout help text.
+
+### 2.5.37 runtime priorities
+
+Gold: test HM07 WATERFALL with Random Field Items ON; create/use a later Box while leaving an earlier Box table unused and wipe with Whiteout ON; test PC-Only Catch with party size 5, current Box full, another Box available; then enable Rule Lock and confirm Radio Nuzlocke still toggles. Also inspect the SOLO loadout description.
+
+## 2.5.36-DEV compatibility notes
+
+This build does not change Nuzlocke rules or gameplay. It records a fresh source audit of Gen1Recomp `dev` at **`def270f7c726ebd7bd87086ad90bc4a7b9622543`** while keeping **0.2.7** as the stable published compatibility baseline. Gold's read-only battle data can now expose Ball counts and native catch-chance previews to compatible HUD/diagnostic consumers; Nuzlocke itself still enforces catches through the same rule paths as before.
+
+### 2.5.36 runtime priority
+
+On a current Android build that supports returning to the launcher without restarting the app, smoke-test **Red or Yellow -> launcher -> Gold -> launcher -> Red or Yellow**. Confirm the Nuzlocke Setup/NUZ RULES surfaces still open normally, Gold Random Starter behaves normally, Running Shoes/Fast Surf retain their selected modes, Unlimited Bag Space retains its selected state/behavior, and no rule appears to run twice from a stale wrapper. Desktop/iOS do not need this specific hot-swap test unless the same in-process lifecycle is exposed there later.
+
+## 2.5.35-DEV bug-fix notes
+
+Gold Random Starter now keeps Elm's generated `givepoke` script data immutable. Preview rows remain presentation-only copies, and the native Gold give-Pokémon transaction is the sole point that substitutes the selected randomized species. The three Elm choices also reuse a stable per-seed/per-style slate cache.
+
+Unlimited Bag Space remains a QoL control even after Rule Lock is enabled. Rule Lock still seals challenge-rule changes; it does not seal this QoL toggle.
+
+### 2.5.35 runtime priorities
+
+Test two or more Gold New Games in the same Gen1Recomp process, including changing Random Starter OFF/ON between runs; repeatedly inspect all three Elm balls with a fixed seed; then enable Rule Lock and verify Unlimited Bag Space can still be changed while a normal challenge rule cannot.
+
+## 2.5.34-DEV Unlimited Bag Space
+
+**Unlimited Bag Space** is a normal QoL toggle and defaults **OFF**. It is available in R/B/Y and Gold and remains adjustable independently of challenge-rule locking.
+
+- **R/B/Y:** ON removes the distinct-item slot ceiling from the normal Bag.
+- **Gold:** ON removes distinct-item slot pressure from the ordinary **ITEM** and **BALL** pockets. Gold's **KEY ITEM** and **TM/HM** capacities remain native.
+- Item stacks still stop at **99**. This is more bag *slots*, not infinite quantities.
+- PC item storage is unchanged. Nuzlocke item-use bans, shop rules, field-pickup legality, story/key-item acquisition, tossing, selling, and Bag ordering are unchanged.
+- Turning the toggle OFF never deletes excess contents. Native/provider capacity simply becomes authoritative again for adding new distinct items.
+
+### 2.5.34 runtime priorities
+- R/B/Y: exceed the native distinct-item Bag limit while ON and successfully pick up another distinct ordinary item.
+- Gold: exceed native ITEM and BALL pocket slot limits while ON; confirm KEY ITEM/TM-HM behavior remains native.
+- Confirm a stack cannot exceed 99 even while Unlimited Bag Space is ON.
+- Turn OFF while already above capacity: existing contents must remain, while a new distinct item is refused until the pocket has room again.
+
+## 2.5.33-DEV Running Shoes and Fast Surf
+
+Both movement QoL options use the same three positions and cycle with **Left / Right / A**:
+
+- **OFF** — vanilla speed.
+- **HOLD B** — 2x movement while B is held.
+- **ALWAYS** — the same 2x movement without holding B.
+
+**Running Shoes** applies only while walking on foot. It does not speed up the Bicycle or Surf. Existing saves that had the older Running Shoes ON toggle are migrated to **HOLD B**, preserving the behavior they already had.
+
+**Fast Surf** applies only to ordinary player-controlled Surf movement. It does not speed up walking, biking, fishing, the act of starting Surf, Waterfall/scripted movement, or cutscenes. Both options are available in R/B/Y and Gold.
+
+### 2.5.33 runtime priorities
+- Running Shoes OFF: walking remains native. HOLD B: only held-B walking is faster. ALWAYS: walking is faster with or without B.
+- Fast Surf OFF: Surf remains native. HOLD B: only held-B Surf is faster. ALWAYS: Surf is faster with or without B.
+- Confirm bike speed and scripted movement remain unchanged.
+- If QoL Toggles `run_hold_b` is installed, confirm held-B walking is not accidentally compounded to 4x.
+
+## 2.5.32-DEV Gold Random Starter behavior
+
+With Random Starter enabled in Gold, Elm's three Poké Balls now represent a deterministic three-choice randomized slate. The same seed and Starter Style always give the same slate, and looking at the balls in a different order does not change it. The mod avoids duplicate choices when enough legal candidates are available. The portrait and cry shown for a ball are presentation-only rewrites; choosing that ball still lets Gold's native GIVEPOKE flow create and nickname the actual Pokémon.
+
+## 2.5.31-DEV Whiteout / Blackout recovery
+
+**Whiteout** once again means the run can survive a total-party KO. Turn Whiteout **ON** if you want that recovery behavior. After the faint/death bookkeeping finishes, Nuzlocke checks the whole usable roster:
+
+- If at least one legal Pokemon remains in the active party or a PC Box, the Whiteout survives. The game uses its normal blackout return. If your party is empty, withdraw one of those reserves from the PC before continuing.
+- Dead Pokemon, Eggs, and permanent **PC LOCKED** Pokemon from PC-Only Catches do not count as reserves. If those are all you have left, the run is over.
+- Whiteout **OFF** is **Blackout**: a full wipe ends/deletes the run even when an otherwise legal Pokemon is sitting in the PC.
+- First Rival Mercy still takes precedence for the one opening Rival battle.
+
+With **Permadeath ON**, the wiped team is dead and removed before the reserve check, so survival normally requires a legal boxed Pokemon. With Permadeath OFF, the fainted party remains recoverable and the native blackout heal can restore it. Gold's Bill's PC normally refuses an empty party; 2.5.31 allows that PC to open specifically for a surviving Whiteout with an eligible boxed reserve.
+
+Existing saves are migrated automatically so the behavior they had selected under the older inverted Whiteout boolean does not unexpectedly change. Fresh 2.5.31 saves already use the corrected meaning.
+
+### 2.5.31 runtime priorities
+- Whiteout ON + Permadeath ON: wipe while one ordinary Pokemon is boxed. Confirm the run survives, the dead active party stays gone, and the boxed reserve can be withdrawn.
+- Repeat with no boxed reserve: confirm Blackout/run end instead of an empty-party softlock.
+- Repeat with only a PC-locked catch or Egg boxed: confirm it does not rescue the run.
+- Whiteout OFF + boxed reserve: confirm the run still ends.
+- Gold: after a surviving empty-party Whiteout, confirm Bill's PC opens and withdrawal works.
+- Repeat a field-poison full wipe and the First Rival Mercy loss path.
+
+## 2.5.30-DEV Gold Random Starter repair
+
+Gold **Random Starter** is intended to change only the concrete Pokemon received from the Elm Ball you select. The Ball choice itself still drives the normal Gold story/event and rival-counterpick branch. With Random Starter ON, the received Pokemon is selected deterministically from the chosen Starter Style and seed; the selected vanilla species is excluded from its own candidate pool when legal alternatives exist.
+
+2.5.30 adds a direct transaction repair so the randomized species is applied at Gold's native `givepoke` grant, even if the earlier preview/script-command layer does not carry the replacement through. The first Elm preview/grant also restores the staged Random Starter toggle, Starter Style, and seed to the fresh save if Gold's NEW GAME save-backing handoff occurred before the full Setup profile commit.
+
+The starter nickname rule is unchanged: if Nickname Rule is ON, the starter still requires a non-empty nickname.
+
+### 2.5.30 runtime priorities
+- Fresh Gold NEW GAME, set Random Starter ON and use a fixed nonzero seed. Receive an Elm starter and confirm it is not the vanilla species from the selected Ball.
+- Repeat the same selected Ball, seed, and Starter Style from an equivalent fresh run and confirm the same species is selected.
+- Confirm the chosen Elm Ball's story/rival path is unchanged.
+- Confirm Nickname Rule still forces a non-empty starter nickname.
+- Open DEV SELF TEST and confirm `gold_random_starter_transaction_gate` is healthy.
+
+## 2.5.29-DEV Gold parity
+
+### Gold Ball Per Encounter
+Gold now exposes **Ball Per Enc.** in Setup and NUZ RULES. Choose **OFF / 1 / 2 / 3 / 5 / 10** legal Ball throws per catchable encounter. OFF is unlimited. Illegal or otherwise blocked Ball attempts do not spend the budget, and each new battle starts a fresh budget. When **No Catching** is ON, Ball Per Enc. is hidden while its saved choice is preserved.
+
+### Gold NEW GAME starting resources
+Gold now has dedicated resource rows; the R/B/Y resource profile is not reused.
+
+- **Starting Money:** 000000-999999; default **003000** preserves vanilla Gold.
+- **Starting Rare Candy:** 00-99; default **00**. The selected amount is placed in bedroom PC storage on the fresh save.
+- **Starting Poke Balls:** 00-99; default **00**. This is an **extra PC allotment** in addition to Gold's normal 5-Ball story reward. The extra Balls are deliberately withheld during the opening and released only after the Mystery Egg is returned to Elm, so Route 29 cannot become capture-ready early just because Setup supplied Balls.
+
+Quick Nuzlocke Start still grants/reconciles the normal 5-Ball milestone. Any configured extra Starting Poke Balls are then released to the PC from the same post-Elm progression state and only once.
+
+### 2.5.29 runtime priorities
+- In Gold Setup, verify Starting Money edits all six digits and Starting Balls/Candy edit two digits.
+- Start a normal Gold NEW GAME with custom money/candy/balls. Money and Candy should match immediately; extra Balls should be absent before the Mystery Egg return and present in the PC afterward.
+- Repeat with Quick Nuzlocke Start and verify the native 5 Balls plus the extra PC allotment exactly once.
+- Set Ball Per Enc. to 1, throw one legal Ball that fails, and verify a second legal throw is refused; start another battle and verify the budget resets.
+- Switch between R/B/Y and Gold Setup profiles and verify starting-resource values remain generation-specific.
+
+## 2.5.28-DEV PC-Only Catches
+**PC-Only Catches** is OFF by default. Turn it ON when you want to catch Pokemon for Pokedex completion or a story/progression requirement without making an otherwise illegal Pokemon usable in the Nuzlocke run.
+
+If a capture is blocked by an eligible challenge rule (for example Type Locke, an already-used area/Dupes state, Static, a species ban, town/overworld eligibility, or Maximum BST), the game may complete the capture but immediately sends that Pokemon to a Box and marks it **PC LOCKED**. It does not spend the area's encounter, does not count as a Catch Draft lane, and does not make a future legal encounter a Dupe just because the research-only Pokemon is in storage.
+
+A PC-locked Pokemon is permanent storage-only: you cannot withdraw it, move it from a Box into the party, or release it. You may still organize it between Boxes. Turning PC-Only Catches OFF later does not unlock Pokemon already marked this way.
+
+Safety limits: glitch/malformed Pokemon remain blocked. Party Size Limit alone does not turn a legal catch into a PC-only catch. **No Catching still blocks ordinary captures even when PC-Only Catches is ON**; only a compatible scripted/progression capture that explicitly requests the progression exception may bypass No Catching. Storage must have room before an exception is allowed. In Gold, if your party is already full, the currently selected Box must have room because Gold checks that Box before the Ball is thrown. If the party has five members, a successful PC-only catch may briefly fill slot six and is then filed into the preflight-selected/next available Box; it is never meant to remain PC LOCKED in the active party.
+
+## 2.5.27-DEV Maximum BST presets
+
+Maximum BST now cycles through **OFF / 300 / 350 / 400 / 450 / 500 / 550 / 600 / 650 / 700**. OFF removes the BST restriction. Any numeric preset blocks newly acquired catches, gifts, and trades whose live merged BST is above that ceiling; mandatory starters remain exempt so progression cannot be broken.
+
+Existing saved thresholds are not migrated. A legacy free-form value continues to enforce exactly as saved and shows as CUSTOM until you adjust the setting; the first adjustment anchors to the nearest preset and then cycles normally.
+
+## 2.5.26-DEV R/B/Y Stat Info layout
+On R/B/Y, NUZ INFO → STAT INFO now shifts the ATK/DEF/SPE/SPC detail column left and widens it so normal/native value + DV + Stat EXP strings fit without marquee scrolling. LEVEL/HP also have more room. Catch Info, Move Info, and Gold presentation are unchanged.
+
+## 2.5.25-DEV Random Field Items
+
+**Random Field Items** defaults OFF. When ON, ordinary visible overworld item-ball pickups in R/B/Y and Gold are replaced deterministically when collected. The feature uses a separate `FIELD_ITEMS` stream under the same 8-digit seed, so it does not alter the seeded choices for starters, encounter tables, or learnsets.
+
+Progression safety is conservative: key items and HMs stay in their original authored pickup slots and cannot appear as random replacements. Hidden items, NPC gifts, shops, fruit/apricorn trees, and other scripted rewards are unchanged in this first scope. Already-collected item balls stay collected; changing the setting/seed affects only future unresolved pickups.
+
+### 2.5.25 runtime priorities
+- R/B/Y: enable Random Field Items with a known seed and collect at least three ordinary visible item balls; confirm the received items differ when expected and pickup objects disappear normally.
+- Repeat the same seed/settings from a fresh equivalent save and confirm the same map/object slots resolve to the same items.
+- Fill the bag and attempt a randomized visible pickup; confirm the native full-bag refusal leaves the ball available for retry.
+- Verify at least one progression-critical visible pickup (especially an HM where applicable) remains its vanilla item.
+- Gold: repeat an ordinary item-ball pickup plus the protected Ice Path HM07/Waterfall pickup.
+- DEV hook health should show the generation-appropriate Random Field Items adapter HEALTHY once its engine module is loaded.
+
+## 2.5.24-DEV development note
+
+NUZ RULES and NEW GAME Setup now remember where you were during the current mod session. Close the screen and reopen it to return to the same selected rule/header and scroll window. R/B/Y and Gold keep separate positions, as do Setup and active-save Rules. This is navigation-only state: it is not saved into a game save or setup profile and resets on a fresh process/mod reload.
+
+### 2.5.24 runtime priorities
+- R/B/Y NUZ RULES: move several pages down, close with B, reopen, and confirm the same selected row and visible scroll window return.
+- R/B/Y NEW GAME Setup: repeat the same check independently from NUZ RULES.
+- Gold NUZ RULES/Setup: repeat both checks and confirm Gold does not inherit the R/B/Y position.
+- Collapse/expand a section and toggle a parent that hides dependent rows (for example Random Starter/Style); confirm reopening never lands on an unrelated row or crashes.
+
 ## 2.5.23-DEV development note
 
 This build specifically repairs fresh-New-Game Yellow regressions found during real-device 2.5.22 testing. Random Starter, the Pallet Town starter log/provenance transaction, No Mom Heal, and Skip Catch Demo should now all be live on the same fresh New Game path, including when the opening Professor Oak explanation is skipped.
@@ -9,7 +419,7 @@ This build specifically repairs fresh-New-Game Yellow regressions found during r
 - With **No Mom Heal ON**, Mom must refuse the healing transaction and must not restore HP/PP/status.
 - DEV SELF TEST should report healthy `late_runtime_phase_2`, `oak_catch_demo_gate`, `rby_starter_transaction_gate`, and Mom-heal gate rows, with the selected setting rows matching the setup choices.
 
-# Nuzlocke 2.5.23-DEV user guide
+# Nuzlocke 2.5.30-DEV user guide
 
 ## 2.5.22-DEV development note
 
@@ -229,18 +639,16 @@ Contained/medium:
 Potential Rules/Setup UI:
 - sticky section header
 - visible-position indicator
-- remember cursor/scroll position
 - native offscreen scroll indicators
 - changed-value marker
 - collapsed-section summaries
 
 Larger:
+- expand Item Randomization beyond visible item balls (hidden items / NPC gifts / shops as separately scoped options after safety review)
 - Egglocke
-- progression-only / PC-locked catches
 - Town Map Nuzlocke Log / overlay
 - fuller Encounter HUD
 - End/Abandon Run statistics
-- Unlimited Bag Space
 - multi-provider difficulty composition
 - Split-Evolution Dupes behavior
 - localization validation
@@ -306,7 +714,7 @@ OPEN INFO and BLIND INFO now round-trip correctly through the Rules UI. The unde
 Dev Mode now reports a warning if `randomizer_info_policy` is ever found in an impossible boolean or malformed numeric storage shape. It does not rewrite the value because no historical boolean encoding exists for this selector.
 
 ### Ball Per Enc.
-**Ball Per Enc.** is in **BATTLE ITEMS** beside **No Catching**. It is hidden while No Catching is ON because Ball-throw budgeting has no active purpose when all catching is prohibited. When catching is allowed, choose OFF / 1 / 2 / 3 / 5 / 10. OFF is the vanilla default. A previously selected value is preserved while the row is hidden.
+**Ball Per Enc.** is in **BATTLE ITEMS** beside **No Catching** in R/B/Y and, as of 2.5.29, Gold. It is hidden while No Catching is ON because Ball-throw budgeting has no active purpose when all catching is prohibited. When catching is allowed, choose OFF / 1 / 2 / 3 / 5 / 10. OFF is the vanilla default. A previously selected value is preserved while the row is hidden.
 
 ### Solo runs
 There is no separate Solo Only rule anymore. Set **Party Size Limit** to **1**, or choose the SOLO loadout. The same party-limit system now governs catches, gifts, trades, and PC withdrawals consistently.
@@ -327,3 +735,10 @@ The 2.5.6 saved-report View Report crash repair has Blue runtime PASS evidence a
 
 ### 2.5.6 Blue UI/Dev status
 2.5.5 runtime testing found that changing multiple NUZ RULES could error in the shared post-write update path, and DEV TOOLS -> VIEW REPORT could crash. 2.5.6 contains targeted repairs for both. VIEW REPORT now has Blue runtime PASS evidence for reopening a saved report after a full game restart; ordinary LEFT/RIGHT/A NUZ RULES edits still need runtime confirmation. MOD COMPAT rule-name rows on the left are intentionally normal weight rather than pseudo-bold.
+
+## 2.5.68 NUZ STATUS
+
+**NUZ STATUS** is the live challenge card. It shows current run metrics and active challenge rules, not NEW GAME setup bookkeeping. Starting Money/Balls/Candy, PC starting kits, Gym Guide Rare Candy service state, UI-only controls, and the redundant master-ON row are intentionally omitted. Type Locke is summarized as one mode/type row rather than exposing internal `Type 1..6` slots. A non-vanilla Difficulty profile is shown by name; vanilla Difficulty and neutral Trainer Money 100% are omitted. Loadout names use the same player-facing format in Red, Blue, Yellow, Gold, and Silver. Use **NUZ RULES/Setup** when you need to review configuration choices that are intentionally not part of the live challenge card.
+
+## 2.5.66 runtime notes
+Silver is beta/test-required. Setup and boot to the bedroom have runtime-passed; NUZ STATUS must be retested on 2.5.66. If the Gen 2 status surface encounters an unexpected edition/provider shape, it now shows a reportable in-screen error instead of terminating the launcher. Yellow manual recovery reassignment also requires retest, especially Mankey → Route 1 → wild.

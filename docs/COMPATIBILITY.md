@@ -1,3 +1,299 @@
+# 2.6.0 compatibility note
+
+No provider, ownership, engine, or hook contract changes. `progression_pc_catches` keeps the same compatibility semantics and is only relocated in the rule menu. Gen1Recomp 0.2.14 remains the latest audited and exact-runtime-booted engine; supported range remains `>=0.1.86 <2.0.0`.
+
+# 2.5.92 compatibility note
+
+No engine/provider compatibility contract changes. Built-in death producers are now idempotent per committed death occurrence, which also makes compatibility/provider re-entry safer without changing ownership or provider APIs.
+
+# 2.5.91 compatibility note
+
+No engine/provider compatibility surface changes. This release only corrects internal migration dry-run comparison semantics for copied table values.
+
+# 2.5.90 compatibility note
+
+The vanilla version-aware Gift/Trade source catalog is now package-local `acquisition_catalog.lua`. Existing compatibility aliases continue to resolve through the same `buildGiftLookup`, `buildTradeLookup`, and deterministic-source helpers. No provider ownership or engine compatibility contract changes.
+
+# 2.5.89 compatibility note
+
+No compatibility/provider contract changes. DEV REPORT diagnostics were moved to `dev_report.lua` with current game identity supplied through a live getter. Engine range and the audited Gen1Recomp 0.2.14 profile remain unchanged.
+
+# 2.5.88 compatibility UI note
+
+No provider/API/engine compatibility contract changes in 2.5.88. MOD COMPAT keeps Compatibility API 29 behavior and only changes presentation/session navigation: its classic detail panel reserves a dedicated footer row and remembers selected row/scroll/detail page for the current mod session.
+
+# 2.5.87 Compatibility cleanup
+
+Compatibility API **29** fixes a metadata hole where the audited engine could be 0.2.14 while the engine-profile table stopped at 0.2.11. Profiles for 0.2.12, 0.2.13, and 0.2.14 are now present, and Release Safety verifies the active profile exists. Provider inventory and compatibility-summary helpers are additive/read-only. `compatible_from = 10`, Mod API 2, Save Schema 4, and `>=0.1.86 <2.0.0` remain unchanged.
+
+The 2.5.86 Encounter Tracker marker experiment is reverted; actual graphical status symbols are deferred to the backlog.
+
+# 2.5.86 Encounter Tracker status markers
+
+> **2.5.86 note:** ENC TRACKER now uses font-safe `O CAUGHT`, `X FAILED`, `- OPEN`, `* SHINY`, and `X DEAD` labels across classic R/B/Y, native Gold/Silver, and Modern UI presentation. Text remains explicit for accessibility; encounter mechanics and stored state are unchanged.
+
+# 2.5.85 Run History producer compatibility
+
+Run History observes already-settled Nuzlocke transaction boundaries and does not take ownership away from the engine or compatibility providers. Ordinary captures journal only after the host `pokemon.caught` event and Nuzlocke tracker/area commit. Provider-backed catches that reach the same established registration path therefore receive the same history treatment, while starter/gift/trade/progression acquisitions retain their dedicated producer paths and persistent-identity dedupe.
+
+Gym Leader F. TOKEN history is appended only after the reward ledger and real carried-token state commit. The permanent semantic Leader identity is also the history dedupe key, so duplicate battle-finalization/provider callbacks cannot mint duplicate chronology rows. Existing R/B/Y and Gold/Silver death paths are unchanged.
+
+## 2.5.83 / Gen1Recomp 0.2.14 audit
+
+> **2.5.84 note:** RS-CACHE-DEDUP-001 is fixed: unseeded Random Starter distinct-choice bookkeeping ignores scoped cache/internal marker rows and counts only canonical bare starter-slot mirrors. Seeded/deterministic starter behavior is unchanged. Gen1Recomp 0.2.14 is exact-runtime boot/DEV REPORT PASS.
+
+
+The published **v0.2.14** tag is three commits ahead of **v0.2.13**. The reviewed tag delta changes only Android release packaging (`mobile/android/love/build.gradle`, disabling release minification) and iOS app-repository metadata (`mobile/ios/app-repo.json`). There are no changes to the Lua Runtime/Loader, published Mod API, GameVersion identity, Gen 2 VM/world callbacks, save contract, or Nuzlocke-facing gameplay seams.
+
+Nuzlocke therefore advances `recompCompatAudited` to **0.2.14**, retains Mod API **2** and engine range `>=0.1.86 <2.0.0`, and makes no adapter/hook changes. No 0.2.14 feature is adopted because the release adds no new mod-facing capability. 2.5.82's successful boot and DEV REPORT render remain protected runtime evidence; exact 0.2.14 boot is still a focused runtime test for 2.5.83.
+
+## 2.5.82 interoperability module note
+
+Compatibility API remains **28**. The existing Public Interop API, provider registry, capability resolution, acquisition/item/storage/encounter policy objects, content registration, automatic compatibility scanning, and compatibility aliases are moved unchanged into package-local `public_interop.lua`. Dynamic game/save state is supplied through getters so module extraction does not freeze lifecycle state. Runtime boot/MOD COMPAT smoke testing is required.
+
+## 2.5.81 modularization compatibility note
+
+No engine hook, provider ownership, supported-game declaration, API version, or dependency contract changes. The rule/settings catalog is loaded package-locally and injected with the existing `Strings` dependency. Random Starter and encounter runtime paths are untouched.
+
+## 2.5.80 Gen1Recomp 0.2.13 compatibility note
+
+The audited Gen1Recomp marker advances to **0.2.13**. Mod API remains **2** and the supported engine range remains `>=0.1.86 <2.0.0`. The 0.2.13 source audit found no required contract break in the Gen 2 VM/world seams used by Nuzlocke (`script.command`, native portrait/cry callbacks, and starter grant callbacks). Stable wrappers are therefore preserved.
+
+Release Safety source/package introspection is diagnostic-only in runtime environments: inability to read a package source file is a warning, not a boot-fatal invariant. The package now includes dedicated architecture modules for Run History, Release Safety, Dev assertions, migration shadow-store logic, and Stadium acquisition provenance.
+
+### Stadium Prize cooperation
+
+Transfer/import mods may call `mod.exports.nuzlocke_acquisition_provenance.mark(mon, origin)` after creating/importing the Pokémon. `origin` may be `stadium_1`, `stadium_2`, or omitted. Nuzlocke records the acquisition source as `stadium_prize` / `STADIUM_PRIZE` and does not synthesize a map location.
+
+## 2.5.78 save/migration compatibility note
+
+2.5.78 does not change Compatibility API 28, Save Schema 4, provider ownership, optional dependencies, or the supported engine range. It changes only how **older supported Nuzlocke schemas are advanced to schema 4**: numbered transitions are now shadow-preflighted and committed through a recoverable Nuzlocke-owned write-ahead journal. Newer-schema downgrade safe-stop remains authoritative and a transaction targeting a schema newer than this build is also treated as unsupported rather than guessed at. A migration/recovery failure uses a separate `migration_error` pause reason but reaches the same protective outcome: Nuzlocke-owned writes and rule enforcement do not continue against uncertain persisted state.
+
+The journal is optional schema-control bookkeeping under the reserved `__nuzlocke_` namespace and is cleared after clean migration completion. Before numbered schema mutation, Nuzlocke creates a separate three-deep raw-save snapshot rotation through Gen1Recomp's engine-owned save path/filesystem; the engine's own `.bak`/`.tmp` recovery files remain untouched. No engine save-format field is added.
+
+## 2.5.77 release-safety compatibility note
+
+No compatibility adapter or engine-range change is made in 2.5.77. The release-safety runner now verifies that every advertised Compatibility API capability has a version entry and that required package-local integration sources remain readable. The stable audited Gen1Recomp marker remains **0.2.12** and the engine range remains `>=0.1.86 <2.0.0`.
+
+## 2.5.76 documentation-hygiene compatibility note
+
+No compatibility adapter changes are made in 2.5.76. The stable audited Gen1Recomp marker remains **0.2.12** and the engine range remains `>=0.1.86 <2.0.0`. Public compatibility documentation was sanitized for durable release/technical provenance only.
+
+## 2.5.75 process-only compatibility note
+
+No compatibility adapter changes are made in 2.5.75. The stable audited Gen1Recomp marker remains **0.2.12** and the engine range remains `>=0.1.86 <2.0.0`. Compatibility reviews now use durable structured records for explicit review scope, cleared/unreviewed surfaces, risk statements, and regression protection.
+
+## 2.5.74 documentation-only compatibility note
+
+No compatibility adapter changes are made in 2.5.74. The stable audited Gen1Recomp marker remains **0.2.12** and the engine range remains `>=0.1.86 <2.0.0`.
+
+Current exact-edition evidence relevant to compatibility testing:
+
+- Blue 2.5.71 Random Starter pre-selection portraits: **RUNTIME PASS**.
+- Silver 2.5.73 Random Starter: randomized award **PASS**, Elm pre-selection portrait **FAIL**.
+- Gold/Silver Random Starter therefore remains a Gen 2 presentation defect; do not infer parity from the working R/B/Y path.
+
+Future compatibility work is planned around an explicit engine-contract inventory, hook/provider ownership registry, capability/version handshake for cooperating mods, feature-health reporting (`ACTIVE` / `DEGRADED` / `UNAVAILABLE`), and exact-edition parity metadata. None of those contracts are introduced by 2.5.74.
+
+## 2.5.73 / Gen1Recomp 0.2.12 audit
+
+Gen1Recomp 0.2.12 is 15 commits ahead of 0.2.11. The reviewed delta changes Gen 1 BattleState/Game/Overworld/UI behavior, launcher/importer, sync/link behavior and platform lifecycle handling, but does not change the mod Runtime/Loader contract, GameVersion, the Gen 2 VM/Mon constructor, or the published Mod API surface Nuzlocke depends on. Nuzlocke therefore keeps `>=0.1.86 <2.0.0` and advances only its audited marker to 0.2.12.
+
+The new `nuzlocke_run_history` API is an additive observation/export surface. It emits only after Nuzlocke has committed its own chronology row and does not claim ownership of another mod's Tracker, save, battle, or progression state. Companion mods should consume the public event/API instead of writing `run_history_v1` directly.
+
+## 2.5.71 Gold/Silver Random Starter transaction parity
+
+Early Gen 2 NEW GAME may replace the mod-save backing between Elm's preview opcodes and the final `givepoke`. Nuzlocke now treats the VM-private preview choice as transaction state rather than recomputing through save-backed randomizer cache at award time. This keeps compatibility with Gen1Recomp 0.2.11's native `Vm.new`/`hooks.givePoke` ownership and does not mutate generated script rows.
+
+## 2.5.70 Gold/Silver Random Starter candidate parity
+
+Gen1Recomp 0.2.11 constructs Gen 2 party members through `src.battle.gen2.Mon`, not the Gen 1 `src.pokemon.Pokemon` path. Nuzlocke's newer starter safety validator had accidentally imposed Gen 1-only `level1Moves`/`learnset` requirements on Gold/Silver candidates, collapsing the legal pool and triggering vanilla fallback. 2.5.70 validates the native Gen 2 `baseStats`/`levelMoves` contract while preserving provider/challenge filters and the current transaction wrapper. Engine range and compatibility API are unchanged.
+
+## 2.5.69 Gold/Silver Random Starter grant repair
+
+The Gen 2 Random Starter transaction continues to compose around `src.script.gen2.Vm.new` and its supplied `hooks.givePoke` callback. The exact game object identified at the `script.command` Elm `givepoke` seam is now carried into that private one-shot transaction instead of relying on global session rediscovery. Shared generated script rows remain unmodified. Compatibility API remains 28; runtime validation is required on both Gold and Silver.
+
+## 2.5.68 NUZ STATUS presentation cleanup
+
+No compatibility ownership or provider contracts changed. The existing R/B/Y ListMenu and shared Gold/Silver status-screen lifecycle remain intact; only source-owned row selection/labels were cleaned up. Compatibility API remains 28 and Gen1Recomp 0.2.11 remains the stable audited marker.
+
+## 2.5.66 — Silver status / recovery compatibility hardening
+
+Silver remains a declared beta target on Gen1Recomp 0.2.11. The shared Gen 2 NUZ STATUS screen now contains edition/provider-shape failures and records them through Dev diagnostics rather than allowing a launcher-level crash. Manual Encounter Tracker recovery now requires a canonical string area key before tracker-table access and treats live-Pokémon identity enrichment as optional maintenance metadata. Compatibility API remains 28.
+
+## 2.5.65 — Silver beta target
+
+Gen1Recomp 0.2.11 defines Silver as generation 2 using Gold's engine with edition-selected data. Nuzlocke now declares `silver` in the manifest and routes both Gold and Silver through the established Gen 2 adapters. Silver has a separate staged Setup profile; Crystal remains undeclared groundwork. Compatibility API stays 28 and the engine range stays `>=0.1.86 <2.0.0`. Runtime parity is required before individual Silver mechanics are marked PASS.
+
+## 2.5.63 — nil-safe compatibility metadata
+
+Compatibility/provider discovery now treats absent capability metadata as neutral `compose` ownership. This is defensive compatibility hardening only; Compatibility API remains 28 and Gen1Recomp 0.2.11 remains the stable audited marker.
+
+## 2.5.62 — Gen1Recomp 0.2.11 audit
+
+Published Gen1Recomp **0.2.11** is source-audited as the current stable marker. The 0.2.10→0.2.11 delta adds Silver/GameVersion work and changes Game/Game2, SaveData/Gen2 Save, Gen2 World, manifest targeting, launch/build code and Gen2 documentation. Mod API remains **2** and the Nuzlocke engine range remains `>=0.1.86 <2.0.0`. Nuzlocke now declares Red/Blue/Yellow/Gold/Silver; Silver is explicitly beta/test-required while parity evidence is accumulated. Crystal remains undeclared.
+
+## 2.5.61 — Gen1Recomp 0.2.10 audit
+
+Published Gen1Recomp **0.2.10** is source-audited as the current stable marker. Its cumulative delta from 0.2.7 includes changes to Mod Runtime/Loader, Gen 1 battle state/status, Game/Game2, SaveData/Gold Save, TextBox, Gold battle/UI/world code, and substantial launcher/sync infrastructure. The public contract remains Mod API 2 and the shared hook/event vocabulary remains intact, so Nuzlocke does not need an adapter or manifest-range change for this release. Existing composition/ownership rules remain authoritative. Runtime smoke testing is still required before promoting specific gameplay paths to PASS.
+
+## 2.5.59 catalog-dialogue compatibility hardening
+
+2.5.59 does not change provider ownership or external hook contracts. It prevents catalog-backed Nuzlocke dialogue from carrying unreachable fallback arguments that can mislead future compatibility or ROM-hack-specific text work into believing custom fallback content will render when the catalog key already wins.
+
+## 2.5.58 cross-table compatibility hardening
+
+2.5.58 does not change provider ownership or external hook contracts. It validates internal progression tables that compatibility and level-cap consumers depend on, so accidental table drift fails visibly instead of silently changing behavior.
+
+## 2.5.57 active-guard compatibility hardening
+
+2.5.57 does not change provider ownership or external hook contracts. The new regression gate distinguishes rule-enforcement mutations, which require `active()`, from intentional passive progression synchronization and Forgiveness Token save/inventory reconciliation, which remain available while the master rule is OFF. This preserves the established write/tracking/enforcement policy while making accidental guard loss self-detecting.
+
+## 2.5.56 internal rule coercion hardening
+
+2.5.56 does not change provider ownership or external hook contracts. Ordinary duplicated numeric dispatch in config reads/writes is replaced by metadata-driven coercion, while external provider delegation, legacy Level Cap migration, dynamic difficulty-provider selection, and other compatibility exceptions remain explicit.
+
+## 2.5.55 internal rule-registration hardening
+
+2.5.55 does not change provider ownership, hook contracts, save schema, engine support, or external compatibility behavior. It consolidates ordinary rule defaults/types onto the existing registration rows so later compatibility/UI/config work cannot silently drift across duplicated metadata tables.
+
+## 2.5.54 internal compiler-budget refactor
+
+No compatibility-provider ownership, hook contract, manifest range, dependency, save schema, or gameplay integration changed. The refactor is internal lifetime/namespace cleanup only. Existing runtime confidence and all protected compatibility paths carry forward because their implementation seams were not behaviorally changed.
+
+## 2.5.53 Dev Report compatibility
+
+NZR5 remains backward-compatible at the decoder boundary: old NZR4 codes can still be decoded and checked for contradictions. No gameplay compatibility surface changes in this build.
+
+## 2.5.51 Gold Random Starter composition
+
+Gold Random Starter no longer depends solely on an empty-party/canonical-species heuristic at the native grant callback. The exact Elm `givepoke` row arms private VM-local intent first, then the existing `givePoke` wrapper composes around the current engine hook and consumes that intent. Shared script rows are not mutated, and provider delegation remains authoritative.
+
+## 2.5.50 F. TOKEN tracker integration
+
+The area picker and ENC TRACKER reroll action consume the existing projected encounter-state/ledger model and call one shared reroll function. They do not create a second encounter ledger or depend on the player's current map. Presentation mods can identify `NuzlockeForgivenessArea` through the Nuzlocke UI ownership contract. The independent Encounter Indicator battle HUD remains unchanged.
+
+## 2.5.49 F. TOKEN cursor compatibility
+
+The R/B/Y forgiveness pages now use the same native cursor glyph path as other working Nuzlocke classic UI pages. Gold remains on `Chrome.cursor`. No dependency, engine-range, or save-schema changes.
+
+## 2.5.48 F. TOKEN / Gym Guide compatibility
+
+R/B/Y F. TOKEN rendering now uses the same full-page native tile surface as established Nuzlocke screens instead of a bespoke offset box. The Bag handoff from 2.5.47 remains. Gym Guide candy messages remain on the engine `Commands.show_text` blocking path and add explicit pages only; provider ownership and Bag transaction behavior are unchanged.
+
+## 2.5.47 F. TOKEN screen ownership
+R/B/Y F. TOKEN use now follows the engine's full-screen field-item transition pattern: the Bag/use list is closed before the Nuzlocke selector is pushed. This prevents native item-target UI and UI-provider composition from remaining underneath the forgiveness screen. Gold's PackMenu/Chrome path is unchanged.
+
+## 2.5.46 Gold START-menu lifecycle
+
+Gold builds its START-menu item list once per opening. When Dev Mode changes while NUZ RULES overlays that menu, Nuzlocke now refreshes only its own marked DEV row in-place. Native rows and rows supplied by other mods are not reconstructed or removed.
+
+## 2.5.45 F. TOKEN UI composition
+R/B/Y F. TOKEN screens explicitly opt out of wide/modern logical-surface resizing by using the same native 160x144 classic-layout contract as other stabilized Nuzlocke screens. UI integrations should treat these screens as Nuzlocke-owned opaque surfaces. Gold remains on the native Gen 2 Chrome renderer.
+
+## 2.5.44 Dev diagnostic composition
+
+NZR4 remains format-compatible. The encoder now canonicalizes redundant PASS/WARN bits from its structured diagnostic counters/statuses, and the decoder exposes consistency flags. No gameplay/provider ownership changes are introduced.
+
+Build provenance is corrected to the actual immediate 2.5.43 parent package, restoring the strict-child metadata chain used by Dev diagnostics.
+
+## 2.5.43 Gold battle-queue composition repair
+
+The Nuzlocke Gold refusal pager is now a true overlay around the previously installed `BattleState.update`: it does not clear, consume, or advance native/other-mod queue rows. It restores the exact pre-dialogue phase/message/timer state after the final A/B page, then subsequent updates continue through the captured wrapper chain normally.
+
+## 2.5.42 text-flow compatibility
+
+Gold Nuzlocke battle-rule refusal paging is internally composed around `BattleState.update` with an ownership/session guard. It intercepts only while Nuzlocke-owned refusal pages are active, then delegates to the previously installed update method, preserving other mods' update wrappers in the chain.
+
+## 2.5.41 — recent-feature composition hardening
+
+Trade Evolutions now follows the supported Gen1Recomp `evolution.check(game, mon, evo, trigger)` contract and only supplies the level-40 alternative when `trigger.kind == "levelup"`. Link, item, forced, preview, and future unrelated contexts remain owned by the engine/providers. Gold held-item branch suppression uses the same level-up-only gate.
+
+F. TOKEN revival remains compatible with systems that retain dead Pokemon physically. If such a record is still in the party but current Party Size Limit is lower than the active count, revival relocates it to PC storage before reactivation rather than bypassing the cap. A failed relocation consumes no token.
+
+## 2.5.40 — Forgiveness Token composition
+
+F. TOKEN is no longer synthetic shop stock. R/B/Y's `item.use` hook owns only this custom item and delegates every other item unchanged; Gold intercepts the same custom id at its Pack `useSelected` seam. Shop compatibility is subtractive only: Nuzlocke filters its own token from BUY/SELL presentation and does not modify prices, wallet limits, or unrelated stock.
+
+Permadeath revival stores a plain-data snapshot before the dead Pokemon is pruned, preserving generation/provider fields without requiring another mod to keep the dead object alive. Revival prefers a physically retained matching object when one exists and otherwise restores the archive to legal party/PC storage. Runtime cross-mod validation remains required.
+
+## 2.5.39+DEV — shared evolution-hook composition
+
+Trade Evolutions uses Gen1Recomp's existing shared `evolution.check` hook rather than replacing species data or the engine's link system. Gen 1 rows use `TRADE`/`species`; Gold uses `EVOLVE_TRADE`/`into`. The 2.5.39 code retained defensive Game/data-shape adapters, while 2.5.41 follows the documented `evolution.check(game, mon, evo, trigger)` contract and requires a true level-up trigger. External evolution-method registries and native link-trade ownership remain intact.
+
+The QOL force decision runs before Nuzlocke's Evolution Limits filter, so `NO FINAL` and `NO EVOLUTION` remain authoritative challenge restrictions. Gold held-item trade branches retain their item identity; the item is consumed after a successful level-triggered evolution. No engine minimum or Compatibility API bump.
+
+## 2.5.38+DEV — Gen1Recomp DEV-release update identity
+
+Gen1Recomp's current GitHub mod updater parses a semver-like release tag but stores only its leading `x.y.z` triple for update comparison. A manifest version such as `2.5.38+DEV` is a SemVer prerelease and therefore sorts below candidate `2.5.38`, causing a published DEV build to advertise its own release. Beginning with 2.5.38, Nuzlocke uses `+DEV` as part of the canonical manifest/build identity; build metadata is ignored for SemVer precedence, making the installed version equal to candidate `2.5.38` while later numeric releases remain newer. The `github` repository hint stays enabled, so update discovery itself is not disabled.
+
+No compatibility API or engine-range change.
+
+## 2.5.37-DEV Gold storage / item identity repair
+
+Current Gen1Recomp Gold storage deliberately materializes individual PC boxes on demand, so `save.boxes` may be sparse. Nuzlocke now treats that engine shape as authoritative and uses sparse-safe traversal for every cross-box ownership/recovery scan. This repairs Whiteout reserve discovery, PC-only catch storage discovery, legacy/provenance recovery, and Gold gift/starter ownership detection without changing upstream storage code.
+
+Gen1Recomp item ids identify HMs as `HM_<MOVE>` (with machine metadata), not only numeric display labels such as HM07. Random Field Items now protects that canonical identity, including Gold's visible Ice Path WATERFALL HM. No engine minimum, compatibility provider contract, or registry ownership changes.
+
+## 2.5.36-DEV current Gen1Recomp dev audit
+
+Current Gen1Recomp `dev` head **`def270f7c726ebd7bd87086ad90bc4a7b9622543`** was source-audited against Nuzlocke 2.5.35. No required gameplay/enforcement adapter change was found. The stable published audit marker remains **0.2.7** rather than pinning `recompCompatAudited` to a moving development SHA. Supported engine range remains **`>=0.1.86 <2.0.0`**, Mod API remains **2**, and engine save format remains **4**.
+
+Gold's official read-only BattleAPI now reports Ball inventory and exact stock `catchChance` values. Nuzlocke's existing optional `currentBattleSnapshot(game)` bridge already reads the generation-specific BattleAPI dynamically, so this is an additive diagnostics/presentation improvement rather than a capture-policy ownership change. If `catch.rate` is replaced by another provider, upstream intentionally omits the preview instead of guessing.
+
+Gold battle-party navigation now offers `ui.party.grid_navigation`; Nuzlocke does not own or replace that presentation/input hook. Android's launcher can now unload a game and boot another in the same process after `Runtime.reset()`. Nuzlocke's owner-aware wrapper revalidation is source-consistent with that lifecycle, but a **Red/Yellow -> launcher -> Gold -> launcher -> Red/Yellow** runtime smoke test remains required for setup, Random Starter, movement assists, Unlimited Bag Space, and stale-wrapper absence.
+
+## 2.5.35-DEV recent-feature compatibility
+
+Gold Elm starter scripts are no longer mutated by Nuzlocke's `script.command` wrapper, preventing cross-New-Game process contamination and composing more safely with other wrappers that inspect the same generated row. No compatibility/provider API versions changed. Unlimited Bag Space remains QoL and Rule-Lock-exempt; its bag-capacity composition from 2.5.34 is unchanged.
+
+## 2.5.34-DEV Unlimited Bag Space compatibility
+
+Unlimited Bag Space composes at the engine's `Bag.capacity` boundary rather than replacing `Bag.add`. That keeps item-stack quantity, item ordering, pockets, acquisition scripts, and legality enforcement under the engine/other providers. When the toggle is OFF, Nuzlocke returns the exact downstream capacity; a compatible mod that changes the live Bag size therefore remains authoritative.
+
+When ON, R/B/Y's ordinary Bag and Gold's ITEM/BALL pockets receive an effectively unbounded distinct-slot capacity. Gold KEY ITEM/TM-HM pockets are deliberately left downstream/native, and PC item storage is not part of this adapter. If another provider wraps `Bag.capacity` after Nuzlocke, lifecycle revalidation composes around the current live function rather than assuming an owner marker alone proves the old closure is still active. Compatibility API remains **28**.
+
+## 2.5.33-DEV movement QoL compatibility
+
+Running Shoes and Fast Surf compose through Gen1Recomp's shared `movement.speed` seam in both generations. Nuzlocke applies its multiplier after downstream providers and scopes it by the engine context: on-foot/non-bike for Running Shoes, `surfing=true` for Fast Surf. Gold's normal `movement.speed` call site explicitly supplies the same `onBike`, `surfing`, `input`, and save context as R/B/Y, with its additional player-state/downhill data.
+
+QoL Toggles' source-confirmed `run_hold_b` option is no longer treated as full external ownership of Running Shoes because it cannot represent Nuzlocke's new ALWAYS mode. It is instead detected as a HOLD-B overlap: if B is already being accelerated downstream, Nuzlocke does not halve that same step again. ALWAYS still accelerates non-B walking steps. Fast Surf has no implicit external owner and simply composes with other movement-speed providers. Compatibility API remains 28.
+
+## 2.5.32-DEV Gold Random Starter compatibility
+
+The Gold starter slate has its own deterministic namespace/version and therefore does not require a global Randomizer algorithm bump that would reshuffle encounter or learnset results. If a constrained/modded species pool cannot provide three unique legal candidates, the slate fails soft by reusing the legal pool rather than breaking Elm's starter transaction. Preview wrappers no longer mutate shared Gen2 script data, improving compatibility with other `script.command` consumers.
+
+## 2.5.31-DEV Whiteout / PC recovery compatibility
+
+Compatibility API remains **28**. Whiteout recovery counts only ordinary usable party/Box Pokemon and explicitly excludes `nuzlockeDead`, `nuzlockePcLocked`, and Egg entries, so the new recovery path cannot legalize PC-Only Catches or revive recorded deaths. R/B/Y and Gold continue to delegate their native blackout heal/warp lifecycle on the survivable branch; Nuzlocke owns only the destructive Blackout consequence.
+
+Gold's native PC requires a non-empty party. 2.5.31 composes `src.ui.gen2.PcMenu.new` and clears that construction-time refusal only when Nuzlocke is active, Whiteout is ON, the party is empty, and an eligible boxed reserve exists. All normal PC limits, Party Size policy, mail rules, and permanent PC-lock withdrawal/release gates remain in force.
+
+## 2.5.30-DEV Gold Random Starter compatibility
+Gold Random Starter now has a native Gen 2 `givepoke` transaction safety net in addition to the existing shared `script.command` adapter. The direct wrapper is owner-aware and composes around the live `src.script.gen2.Vm.new`; it shallow-copies the World's VM hook table and replaces only `givePoke`, so other VM callbacks and later/earlier compatible wrappers are preserved.
+
+External starter-randomizer ownership still wins before any Nuzlocke selection or staged-profile synchronization. The transaction repair is limited to a zero-member party plus the three canonical Elm starter operands, so ordinary scripted gifts continue through the existing Gold gift policy unchanged. Compatibility API remains **28**.
+
+## 2.5.29-DEV Gold resource/config compatibility
+Compatibility API remains **28**. Gold Ball Per Encounter uses the existing Gold battle-Pack capture adapter; only the missing Nuzlocke configuration-row exposure changes. Gold starting resources are fresh-save setup behavior: money writes Gold's native `player.money`, Rare Candy writes native `pcItems`, and extra Starting Poke Balls wait for the live Gold Mystery-Egg-return event before entering PC storage. The engine's native 5-Ball story reward remains untouched, reducing conflict with story/progression or capture-provider mods. Runtime combination testing is still required for mods that replace Gold's opening story or PC item-storage transaction.
+
+## 2.5.28-DEV PC-only catch compatibility
+Compatibility API remains **28**. Nuzlocke uses the host's settled `pokemon.caught` event for both generations, so the engine first owns the real capture/Pokedex/storage transaction and Nuzlocke only moves/marks a successful research-only catch afterward. R/B/Y PC enforcement composes around the semantic `pc_box_withdraw` / `pc_box_release` ListMenu kinds; Gold composes around native `doWithdraw`, MOVE destination validation, and `askRelease`. The public Party/PC policy mirrors the same restriction for alternate PC providers.
+
+A compatible progression capture can opt into the narrow No Catching exception only by declaring both progression-required and progression-exception permission. Ordinary wild catches do not inherit that exemption. Storage preflight fails closed for the exception; Gold also mirrors the native full-party/current-Box check before a Ball can be used. Provider/alternate-PC combination runtime testing remains required, especially for providers that mutate storage without consulting the public acquisition/PartyPC policies.
+
+## 2.5.27-DEV Maximum BST compatibility
+Compatibility API remains **28**. This build only expands Nuzlocke's UI preset choices; provider-supplied species metadata/BST composition and the numeric Maximum BST contract are unchanged. Existing free-form saved thresholds remain valid and are not rewritten.
+
+## 2.5.26-DEV STAT INFO compatibility
+R/B/Y STAT INFO consumes more of its own unused horizontal space only. No hook ownership, provider composition, Modern UI contract, Gold screen, or gameplay integration changes.
+
+## 2.5.25-DEV Random Field Items compatibility
+Compatibility API remains **28**. Nuzlocke composes around the live R/B/Y visible-item `talkTo` method and Gold `HiddenItems.ballPickupScript` method with owner-aware wrapper sessions. The option does not claim external randomizer ownership and does not touch hidden-item, gift, shop, fruit/apricorn, or scripted-reward paths. Protected key/HM pickups fail open to the authored item. Runtime combination testing with mods that replace visible item-ball handling remains required.
+
+## 2.5.24-DEV UI navigation compatibility
+Compatibility API remains **28**. Remembered Rules/Setup position is local to Nuzlocke's own configuration surfaces and is separated across R/B/Y vs Gold and Setup vs active Rules. It does not claim external menu ownership, change provider delegation, or persist compatibility state.
+
 ## 2.5.23-DEV fresh-session/runtime compatibility
 Compatibility API remains **28**. Critical R/B/Y direct/script wrappers now revalidate on fresh `save.created`, and staged late-runtime phase 2 is actually executed rather than discarded. Random Starter uses an explicit internal cross-phase helper export, avoiding Lua's silent global fallback when a local is out of lexical scope. Provider ownership/public capability semantics are unchanged.
 
@@ -6,7 +302,7 @@ Compatibility API remains **28**. Gen 1 kerning now refuses to guess through an 
 
 ## 2.5.21-DEV trainer identity compatibility
 Compatibility API remains **28**. Reward recognition and League progression now share one trainer identity normalization path covering ID, class, and name evidence, including R/B/Y `oppClass`, generic provider class aliases, and Gold `trainer.classId` / `trainer.class`. This reduces disagreement when another mod or provider changes trainer payload shape without changing provider ownership semantics.
-# Compatibility — 2.5.23-DEV
+# Compatibility — 2.5.30-DEV
 
 
 ## 2.5.20-DEV compatibility safety
@@ -200,7 +496,7 @@ Evidence/status vocabulary:
 
 | Mod / tool | Version last inspected | Last audit | Analysis type | Current Nuzlocke treatment | Runtime status / limitation | Re-audit trigger |
 |---|---:|---|---|---|---|---|
-| Gen1Recomp upstream | 0.2.1 | 2026-08-17 / 2.4.55 | SOURCE/STATIC + historical runtime | 0.2.0 mod-runtime baseline plus launcher-only 0.2.1 hotfix; official `mod.storage`; improved Gold `catch.rate` context; explicit Gold fallbacks retained where parity is incomplete | Current source-audited engine; individual Nuzlocke features still carry their own runtime status | New Gen1Recomp release or changed documented hook/registry/storage contract |
+| Gen1Recomp upstream | 0.2.7 + dev `def270f7` | 2026-08-19 / 2.5.36 | SOURCE/STATIC + historical runtime | 0.2.7 published baseline plus current dev audit; official `mod.storage`; Gold BattleAPI Ball/catch previews; shared Gold party-grid hook; Android in-process game switching; explicit Gold fallbacks retained where parity is incomplete | Current published baseline source-audited; dev hot-swap matrix TEST REQUIRED; individual features retain their own runtime status | New release/dev contract change in hooks, registries, storage, Runtime reset, BattleAPI, or game-switch lifecycle |
 | Kanto Ascendant | 6.5.4 | 2026-08-17 / 2.4.12 | SOURCE/STATIC | External difficulty/trainer-level/wild-level/Trainer Card presentation ownership classification | Combination TEST REQUIRED | Ascendant difficulty/provider contract changes |
 | Wilds of Kanto | 2.1.7 | 2026-08-17 / 2.4.11 | SOURCE/STATIC | Audited overworld-catch policy + tracker bridge | Runtime combination TEST REQUIRED | Wilds catch/storage exports or overworld acquisition flow changes |
 | Modern Party UI | 0.3.8 | 2026-08-17 / 2.4.11 | SOURCE/STATIC | Presentation provider; avoid controller double-wrapping | Runtime combination TEST REQUIRED | Party controller/ownership changes |
@@ -240,13 +536,15 @@ All Pokémon Catchable 151 therefore composes naturally through its encounter/ev
 
 ## Current Gen1Recomp target
 
-- Audited release: **0.2.1** (0.2.0 runtime; 0.2.1 launcher-only hotfix)
+- Audited published release: **0.2.7**
+- Additional moving-development audit: **`dev` @ `def270f7c726ebd7bd87086ad90bc4a7b9622543`** (2026-08-19 / Nuzlocke 2.5.36)
 - Manifest: **`>=0.1.86 <2.0.0`**
 - Mod API: **2**
+- Engine save format: **4**
 - Games declared: Red, Blue, Yellow, Gold
 - `affects_link: true`
 
-2.4.57 broadened the manifest to `>=0.1.86 <2.0.0`. The range is an engine-semver load declaration, not automatic runtime certification; Mod API 2 remains the separate breaking mod-surface contract.
+The stable `recompCompatAudited` marker remains 0.2.7 because the `dev` SHA is moving development state, not a published compatibility profile. 2.4.57 broadened the manifest to `>=0.1.86 <2.0.0`; that range is an engine-semver load declaration, not automatic runtime certification, and Mod API 2 remains the separate breaking mod-surface contract.
 
 
 ## Party Size Limit composition (2.4.22)
@@ -510,3 +808,8 @@ R/B/Y composes at the existing `BattleState.throwBall` seam after capture legali
 
 ## Gen1Recomp 0.2.2–0.2.7
 The release deltas through 0.2.7 were source-audited. No change to the Nuzlocke engine requirement is needed; it remains `>=0.1.86 <2.0.0`. The final 0.2.7 Gold encounter schema includes TimeFishGroups/day-night fishing under the shared `encounters` registry; Nuzlocke's public final-registry facade now resolves the Gold `gen2Encounters` target. Newer additive battle/UI/render/audio surfaces are observed rather than commandeered, preserving compatibility with presentation and input mods.
+
+
+## Exact edition versus shared generation (2.5.67)
+
+Red, Blue and Yellow continue to share Gen 1 mechanics; Gold and Silver continue to share the Gen 2 engine path. That sharing no longer means diagnostic identity is shared: runtime reports and user-facing status/rules surfaces identify the exact edition. Compatibility code should branch on generation only when the engine/mechanic is genuinely shared, and on exact edition only for edition-specific data or behavior.

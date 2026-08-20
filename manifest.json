@@ -1,7 +1,7 @@
 {
   "id": "nuzlocke",
   "name": "Nuzlocke",
-  "version": "2.5.23-DEV",
+  "version": "2.6.0",
   "api": 2,
   "entry": "main.lua",
   "profile": "content",
@@ -32,13 +32,14 @@
     "gen1_pt-br"
   ],
   "conflicts": [],
-  "description": "Configurable Nuzlocke enforcement, encounter tracking, challenge rules, run status, and quality-of-life options for Red, Blue, Yellow, and beta Gold support.",
+  "description": "Configurable Nuzlocke enforcement, encounter tracking, challenge rules, run status, and quality-of-life options for Red, Blue, Yellow, and beta Gold/Silver support.",
   "github": "Stone696/nuzlocke",
   "games": [
     "red",
     "blue",
     "yellow",
-    "gold"
+    "gold",
+    "silver"
   ],
   "affects_link": true
 }

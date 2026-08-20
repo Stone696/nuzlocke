@@ -1,3 +1,312 @@
+# 2.6.0 API note
+
+No public API or save-schema revision. Compatibility API remains **29** (`compatible_from = 10`), Diagnostics API **1**, Run History API **1**, Save Schema **4**, and Gen1Recomp Mod API **2**. Moving `progression_pc_catches` to the top of QOL changes only menu categorization/order; its rule key and persisted representation are unchanged.
+
+# 2.5.92 API note
+
+Run History API remains **1** and storage remains v1. `pokemon.died` rows can now include scalar `deathSequence`, and the built-in death producer derives an internal dedupe key `death:<pokemonId>:<deathSequence>` when both values exist. This is additive and backward-compatible; event kind names and consumer functions are unchanged.
+
+# 2.5.91 API note
+
+No public API version changes. Internal migration-shadow `changes()` now uses structural value equality for table-shaped save data so dry-run output reports semantic changes rather than copied-table identity changes.
+
+# 2.5.90 API note
+
+No public API version changes. The existing acquisition-source helper functions retain their names and semantics; only their implementation/data moved to package-local `acquisition_catalog.lua`. Compatibility API remains **29**, Diagnostics API **1**, Run History API **1**, Save Schema **4**, and Mod API **2**.
+
+# 2.5.89 API note
+
+No public API version changes. Compatibility API remains **29**, Diagnostics API **1**, Run History API **1**, Save Schema **4**, and Mod API **2**. `dev_report.lua` is an internal package-local extraction only; the existing `mod.exports.__beta26.Dev` and `mod.exports.nuzlocke_dev` surfaces remain the public diagnostic contracts.
+
+# 2.5.88 API note
+
+No public API revision. Compatibility API remains **29** (`compatible_from = 10`), Diagnostics API remains **1**, Run History API remains **1**, Save Schema remains **4**, and Gen1Recomp Mod API remains **2**. The new `uiSessionState` export is diagnostic/internal UI state, not a compatibility contract and not gameplay save data.
+
+# 2.5.87 Compatibility API 29
+
+Compatibility API advances from 28 to **29** while remaining backward-compatible from API 10. `nuzlocke_compat.getEngineProfile(version?)` returns a public copy of a known engine profile (defaulting to the active audited profile); `getCompatibilitySummary()` returns the API version, compatibility floor, audited engine, active engine profile, resolved profile metadata, and capability contract versions. `getCapabilityVersion()` now normalizes case and common separators before lookup.
+
+The capability-first Public Interop surface adds read-only `listProviders()` and `providerCount()` helpers plus legacy-compatible aliases `hasProviderCapability`, `providersWithCapability`, `listProviders`, and `providerCount`. Provider enumeration returns copied records so consumers cannot mutate the live registry accidentally. Engine profiles for Gen1Recomp 0.2.12, 0.2.13, and 0.2.14 are now explicitly present, and Release Safety verifies that the configured active engine profile resolves. Mod API remains 2.
+
+The 2.5.86 tracker-marker presentation is reverted and has no API/state effect.
+
+# 2.5.86 Encounter Tracker status markers
+
+> **2.5.86 note:** ENC TRACKER now uses font-safe `O CAUGHT`, `X FAILED`, `- OPEN`, `* SHINY`, and `X DEAD` labels across classic R/B/Y, native Gold/Silver, and Modern UI presentation. Text remains explicit for accessibility; encounter mechanics and stored state are unchanged.
+
+# 2.5.85 Run History producer completion
+
+Run History API remains **1** and storage version remains **1**. No consumer-facing function or event name is removed. `pokemon.caught` is now produced for ordinary successful catches as well as the existing starter/gift/trade/progression acquisition paths. `pokemon.died` remains produced by the authoritative R/B/Y battle, field-poison, and Gold/Silver battle permadeath paths. `forgiveness.awarded` is now produced after a Gym Leader reward commits; `forgiveness.used` is produced after successful area/revive spends and includes the post-spend `tokens` value.
+
+Catch payloads may additionally expose flat scalar `encounterTime`, `roamerSpecies`, `encounterSource`, `encounterProvider`, `encounterProviderVersion`, `pcLockReason`, and `pcBox` fields when known. These are additive fields under API 1; consumers must continue to tolerate absent optional fields. Gym award rows use a semantic Leader dedupe key. Built-in death rows use Pokémon identity plus `deathSequence` as an occurrence-level dedupe key; the sequence survives F. TOKEN revival, so a later genuine death receives a new sequence and remains chronological.
+
+## 2.5.83 engine-audit API note
+
+> **2.5.84 note:** RS-CACHE-DEDUP-001 is fixed: unseeded Random Starter distinct-choice bookkeeping ignores scoped cache/internal marker rows and counts only canonical bare starter-slot mirrors. Seeded/deterministic starter behavior is unchanged. Gen1Recomp 0.2.14 is exact-runtime boot/DEV REPORT PASS.
+
+
+No public Nuzlocke API changes in 2.5.83. Compatibility API remains **28**, Diagnostics API **1**, Run History API **1**, Save Schema **4**, and Gen1Recomp Mod API **2**. The only executable metadata change is `recompCompatAudited = "0.2.14"`; the 0.2.14 upstream delta exposes no new mod-facing API to consume.
+
+## 2.5.82 Public Interop module note
+
+Compatibility API remains **28**, Diagnostics API **1**, Run History API **1**, Save Schema **4**, and Mod API **2**. `public_interop.lua` is an internal architecture module only; it does not rename, remove, or version-bump any public provider/capability surface.
+
+## 2.5.81 rule-catalog module note
+
+Compatibility API remains **28**, Diagnostics API **1**, Run History API **1**, Save Schema **4**, and Mod API **2**. `rule_catalog.lua` is an internal package-local architecture module; it does not create a new public API or change rule keys/defaults.
+
+## 2.5.80 acquisition provenance and modularization note
+
+Compatibility API remains **28**, Diagnostics API **1**, Run History API **1**, Save Schema **4**, and Mod API **2**.
+
+A small cooperative acquisition-provenance API is available as `mod.exports.nuzlocke_acquisition_provenance`:
+
+- `version = 1`
+- `key = "stadium_prize"`
+- `display = "STADIUM PRIZE"`
+- `mark(mon, origin)` — marks an existing Pokémon as a Stadium prize; optional origin accepts Stadium 1/2 spellings and normalizes to `stadium_1` / `stadium_2`.
+- `describe(mon)` — returns the normalized Stadium provenance record when applicable.
+
+The API deliberately records acquisition provenance rather than a fake catch location. The internal implementation also mirrors the canonical origin into Nuzlocke's identity/provenance fields.
+
+The entry file now loads `run_history.lua`, `release_safety.lua`, `dev_diagnostics.lua`, `save_migration.lua`, and `stadium_provenance.lua`. This is an implementation split, not an API-version bump.
+
+## 2.5.78 save/migration integrity note
+
+2.5.78 keeps Compatibility API **28**, Diagnostics API **1**, Run History API **1**, and Save Schema **4**. The internal `__beta26.saveUpgrade` surface adds transaction API 1 helpers for numbered schema migration safety: `previewPendingSchemaMigrations()`, `recoverSchemaTransaction(version)`, `applySchemaMigration(fromVersion, target, migrate)`, `status()`, and `audit()`.
+
+`createPreMigrationBackup(game, save)` creates a bounded three-deep raw-save snapshot rotation beside the active save using Gen1Recomp's `SaveData.saveFilename()` / `persistenceFs()` surface; it never overwrites the engine's own `.bak`/`.tmp` files. `previewPendingSchemaMigrations()` is read-only with respect to live persistence. Schema migrators receive a save-like store and are preflighted against an in-memory shadow before commit. The live commit uses reserved bookkeeping key `__nuzlocke_schema_migration_txn`; it records touched-key pre/post state, writes the schema marker last, and is removed after successful completion. An interrupted transaction is either rolled back when the old schema marker remains or finalized when the target schema marker already committed. A failed migration/recovery also causes the existing Nuzlocke persistence/enforcement safety boundary to report `migration_error` and refuse further Nuzlocke-owned writes until recovery succeeds. This is distinct from `newer_schema` even though both pause unsafe persistence. These are internal/development surfaces and do not establish a new stable third-party API version.
+
+The transaction mechanism currently covers numbered schema transitions only. Semantic, reconstruction, and projection upgrade steps remain under the existing deterministic coordinator but are not advertised as atomic.
+
+## 2.5.77 release-safety diagnostic note
+
+2.5.77 keeps Compatibility API **28**, Diagnostics API **1**, Run History API **1**, and Save Schema **4**. The internal/developer export surface gains `releaseSafetyAudit()` and `assertReleaseSafety()` under the existing compatibility namespace. The aggregate result is also represented in Dev self-test. These functions are read-only with respect to gameplay/save state except that `assertReleaseSafety()` raises on a failed static release contract. They do not constitute a new stable public API version.
+
+## 2.5.76 documentation-hygiene API note
+
+2.5.76 does not change the executable public API. Compatibility API remains **28**, Diagnostics API remains **1**, Run History API remains **1**, and Save Schema remains **4**. Public API documentation was sanitized for durable release/technical provenance only.
+
+## 2.5.75 process-only API note
+
+2.5.75 does not change the executable public API. Compatibility API remains **28**, Diagnostics API remains **1**, Run History API remains **1**, and Save Schema remains **4**. The new review/process contracts are development workflow only and expose no new mod API.
+
+## 2.5.74 documentation-only API note
+
+2.5.74 does not change the executable public API. Compatibility API remains **28**, Diagnostics API remains **1**, Run History API remains **1**, and Save Schema remains **4**. The planned public-namespace cleanup (`mod.exports.__beta26` -> canonical `mod.exports.nuzlocke` with a long-lived deprecated alias) is **planning only** and is not implemented by this build.
+
+## 2.5.73 Run History API 1
+
+A new additive API is exported as `mod.exports.nuzlocke_run_history`. It is independent of Compatibility API 28 and does not change Save Schema 4.
+
+- `version = 1`
+- `audited_recomp = "0.2.12"`
+- `event = "nuzlocke.run_history"` — emitted after a journal row is committed. Payload: `{ game, event, run_id }`.
+- `list(game, opts)` — returns copied chronological rows. Optional `opts.kind`, `opts.after_seq`, and `opts.limit` (1..512).
+- `report(game)` — returns storage/API version, run ID, exact edition, generation, retained row count, lifetime counters, and first/last retained sequence IDs.
+- `record(kind, payload, opts)` — additive companion/internal producer seam. Only scalar payload fields are persisted; engine objects/tables are deliberately discarded. Optional `opts.dedupe` makes an event idempotent while retained.
+
+Storage is `run_history_v1` with format version 1. Root metadata includes `partial`, `coverage_start_build`, `baseline_catches`, and `baseline_deaths`; consumers must not present an upgraded mid-run journal as complete history. Rows contain `seq`, `kind`, exact `edition`, `generation`, `build`, optional `dedupe`, plus flat scalar event fields. Retention is capped at 512 rows. Lifetime counters are not decremented when old detail rows age out.
+
+Initial canonical event kinds are `pokemon.caught`, `pokemon.died`, `badge.earned`, `forgiveness.awarded`, `forgiveness.used`, `run.blackout`, `run.completed`, and `note`. 2.5.73 wires producers for catches, deaths and forgiveness use; the remaining declared kinds reserve the stable vocabulary for later progression/run-lifecycle producers.
+
+`run_history_v1` intentionally does not replace `tracker_log` or legacy `nuzlocke_history`. Tracker remains encounter-state/presentation data; legacy history remains compatibility state; Run History owns chronology for future readers.
+
+## 2.5.71 Gen 2 Random Starter transaction identity
+
+The existing starter-randomizer API remains version 2. Internally, Gold/Silver Elm previews now store the exact displayed choice in VM-private transaction state; the matching native `givepoke` consumes that choice without rerolling. No public API signature, Compatibility API version, Save Schema, or Diagnostics API version changes.
+
+## 2.5.70 Gen 2 Random Starter candidate validation
+
+No public API version bump. `starter_randomizer` remains API 2 and Compatibility API remains 28. Its candidate safety contract is now generation-aware: R/B/Y retain the Gen 1 Pokemon constructor checks; Gold/Silver validate Gen1Recomp's Gen 2 `Mon` record shape (`baseStats`, `growthRate`, `types`, `levelMoves`, and referenced move PP). Provider/delegation ownership is unchanged.
+
+## 2.5.69 Gen 2 Random Starter transaction note
+
+No public API version bump. `starter_randomizer` remains API 2 and Compatibility API remains 28. The private Gen 2 transaction now carries the exact live game object in its one-shot Elm starter intent so the native GivePoke substitution resolves against the correct fresh NEW GAME state. Silver is explicitly registered with the Johto starter family.
+
+## 2.5.68 status-presentation note
+
+No public API changes. NUZ STATUS row filtering/labels are presentation-only; Compatibility API remains 28, Diagnostics API remains 1, Save Schema remains 4, and NZR6 encoding is unchanged.
+
+## 2.5.65 Silver / Gen 2 family note
+
+`nuzlocke_compat.game_profiles` now treats `SILVER` as an experimental GSC profile. The historical private/runtime helper name `runtimeIsGold` is retained for compatibility but semantically answers whether the active game is generation 2; on Gen1Recomp 0.2.11 this includes Gold and Silver. Public Compatibility API remains 28.
+
+## 2.5.63 Dev fingerprint/compatibility guard note
+
+`Dev.reportFingerprint(text, bits)` now exposes the deterministic NZR5 hash operation needed outside the compiler-budget codec scope. Compatibility relationship lookup treats a missing capability as neutral compose metadata rather than attempting a nil-key table index.
+
+## 2.5.62 storage-facade and engine-audit note
+
+Compatibility API remains **28**, Diagnostics API **1**, Save Schema **4**, and Gen1Recomp Mod API **2**. Dev diagnostics now call the playthrough-bound `mod.storage` facade using its bound signatures (`context()`, `readBytes(key)`, `writeBytes(key, bytes)`, `list(prefix)`, `delete(key)`). Gen1Recomp 0.2.11 is the current stable audited marker; engine range remains `>=0.1.86 <2.0.0`.
+
+## 2.5.61 runtime-error and engine-audit note
+
+Compatibility API remains **28** (`compatible_from = 10`), Diagnostics API remains **1**, Save Schema remains **4**, and Gen1Recomp Mod API remains **2**. The development `__beta26.Dev` surface gains `errorCode(label, err)` / public diagnostic alias `error_code` for deterministic caught-runtime fingerprints; this is diagnostic infrastructure, not a new stable third-party compatibility contract. Published Gen1Recomp 0.2.10 is the new stable audited engine marker; the manifest range remains `>=0.1.86 <2.0.0`.
+
+## 2.5.59 dead-fallback lint hardening
+
+No public compatibility contract changes in 2.5.59. Compatibility API remains **28** (`compatible_from = 10`) and Diagnostics API remains **1**. Internally, `deadFallbackAudit(source)` is exposed on the development export surface and consumed at module load and by Dev assertions; it is not a new stable external compatibility contract.
+
+## 2.5.58 cross-table invariant hardening
+
+No public compatibility contract changes in 2.5.58. Compatibility API remains **28** (`compatible_from = 10`) and Diagnostics API remains **1**. Internally, `crossTableInvariantAudit()` is exposed on the development export surface and is also consumed by Dev assertions; it is not a new stable external compatibility contract.
+
+## 2.5.57 active-guard contract hardening
+
+No public compatibility contract changes in 2.5.57. Compatibility API remains **28** (`compatible_from = 10`) and Diagnostics API remains **1**. Internally, `trainer_rewards.lua` exposes an `activeGuardAudit(source)` development diagnostic used at module installation and by Dev assertions. It verifies required enforcement guards and documented persistence exceptions; it is not a new stable external compatibility contract.
+
+## 2.5.56 rule coercion source consolidation
+
+No public Compatibility API, Diagnostics API, or Save Schema version changes. Internally, ordinary rule numeric coercion now derives from the authoritative rule registration rows. `__beta26.ruleRegistry` descriptors additionally expose per-rule coercion metadata used by diagnostics/audit tooling.
+
+## 2.5.55 rule-registration source consolidation
+
+No public compatibility contract changes in 2.5.55. Compatibility API remains **28** (`compatible_from = 10`) and Diagnostics API remains **1**. Internally, ordinary rule defaults/types now originate on the same rule registration rows used by Setup/NUZ RULES; the existing read-only `__beta26.ruleRegistry` descriptors consume that same metadata.
+
+## 2.5.54 compiler-budget refactor
+
+No public API, save, compatibility, or diagnostics contract changes. Compatibility API remains **28**, Diagnostics API **1**, Save Schema **4**, and Mod API **2**. The refactor changes only internal helper lifetime/placement. `NZR5` and legacy `NZR4` decoding behavior are unchanged from 2.5.53.
+
+## 2.5.53 Dev Report compact-code contract
+
+Fresh `Dev.buildReportCode()` output uses `NZR5`. The decoder accepts both NZR4 and NZR5. In NZR5, hook health, lifecycle callbacks, safe-stop writes, rule effectiveness, and randomizer integrity are reconstructed from their encoded structured counters/status instead of being encoded a second time as summary bits.
+
+## 2.5.51 Gold Random Starter internal transaction note
+
+No public compatibility API changes. Gold's Random Starter implementation now carries the exact Elm starter decision from `script.command` to the native `hooks.givePoke` transaction through private per-VM one-shot state. External random-starter provider ownership still disables the Nuzlocke-owned substitution.
+
+## 2.5.50 F. TOKEN area API behavior
+
+`reopenFailedEncounterWithForgiveness(game, areaKey)` now accepts an optional explicit logical area key; omitting it preserves the historical current-area fallback for compatibility. `forgivenessAreaEligible(game, areaKey)` and `forgivenessAreaRows(game)` expose the same authoritative eligibility projection used by the F. TOKEN area picker and ENC TRACKER action. No Compatibility API or Save Schema version changed.
+
+## 2.5.49 F. TOKEN UI behavior
+
+R/B/Y F. TOKEN selectors now render the active row with `src.ui.Theme.cursor` through `Font.drawCode`, matching established native-style Nuzlocke menu pages. No public API or forgiveness mechanic changed.
+
+## 2.5.48 UI/text behavior
+
+No public save/API schema changed. R/B/Y F. TOKEN screens now render with the established full-page 20x18 tile layout. Gym Guide Rare Candy still uses the existing foreground script command, but its Nuzlocke-added text now contains explicit page boundaries before `NuzlockeRareCandyMenu` is pushed.
+
+## 2.5.47 F. TOKEN R/B/Y presentation ownership
+The R/B/Y `item.use` interception for F. TOKEN now closes the active Bag/use list before pushing `NuzlockeForgivenessItem`. `NuzlockeForgivenessItem` and `NuzlockeForgivenessRevive` are also published through `nuzlocke_ui.describeScreen()` as classic Nuzlocke-owned surfaces. No public save/API schema changed.
+
+## 2.5.46 Gold Dev Mode visibility
+
+`mod.exports.__beta26.Dev.enabled()` now resolves `dev_mode` through the same live config accessor used by NUZ RULES. `refreshGoldDevMenuRow(game, enabled)` updates only Nuzlocke's marked DEV row in the already-open Gold START menu; later openings still rebuild through `ui.start_menu.items`.
+
+## 2.5.45 F. TOKEN presentation ownership
+The internal `NuzlockeForgivenessItem` and `NuzlockeForgivenessRevive` screens now advertise stable screen IDs, `uiModLayout = "classic"`, `keepClassicUi = true`, and Nuzlocke presentation ownership/fallback metadata on R/B/Y. This is presentation-only and does not change public F. TOKEN APIs or persistence. Gold continues to render these screens through Gen 2 `Chrome`.
+
+## 2.5.44 NZR4 consistency hardening
+
+No public API version bump. `mod.exports.nuzlocke_dev.report_code(...)` still emits `NZR4`, but redundant summary bits for `hook_health`, `lifecycle_callbacks`, `safe_stop_writes`, `rule_effectiveness`, and `randomizer_integrity` are now derived from the same structured evidence that is encoded later in the payload.
+
+`decode_report_code(code)` now additionally returns `consistent` and a `consistency` table with those five checks. This is additive Diagnostics API behavior and makes internally contradictory legacy/transcribed codes identifiable without changing the NZR4 bit layout.
+
+## 2.5.43 Gold pager ownership correction
+
+No public API version change. The internal Gold battle-rule pager no longer mutates `BattleState.queue` or calls `advanceQueue()`. It snapshots/restores only `phase`, `message`, and `messageTimer`; Compatibility API remains **28**.
+
+## 2.5.42 player-paced Gold battle-rule text
+
+No public API version change. Gold Nuzlocke battle-rule refusals now use an internal pager installed over `src.ui.gen2.BattleState.update`; it owns only Nuzlocke-authored refusal pages, consumes A/B to advance, then returns through `advanceQueue()`. Compatibility API remains **28**.
+
+## 2.5.41 recent-feature hardening
+
+Compatibility API remains **28**. `tradeEvolutionByLevelAllows(...)` and Gold branch suppression now require the supported `trigger.kind == "levelup"` contract; link/item/forced/other evolution contexts are never converted by the QoL path. `reviveWithForgiveness(...)` also detects a physically retained dead party member when the current Party Size Limit has since been lowered and relocates it to legal PC storage before clearing death state.
+
+Build/manifest identity is numeric-only (`2.5.41`) from this version forward. Save Schema, Diagnostics API, Mod API, and engine range are unchanged.
+
+## 2.5.40 Forgiveness Token internals
+
+`forgivenessTokenItemId` is now `NUZLOCKE_FORGIVENESS_TOKEN`, backed by the live save inventory. `forgivenessTokens()` reads the carried quantity and keeps `route_forgiveness_tokens` only as a backward-compatible mirror; `setForgivenessTokens()` updates both. `ensureForgivenessTokenItem()` installs the runtime item definition and `syncForgivenessTokenItem()` migrates legacy unspent counts.
+
+The old `forgivenessTokenShopId`, million-yen price/settlement helpers, Bag purchase bridge, and stock injector are retired. Private helpers `archiveForgivenessDeath`, `reopenFailedEncounterWithForgiveness`, and `reviveWithForgiveness` own lossless death snapshots and explicit spending. No public Compatibility API version bump.
+
+## 2.5.39+DEV evolution QoL internals
+
+Compatibility API remains **28**. The internal DEV export `tradeEvolutionLevel` is `40`, and `tradeEvolutionByLevelAllows(gameOrData, mon, evo, trigger)` models the new default-OFF Trade Evolutions QOL across the shared `evolution.check` seam. It recognizes both Gen 1 `TRADE` rows and Gold `EVOLVE_TRADE` rows.
+
+The 2.5.39 adapter defensively accepted either a live Game or a merged-data-shaped first argument. Current Gen1Recomp documents the supported hook contract as `evolution.check(game, mon, evo, trigger)` for both generations; 2.5.41 therefore keys the QoL decision to `trigger.kind == "levelup"` while retaining the shape adapters for backward/provider tolerance. `evolutionTargetId` accepts both Gen 1 `species` and Gold `into` target fields. No public API contract/version changed.
+
+## 2.5.38+DEV API note
+
+Compatibility API remains **28**. `PartyPC.evaluate()` no longer reports the Nuzlocke `party_size_limit` denial when the configured value is 6, because 6 is native capacity rather than a challenge restriction. Limits 1-5 retain the same denial contract. `mod.exports.__beta26.build` and `mod.exports.__beta26.manifestVersion` both expose the canonical updater-safe `2.5.38+DEV` identity.
+
+## 2.5.37-DEV storage/randomizer repair internals
+
+No public API version changed. Compatibility API remains **28**, Diagnostics API **1**, Save Schema **4**, and Mod API **2**.
+
+`mod.exports.__beta26.forEachExistingSaveBox(save, callback)` is an internal sparse-safe traversal used by Nuzlocke storage scans. Gold's `save.boxes` may omit never-used intermediate numeric slots, so internal code no longer relies on `ipairs(save.boxes)` for cross-box discovery. The callback receives `(box, numericIndex)` in ascending index order and may return `false` to stop early.
+
+PC-Only Catch preflight now records the chosen filing box on the battle transaction. Post-catch filing treats that as a preferred target and falls back to any box with room, rather than re-applying Gold's *pre-throw* current-box-only rule after the catch has increased party size. Permanent `nuzlockePcLocked` metadata is written only after the caught Pokemon is confirmed in storage.
+
+Random Field Item HM protection now uses both canonical `HM_` ids and `def.machine.kind/type == "HM"`; no randomizer API or RNG algorithm version changes.
+
+## 2.5.36-DEV Gen1Recomp dev-audit internals
+
+No public Nuzlocke API changed. `recompCompatAudited` intentionally remains **`0.2.7`**, the latest published release profile; current Gen1Recomp development head **`def270f7c726ebd7bd87086ad90bc4a7b9622543`** is recorded separately in compatibility documentation because a moving SHA is not a stable semantic compatibility version.
+
+The existing `nuzlocke_compat.currentBattleSnapshot(game)` remains optional/read-only and dynamically loads the generation-appropriate official BattleAPI. On current Gold dev, its `items` snapshot can now contain Ball records with exact stock `catchChance` percentages. Nuzlocke does not calculate or enforce from those preview percentages; capture legality and Ball Per Encounter continue to use their established transaction hooks. Upstream may return `catchChance=nil` when another mod owns `catch.rate`.
+
+Current Gold also exposes `ui.party.grid_navigation` for battle party menus. Nuzlocke claims no capability or ownership for that hook. Android in-process launcher switching calls upstream `Runtime.reset()` before another game boots; 2.5.36 adds no new lifecycle wrapper and relies on the existing owner-aware revalidation strategy.
+
+## 2.5.35-DEV recent-feature repair internals
+
+No public API versions changed. Gold Random Starter's `script.command` observer no longer rewrites the native `givepoke` command; concrete species substitution remains owned by the existing 2.5.30 `Vm.new` / `hooks.givePoke` transaction wrapper. Starter cache normalization now treats plain species-id keys as case-insensitive while preserving/canonicalizing the known opaque `GOLD_STARTER_SLATE:v1:s...:style...` scope.
+
+## 2.5.34-DEV Unlimited Bag Space internals
+
+No public Compatibility API capability was added; Compatibility API remains **28**. Unlimited Bag Space is implemented as an internal, session-safe wrapper around the engine's `src.inventory.Bag.capacity` function. The wrapper always asks the downstream/live capacity first. OFF returns that answer unchanged; ON raises the relevant ordinary carrying pocket to an effectively unbounded finite capacity.
+
+`mod.exports.__beta26.unlimitedBagCapacity(nativeCapacity, pocket, game, enabled)` is an internal deterministic resolver used by the wrapper. R/B/Y's ordinary Bag is eligible. On Gold, only `ITEM` and `BALL` are expanded; `KEY_ITEM` and `TM_HM` preserve the downstream capacity. Stack quantity remains owned by `Bag.add` and therefore stays capped at 99.
+
+`installUnlimitedBagSpace()` records owner/previous/wrapper identity on `Bag` and revalidates at safe lifecycle boundaries. Save Editor sessions skip the runtime patch so an editor loader cannot strand a stale `mod.save` closure in gameplay. No Save Schema field or migration marker is required because the new persisted setting is an ordinary default-OFF configuration row already covered by the canonical rule/save descriptor machinery.
+
+## 2.5.33-DEV movement-assist internals
+
+Compatibility API remains **28**. `automatic_running_shoes` is now a numeric three-state configuration value (`0=OFF`, `1=HOLD B`, `2=ALWAYS`) with defensive boolean compatibility (`false->0`, `true->1`). New `fast_surf` uses the same numeric mode. Internal helpers `__beta26.movementAssistMode` and `__beta26.movementAssistLabel` normalize/label the values.
+
+No new public provider capability is introduced. Both assists compose through the existing engine `movement.speed` hook. The semantic migration marker `movement_assist_modes_2533` converts the historical Running Shoes boolean once and seeds Fast Surf OFF without changing Save Schema 4.
+
+## 2.5.32-DEV Gold Random Starter slate internals
+
+Gold now exposes `goldRandomStarterSlate(game, seed, style)` internally. It builds the complete Elm three-ball slate in canonical starter order, uses the dedicated versioned `STARTER_SLATE` deterministic namespace, and avoids replacement while legal alternatives remain. The accepted starter scalar is still written only by `commitRandomStarter`. Preview rewriting returns copied args/cmd values for the current `script.command` dispatch rather than modifying shared generated source tables.
+
+## 2.5.31-DEV Whiteout recovery internals
+
+Compatibility API remains **28**, Diagnostics API remains **1**, and Save Schema remains **4**. 2.5.31 adds internal `__beta26` helpers for classifying Whiteout recovery reserves and deciding survivable Whiteout versus destructive Blackout. These are implementation helpers, not new Compatibility API capabilities/providers. A one-time semantic marker `whiteout_semantics_restored_2531` documents the corrected persisted meaning of the existing `whiteout_clause` configuration key.
+
+Gold's empty-party Bill's-PC recovery wrapper composes the native `PcMenu.new` construction seam only when Whiteout recovery has at least one eligible boxed Pokemon; it does not alter the public Party/PC compatibility policy or the permanent PC-Only-Catch lock contract.
+
+## 2.5.30-DEV Gold Random Starter implementation note
+Compatibility API remains **28**. The repair is internal: Gold now composes around the Gen 2 VM constructor so each VM receives a copied hook table whose `givePoke` callback can replace only the canonical first-party Elm starter species. No public capability name, provider contract, return shape, or API version changes.
+
+`mod.exports.__beta26.randomStarterRuleEnabled(game)` is an internal development helper used to bridge the immutable NEW GAME Setup snapshot into the freshly adopted mod.save bucket for the Random Starter toggle/style/seed only. External `random_starter` provider ownership remains authoritative. DEV diagnostics add the internal `gold_random_starter_transaction_gate` health row under Diagnostics API 1.
+
+## 2.5.29-DEV Gold starting-resource / Ball-limit API note
+Compatibility API remains **28**. This child adds no public capability or return-shape change. `encounter_ball_limit` was already a normal numeric rule contract; Gold now exposes that existing rule on its configuration surface. Gold NEW GAME resources use internal setup keys `gold_starting_money`, `gold_starting_pokeballs`, and `gold_starting_rare_candies` so R/B/Y and Gold staged profiles do not reinterpret the same resource fields. The Gold Ball deferral marker is engine/save-internal and is not a new public Compatibility API field.
+
+## 2.5.28-DEV progression/completion catch API note
+Compatibility API remains **28**. The existing acquisition and Party/PC policy surfaces gain additive semantics for the PC-only progression exception; no capability name or capability-version number changes.
+
+For a cooperative capture source that sets `captureAttempt=true`, `progressionRequired=true`, and `allowProgressionException=true`, `Acquisition.evaluate/begin/commit` may return an allowed exception with `pcLock=true`, `permanent=true`, `consumeEncounter=false`, `rule="progression_pc_catches"`, and `pcLockReason=<original denial>`. `Acquisition.commit` will attempt to apply the permanent storage marker when a concrete committed `mon`/`pokemon` is supplied. Providers remain responsible for respecting the normal evaluate-before-mutate transaction order.
+
+`PartyPC.evaluate` now returns `allowed=false`, `rule="progression_pc_lock"`, `reason="progression_pc_locked"` when a PC-locked Pokemon would enter the active party or when RELEASE targets one. `compat21.pokemonLegality()` reports `PC LOCKED`, and `compat21.pokemonProvenance()` additively exposes `pcLocked`, `pcLockReason`, and the progression-catch location. These additions are backward-compatible optional fields under Compatibility API 28.
+
+## 2.5.27-DEV Maximum BST preset implementation note
+Maximum BST remains an internal numeric rule value exposed through the existing Compatibility API 28 surfaces. The UI preset ladder expands to OFF/300/350/400/450/500/550/600/650/700, but `getMaximumBST()` and compatibility consumers still receive the exact numeric threshold (or 0 for OFF). No public API or capability version changes.
+
+## 2.5.26-DEV STAT INFO layout implementation note
+R/B/Y native NUZ INFO keeps the existing host-owned ListMenu integration. STAT rows now preserve up to 14 right-column glyphs and draw ATK/DEF/SPE/SPC from x=40, while LEVEL/HP draw from x=64 with an 11-glyph budget. This is presentation-only; Compatibility API 28 and all public data contracts are unchanged.
+
+## 2.5.25-DEV field-item randomizer implementation note
+Compatibility API remains **28**. Random Field Items uses internal owner-aware engine adapters and the existing internal versioned seeded helper; it adds no Compatibility API capability, provider ownership claim, save-schema field, or public API version bump. The public `mod.exports.randomizer` API remains version 1.
+
+## 2.5.24-DEV UI navigation implementation note
+Compatibility API remains **28**. Rules/Setup cursor and scroll memory is an internal, session-only UI concern keyed by configuration surface and semantic row identity. It does not add public API fields, change capability versions, write gameplay save data, or alter Save Schema 4.
+
 ## 2.5.23-DEV runtime-scope / fresh-New-Game implementation note
 Compatibility API remains **28**. The repaired Random Starter path consumes an explicitly exported internal seeded-index helper instead of reaching across a Lua lexical boundary, and the R/B/Y command/heal/starter transaction wrappers are again installed from the scope that owns their captured locals. Late-runtime phase 2 now executes and fresh `save.created` revalidates critical R/B/Y wrappers. These are internal runtime-conformance repairs; no public Compatibility API return shape, capability version, Diagnostics API contract, or save representation changes.
 
@@ -6,7 +315,7 @@ Compatibility API remains **28**. Gen 1 kerning wrapper ownership and starter RN
 
 ## 2.5.21-DEV trainer identity note
 Compatibility API remains **28**. Internal trainer reward/progression bookkeeping now uses one shared normalized identity record covering trainer ID, class, and name aliases across R/B/Y, Gold, and compatible provider payloads. This is an implementation-consistency repair; no public return shape, capability contract, or API version changes.
-# Nuzlocke API — 2.5.23-DEV
+# Nuzlocke API — 2.5.30-DEV
 
 
 ## 2.5.20-DEV persistence/enforcement policy note
@@ -312,3 +621,10 @@ The fixed diagnostic result vector now includes `encounter_ball_limit_setting`, 
 Nuzlocke's current source-audited engine profile is 0.2.7. The engine remains Mod API 2 / save format 4. The final 0.2.7 release adds Gold `TimeFishGroups` / day-night fishing fields under the shared `encounters` registry and routes that registry to `game.data.gen2Encounters` on Gold. `Registry.effectiveEncounters(game)` and `Registry.describe(game).encounters` now expose that generation-correct final live table, while R/B/Y continue to use `game.data.encounters`.
 
 This is a repair of the existing `final_encounter_registry`/encounter-information contract, not a Compatibility API bump. Randomizer mutation continues to operate on the same live registry it already used; OPEN/BLIND reveal policy and targeted-selection policy are unchanged. The 0.2.2 `battle.move_grid_navigation` hook remains an available shared hook Nuzlocke does not own, and Gold `mod.battle` Ball/catch-preview records added in 0.2.3 remain read-only snapshot data when available.
+
+
+## 2.5.67 exact-edition diagnostics / NZR6
+
+`mod.exports.__beta26.Dev.gameId(game)` returns the exact normalized edition id (`red`, `blue`, `yellow`, `gold`, `silver`, or future `crystal` groundwork). `Dev.gameLabel(game)` returns the uppercase display label. Shared generation mechanics should continue to use the generation predicate; diagnostics, parity accounting, breadcrumbs, and player-facing version labels should use exact edition identity.
+
+The compact Dev Report format is now **NZR6**. NZR6 stores the exact edition in three bits instead of the historical one-bit RBY/Gold family flag. `Dev.decodeReportCode` remains backward-compatible with NZR4 and NZR5 codes. This makes exact-edition runtime evidence available for future per-game feature implementation/parity graphs without duplicating Gen 1/Gen 2 mechanics.
