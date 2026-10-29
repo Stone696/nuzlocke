@@ -1,129 +1,73 @@
-<!-- Current build: 2.9.72 -->
-<!-- 2.9.7: DEV/diagnostics completeness + lifecycle-contract audit complete. -->
+# Nuzlocke v3.0.3-beta
 
-**2.9.59:** Shiny Pokemon 1.2.41 compatibility/lifecycle/voxel ownership hardening with cross-project audit freshness; no new runtime certification.
-**2.9.58:** Focused Random Trainers, compatibility AUTO-provider, and Gen-II NUZ STATUS integrity fixes; Random Field Items remain unchanged pending runtime evidence.
-**2.9.57:** Post-modularization integrity hotfix for future-schema Pokemon identity safety and owner-aware Release Safety source checks.
-<!-- 2.9.7: final static Randomizer audit complete; Gen-II trainer/field-item runtime certification remains pending. -->
-# Nuzlocke 2.9.72
+Configurable Pokémon challenge rules for [Gen1Recomp](https://github.com/bryanthaboi/gen1recomp), with a new **Generation 3 beta port** and the established Generation 1/2 mod preserved.
 
-**2.9.71:** Focused Random Field Items repair for R/B/Y. Visible item balls now compose through Gen1Recomp's public `world.talk` hook immediately before native pickup handling consumes the item payload. Yellow 2.9.70 supplied the Runtime FAIL that motivated this repair; 2.9.71 requires retest before Runtime PASS.
+**Supported games:** Red, Blue, Yellow · Gold, Silver, Crystal · **FireRed, LeafGreen, Ruby, Sapphire, Emerald (Gen 3 beta)**.
 
-**2.9.56 adds `evolution_policy.lua` as the dedicated owner for Evolution Limits and Trade Evolution QoL over the shared `evolution.check` seam.** Randomizer evolution mappings, UI/config, Pokemon identity/provenance, and acquisition policy remain with their existing owners. The protected package inventory intentionally advances to **37 files / 27 Lua modules plus `mod.card`**. Further consolidation/relocation is paused after this build by user direction.
+**Installed version:** `3.0.3-beta` · **Mod API:** 2 · **Gen 3 save namespace:** `gen3_classic_v1`.
 
-**2.9.54 adds `species_policy.lua` as the dedicated owner for configurable species-restriction policy.** Type/Color/Alphabet Locke selection and legality, glitch classification, Maximum BST/species-fact helpers, and legendary/mythical/pseudo challenge classification now consume the stable `pokemon_identity.lua` service through explicit dependencies. Pokémon instance identity/provenance, tracker state, shiny generation/presentation, Randomizer mappings, and acquisition enforcement remain outside this module. The protected package inventory intentionally advances to **35 files / 25 Lua modules plus `mod.card`**.
+> **Beta:** automated smoke tests cover many rules and native hook contracts. All five Gen 3 ROM editions and third-party mod combinations still need manual validation. Back up saves, particularly before Permadeath, End Run and randomiser testing.
 
-**2.9.53 adds `encounter_tracker.lua` as the dedicated owner for area catalogs, encounter-area projection, tracker persistence, legacy catch recovery, and save reconstruction.** It consumes the stable `pokemon_identity.lua` service established in 2.9.52 instead of duplicating identity/provenance logic. Challenge legality, shiny generation/presentation, and unrelated runtime enforcement remain outside the module. The protected package inventory intentionally advances to **34 files / 24 Lua modules plus `mod.card`**.
+> **v3.0.3-beta:** Player-controlled starter rerolls (OFF / 1 / 3 / 5 / UNLIMITED), saved reroll counts, matching rival starters and improved guidance for optional Untamed Advanced / Modern Spawns compatibility. See [release notes](RELEASE_NOTES.md) for changes since v3.0.2-beta.
 
-**2.9.52 adds `pokemon_identity.lua` as the dedicated owner for stable Pokemon instance identity, canonical species-definition/provider metadata lookup, current-mon enumeration, persistent ID allocation/repair, origin assignment, baseline migration, and Pokemon provenance initialization.** Locke selection/policy, shiny generation/presentation, tracker reconstruction, and challenge legality remain outside the module. Mutable game/save state is getter-backed. The protected package inventory intentionally advances to **33 files / 23 Lua modules plus `mod.card`**.
+## Getting started
 
-**2.9.51 begins the intentionally approved new-module phase with `compatibility_runtime.lua`.** Internal provider discovery, owner preference/resolution, compatibility evidence, engine/mod relationship projections, and the public Compatibility API construction now live behind this dedicated owner. Mutable/late-bound runtime dependencies (`currentGame`, rule activity/defaults, catch policy) are getter-backed rather than captured at module initialization. Public Compatibility API remains **37**; this is an ownership split, not a contract bump. The protected package inventory intentionally advances to **32 files / 22 Lua modules plus `mod.card`**.
+1. Install Gen1Recomp with your own supported game files and install Nuzlocke from the mod manager.
+2. Start a **new Generation 3 game** to configure rules in **NEW RUN SETUP** (including optional **LOCK FOR RUN**), or open **Start → NUZ MENU → NUZ RULES → CORE** in-game.
+3. Enable **Nuzlocke Enabled**; the rule is opt-in. Randomiser and selected QoL features can operate independently of the Nuzlocke challenge switch.
+4. Set the **randomiser seed and options before the first randomised result**; settings lock when mappings have begun. If configured beforehand, **starter rerolls** are still allowed at the starter-choice screen (RSE: **Select**) or in Oak's lab (FRLG: **RANDOMIZER → REROLL STARTERS NOW**). For gameplay testing, use a disposable save.
 
-**2.9.50 closes the currently reviewed existing-owner modularization phase.** The remaining R/B/Y Forgiveness Token shop filter now lives in `forgiveness.lua` verbatim, preserving semantic BUY/SELL detection, SELL-list rebuild filtering, wrapper-session ownership, and reinstall hooks. With the Dev diagnostics and Gen-II title SETUP moves completed in 2.9.48–2.9.49, further large reductions should use deliberately approved new first-class Lua owners rather than overloading existing modules. No gameplay, save schema, API, Randomizer, or Runtime PASS changes are intended.
+## What's in v3.0.3-beta?
 
-**2.9.49 activates the existing `title_setup_compat.lua` as the semantic owner of the live Gen-II title SETUP adapter.** Gen-II `MainMenu:choose()` and final-list SETUP insertion/removal now live in that module, while setup-profile persistence/staging remains in `main.lua` behind explicit callbacks. The historical R/B/Y fallback inside the module remains dormant, preserving the protected public title-menu path. No gameplay, save schema, API, Randomizer, or Runtime PASS changes are intended.
+| Category | Features |
+| --- | --- |
+| **CORE & CLAUSES** | Permadeath, one encounter per area, failed encounters, mandatory catch naming, first-rival mercy, whiteout, PC survivors; Dupes, Shiny exceptions/rate, Roamer, Egg and Route Forgiveness |
+| **PLAYSTYLES** | **Shiny Nuzlocke**, **Hardcore Nuzlocke**, or both together |
+| **LEVELS, HARDCORE & DIFFICULTY** | Gym/League/Postgame level caps, EXP Edging, SET battle restrictions, optional hardship rules and difficulty profiles |
+| **ADVANCED RULES** | Catch bans and gifted/traded Pokémon; OHKO/Battle Clauses; Status Bans/Sleep Clause; Type Locke/Catch Draft; battle/field items; services and economy; Pokémon stats; Kanto/Hoenn area splits |
+| **RANDOMIZER** | Seeded Gen 3 starter, wild, trainer, static/gift/Egg, items/shops/TM, learnset and evolution randomisation; optional National Dex Gen 3 API-v2 species pool up to #1025, opt-in alternate forms, generation and BST filters; manual 0/1/3/5/unlimited starter rerolls with saved counters |
+| **QOL & SETUP** | Instant Text, Run/Surf, bag and trade-evolution options; new-game starting resources, native catching unlock and settings lock |
+| **RUN JOURNAL & RESULTS** | Encounter tracking, Graveyard, regional/form-aware names, readable event history, End Run, Champion/failed-run results and shareable single-image memorial/team poster with extended/shiny artwork where a supported provider exists |
+| **MOD SUPPORT & NUZ DEV** | Live read-only diagnostics for Untamed Advanced, National Dex Gen 3, G9 Battle Sprites, Modern Spawns, Gen 3 HD Sprites and existing shiny/randomiser providers; hidden developer testing tools |
 
-**2.9.48 closes the remaining reviewed Dev-diagnostics ownership batch.** `Dev.hookHealth`, diagnostic snapshot/error/logging helpers, and self-test orchestration now live in `dev_diagnostics.lua`. Mutable game selection is resolved through the existing live getter on every call; rule/default/config helpers are injected explicitly. The small core instrumentation primitives used by runtime code remain in `main.lua`. No gameplay, save, Randomizer, compatibility ownership, public API version, or Runtime PASS changes are intended.
+For a detailed **ported vs adapted vs new** breakdown, see the **[Gen 3 feature matrix](docs/GEN3_FEATURE_MATRIX.md)**. This matrix is the current v3 feature inventory rather than the historically evolving notes from early beta development.
 
-**2.9.47 completes the currently reviewed World Building ownership move.** Shared World Building text cleanup/wrapping, presentation transactions, tier selection, once-per-save flavor flags, `worldMessage`, `worldMechanic`, failed-encounter feedback, and their pure tier audits now live in `world_building.lua`. Challenge legality remains outside this presentation module.
+### Untamed-Advanced integration
 
-**2.9.46 continues modularization by moving four dependency-clean read-only diagnostic surfaces into `dev_diagnostics.lua`: Rule Effectiveness, Randomizer Integrity, Gen-II Edition Parity, and Storage Context. `Dev.hookHealth`, snapshot/error capture, and self-test orchestration remain in `main.lua` pending a broader live-hook dependency review. No gameplay or runtime-certification behavior changes are intended.**
+When a compatible [Untamed Advanced](https://github.com/Deluxe0111/Untamed-Advanced) build is installed, Nuzlocke's **Random Wild** option also randomises eligible visible wandering wild Pokémon **before** their sprite and battle are built. This shares seed, candidate pool and species legality with ordinary wild encounters, so the Pokémon shown, battled and caught agrees. Story actors, special roamers, followers and scripted exclusions remain governed by their respective mods.
 
-**2.9.45 consolidates the remaining low-risk static rule/configuration data into `rule_catalog.lua`.** Locke loadout definitions, the shared Gen-II beta rule/description surface, selective species-ban set normalization, and pure NEW GAME starting-resource resolution/audits now live with the authoritative catalog owner. Live save state, runtime application/classification, game-data species lookup, and all enforcement remain in `main.lua`. No gameplay behavior or public API version changes are intended.
+Untamed is an **optional** companion. Newer Untamed Advanced builds separately integrate Modern Spawns' COMPLETE/RANDOM per-spawn species draws; **that functionality ships in Untamed Advanced, not in the Nuzlocke ZIP**. With Nuzlocke RANDOM WILD enabled, the Nuzlocke hook can further replace Untamed's selected species. The combined stack still needs in-game verification. The Nuzlocke **MOD SUPPORT** screen reports detected integrations but does not automatically certify them or take control of another mod's renderer.
 
+### Important boundaries
 
-**2.9.44 continues conservative modularization by moving the pure read-only save-schema descriptor presentation/structural-audit layer into `rule_catalog.lua`.** `SaveSchemaDescriptor.describe()` and structural/default-type `audit()` now live beside the already-built save-field snapshot they inspect, while live schema versioning, migrations, transactions, persistence, and save lifecycle remain in `main.lua`. Parity passes across 166 authoritative descriptor rows / 185 generated save fields, including role counts, fault detection, and deep-copy isolation. `main.lua` is now 31,462 lines / 1,568,827 bytes, down 60 lines / 3,118 bytes from 2.9.43. No gameplay, persistence semantics, Randomizer, compatibility ownership, or public API version changes are intended.
-
-**2.9.43 continues conservative modularization by moving the pure read-only rule registry presentation/structural-audit layer into `rule_catalog.lua`.** `describe()`, `get()`, and structural/default-type `audit()` now live beside the descriptor snapshot they inspect, while live stored-save validation and enum/coercion certification remain in `main.lua`. Registry parity passes across all 166 authoritative descriptor rows with deep-copy isolation preserved. `main.lua` is now 31,522 lines / 1,571,945 bytes, down 39 lines / 1,282 bytes from 2.9.42. No gameplay, persistence, Randomizer, compatibility-ownership, or public API version changes are intended.
-
-**2.9.42 continues conservative modularization after a split-safety review of the machine-readable rule/save descriptor subsystem.** Only deterministic descriptor construction moved into `rule_catalog.lua`; live save validation, schema/transaction ownership, enum/coercion auditing, and runtime descriptor exports remain in `main.lua`. A parity harness matched all 166 authoritative descriptor rows and the complete generated save-field map. No gameplay, persistence, Randomizer, compatibility-ownership, or public API version changes are intended.
-
-**2.9.41 resumes the conservative modularization program.** The pure ordinary rule-value coercion implementation now lives in `rule_catalog.lua` beside the authoritative rule definitions, while the established `__beta26.coerceRuleValue` surface remains unchanged and passes a full catalog parity matrix. The live rule-definition index is supplied on every call so the split cannot freeze a stale registration-time snapshot. No gameplay, save, Randomizer, compatibility-ownership, or public API version changes are intended.
-
-**2.9.40 completes the current Release Safety hardening sequence.** Compatibility metadata is now audited semantically where structured owners exist, compatibility confidence is reported as separate live-contract/source-reviewed/combined-runtime-required evidence, and document-role checks validate the first real heading instead of brittle line position. No gameplay, save, Randomizer, compatibility-ownership, or public API version changes are intended.
-
-**2.9.38 continues the safety/reconciliation sequence with a generated, read-only save-key/reference consumer index.** It derives canonical described keys from the existing save-schema descriptor, maps bounded source consumers across shipped Lua modules, reports dynamic and undescribed literal references, and fails open when package source cannot be read. It does not read or write live save values, migrate state, alter enforcement, or promote Runtime PASS.
-
-**2.9.37 continued the small certification/reconciliation hardening sequence.** Catch-denial reasons now have one read-only disposition catalog that explicitly records progression-PC override eligibility, and Release Safety verifies that catalog against the existing executable eligible set. Numeric rule descriptors also receive semantic enum/range completeness checks for valid bounds, in-range defaults, and canonical clamping. These are certification improvements only: catch legality, progression exceptions, rule defaults, saves, APIs, Randomizer behavior, and runtime evidence are unchanged.
-
-**2.9.36 repaired Gen-II Colorlocke/Alphabetlocke configuration reachability** and added table-driven reachability certification for both mode and child-selector rows.
-
-
-Nuzlocke is a configurable challenge-rules mod for Gen1Recomp. It supports **Red, Blue, and Yellow** as the mature baseline, **Gold and Silver** as beta targets, and **Crystal** as an explicit alpha target. Runtime evidence is edition-specific: support in one game is never treated as proof for another.
-
-## Current release contract
-
-- **Gen1Recomp:** `>=0.2.24 <2.0.0`; source/documentation compatibility audited through **0.2.40** (release commit `0cf543d597ce84e4d847b2aba782f1bf2799fde0`). Exact-edition 0.2.40 runtime smoke remains pending.
-- **Mod API:** 2.
-- **Nuzlocke Save Schema:** 5.
-- **Compatibility API:** 37.
-- **Diagnostics API:** 1.
-- **Translation API:** 2.
-- **Run History:** v2.
-- **Randomizer algorithm:** v1.
-- **Package:** 36 files / 26 Lua modules plus `mod.card`.
-- **World Building default:** T3.
-- **Battle Menu UI:** Gen I only; Gold/Silver/Crystal retain the native Gen-II battle command presentation.
-- **Dev Mode:** observational/diagnostic unless a tool is explicitly described as mutating state.
-
-2.9.18 adds an explicit END RUN / ABANDON RUN lifecycle surface under the NUZ MENU. Abandonment uses the existing durable Run History v2 event, defaults destructive confirmation to NO, commits history before disabling challenge enforcement, and opens the Almanac final recap. Natural completion remains progression-owned and cannot be manufactured by the lifecycle UI. No Save Schema or public API bump is required.
-
-2.9.17 adds a translated, read-only Almanac / Run Recap under the NUZ MENU. It summarizes durable Run History v2 totals for catches, deaths, progression, failures, blackouts, forgiveness, completion state, rule-integrity evidence, and recorded Randomizer run metadata. Incomplete legacy or pruned detail is explicitly labeled PARTIAL rather than reconstructed. The 2.9.16 Graveyard Viewer remains unchanged. No Save Schema, Compatibility API, Randomizer algorithm, defaults, support-level, or Runtime PASS changes are claimed.
-
-## Core challenge features
-
-**2.9.25 adds Colorlocke and Alphabetlocke.** Each can be OFF, deterministically RANDOM for the run, or CHOOSE. Colorlocke uses canonical species-color metadata; Alphabetlocke uses the canonical species identity's first A-Z letter, never localized display text. Both apply prospectively to new acquisitions, compose with Type Locke/PKMN BAN/BST and other species rules, leave existing Pokemon and later evolutions untouched, and fail open when a custom species lacks the metadata needed for a safe classification.
-
-The mod includes permanent death, One Per Area encounter enforcement, Failed Encounters, Dupes modes, Nickname Rule, Shiny Clause, level caps, species restrictions, battle/field item restrictions, escape restrictions, healing/service restrictions, economy restrictions, party/team limits, difficulty profiles, World Building, encounter tracking, Run History, translated Graveyard and Almanac viewers, Forgiveness/F. TOKEN support, and edition-specific setup/QoL controls. Availability is edition- and context-sensitive; unsupported or delegated rules are hidden, dimmed, or reported through the compatibility/diagnostic surfaces rather than silently assumed to work.
-
-## Randomizer
-
-The current ownership registry has **ten independently resolved subsystems**: **Starter, Encounters, Field Items, Learnsets, Trainers, Evolutions, Shops, TM Contents, TM Locations, and Gift Items**. Random TM contents and physical TM pickup locations are separate methods. Deterministic mappings use algorithm v1 and persisted source identities; diagnostics must not consume RNG or materialize unseen mappings.
-
-Known runtime debt remains important: **Gen-II Random Trainers** and **Gen-II Random Field Items** have tester-reported Runtime FAIL evidence and remain unresolved. Source audits found the expected engine seams, so they are not represented as fixed until exact runtime testing proves the pipeline.
-
-## Compatibility and ownership
-
-Compatibility is based on the narrow mechanic being owned, not merely on whether another mod is installed or happened to load first. Presentation ownership does not grant gameplay ownership. Nuzlocke prefers public hooks/provider contracts, uses source-confirmed named adapters when needed, and treats private interposition as exceptional.
-
-Current reviewed targets include the maintained Shiny Pokémon fork 1.2.20, Wilds of Kanto 2.2.0, PokéPC Followers 0.5.1, Followers EX 1.0.19, PotatoVoxel 1.9.6, Dramatic Shape 1.9.0, Battle Art Voxel Fork 1.10.0, Battle Cinematics 1.2.4, Pokémon Gen1 Randomizer 0.46.4, Gen2 Randomizer+ 2.9.0, Item Randomizer 1.1.1, Kanto Reforged 1.5.3, QoL Toggles 1.30.8, Delta Type 1.2.0, Wonder Trade 1.2.1, The World 6.54.15, VanillaPlus 0.3.0, G9 Battle Engine 1.2.3 / beta 2.0.2, Useful Bag 2.6.3, Modern Bag UI 0.4.5, Bag Sort 0.1.0, and the translation companions documented in `docs/COMPATIBILITY.md`.
-
-Important boundaries:
-- **Kanto Ascendant 6.5.17:** explicit upstream conflict; do not combine with standalone Nuzlocke.
-- **Dex Overflow 0.1.1** and **Safari All 1.1.0:** legacy reviewed targets; no newer/current package is claimed without evidence.
-- **Wonder Trade:** post-mutation observe/reconcile only; Wonderlocke remains disabled until a safe pre-transaction cooperation seam exists.
-- **SHINY_POKEMON:** explicit provider target but intentionally not a reciprocal optional dependency, avoiding a loader dependency cycle.
-- Replacement Bag/Party/UI mods keep their presentation/controller ownership; Nuzlocke rules operate on semantic actions/items rather than list positions or pocket indices.
-
-See `docs/COMPATIBILITY.md` for the detailed target matrix and `docs/FEATURE_CONFIDENCE.md` for evidence labels.
-
-## Credits and project lineage
-
-- **bryanthaboi** — creator of the original Nuzlocke mod and project baseline.
-- **masterwebx** — creator of the original Shiny Pokémon mod. That original project is part of the code/design lineage and technical foundation of this project’s shiny support and the maintained Shiny Pokémon compatibility work.
-- **Stone696** — current Nuzlocke maintainer/developer and maintainer of the Shiny Pokémon fork, responsible for continued development, expansion, compatibility work, and current releases.
-
-The current built-in Nuzlocke shiny subsystem has been substantially reworked around current Gen1Recomp APIs and single-owner compatibility architecture. This later divergence does not erase the attribution owed to the original Shiny Pokémon project.
-
-## Shiny ownership
-
-When no compatible external shiny provider owns the active edition, Nuzlocke may provide its built-in shiny rate/colors/intro behavior. When a healthy external provider owns shiny generation/presentation, Nuzlocke stands down those presentation/generation controls and consumes the resulting shiny identity. **Shiny Clause remains Nuzlocke challenge policy either way.** The protected standalone runtime evidence remains the Red test from 2.8.37; it is not generalized to other editions or combined-mod stacks.
-
-## Localization
-
-Nuzlocke exposes Translation API 2 and routes its authored text through the engine localization surface where migrated. Current companion targets and certification state are listed in the compatibility and confidence documents. Missing translations fall back safely; a companion being installed is not the same as its language being active or certified.
+- **NICKNAME TASKS** tracks unnamed gifts, trades and hatched Pokémon, but pending non-catch names may not yet prevent battle use on every path.
+- **Route Forgiveness** supports missed-route token redemption; **normal Pokémon revival** remains unavailable. The separate hidden **NUZ DEV** full-archive restore is for testing only.
+- Gen 2-only mechanics aren't misrepresented as Gen 3 options. **Wonderlocke was removed** from the Gen 3 catalogue.
+- **Gen 1/2** continue to use the established `main.lua` runtime and save structures. The v3 port has its own implementation; existing legacy rules and records are not replaced.
 
 ## Documentation
 
-- `docs/USER_GUIDE.md` — current player-facing behavior and controls.
-- `docs/COMPATIBILITY.md` — engine/mod ownership boundaries and reviewed targets.
-- `docs/API.md` — public compatibility, translation, diagnostics, and provider contracts.
-- `docs/FEATURE_CONFIDENCE.md` — Runtime/Static/Source evidence and known testing debt.
-- `CHANGELOG.md` — chronological historical changes.
-- `RELEASE_NOTES.md` — concise notes for the current release.
+[Browse the complete documentation index](docs/README.md) for current Gen 3 guides and preserved Gen 1/2 references.
 
-Historical release detail belongs in the changelog rather than being presented as current behavior in this README.
+| What you need | Reference |
+| --- | --- |
+| Full Gen 3 feature classification | [Ported, adapted and new features](docs/GEN3_FEATURE_MATRIX.md) |
+| Native integration, editions and current limits | [Gen 3 overview](docs/GEN3_PORT.md) |
+| CORE and rule precedence | [Core rule specification](docs/GEN3_CORE_SPEC.md) |
+| Rules, playstyles, clauses and menus | [Advanced Catch Rules](docs/GEN3_ADVANCED_RULES.md) · [Playstyles](docs/GEN3_PLAYSTYLES.md) · [Battle Clauses](docs/GEN3_BATTLE_CLAUSES.md) · [Status Bans](docs/GEN3_STATUS_BANS.md) |
+| Other advanced rule categories | [Variants](docs/GEN3_VARIANTS.md) · [Services](docs/GEN3_SERVICES_ECONOMY.md) · [Area Splits](docs/GEN3_AREA_SPLITS.md) · [Run/Party](docs/GEN3_RUN_PARTY.md) |
+| Randomiser and Untamed interoperability | [Gen 3 Randomiser](docs/GEN3_RANDOMIZER.md) |
+| Final screen and shareable results | [Run results](docs/GEN3_RUN_RESULTS.md) |
+| Manual test cases and developer setup | [Gen 3 checklist](docs/GEN3_TEST_CHECKLIST.md) · [Developer guide](docs/DEVELOPER_GEN3.md) · [Hidden NUZ DEV](docs/GEN3_NUZ_DEV.md) |
+| **Gen 1/2** behaviour and compatibility | [Legacy user guide](docs/USER_GUIDE.md) · [Compatibility reference](docs/COMPATIBILITY.md) |
+| Versions and authorship | [v3 release notes and preserved older releases](RELEASE_NOTES.md) · [Full changelog](CHANGELOG.md) · [Credits](CREDITS.md) |
 
+## Releasing and maintaining this fork
 
-### Special Acquisition slot policy
-Allowed gifts/fossils/prize Pokemon and NPC trades can independently use **AREA** (consume the ordinary One Per Area slot) or **BONUS** (retain provenance/history without consuming that slot). Allow/deny and species-legality rules remain independent. Gen-II Egg encounter policy remains separate.
+The [release guide](docs/RELEASING.md) explains the already-published v3 prerelease, safe future manual releases, deterministic player ZIPs, original contributor attribution and the missing upstream licence clarification. The [test suite inventory](tests/README.md) documents why active Gen 3 smoke tests stay in the repository but are excluded from player downloads.
+
+## Credits
+
+**[bryanthaboi](https://github.com/bryanthaboi)** created the original Nuzlocke mod; **[Stone696](https://github.com/Stone696)** continued its development, including significant Generation 1/2 features and compatibility work; **[masterwebx](https://github.com/masterwebx)** created the original Shiny Pokémon mod forming part of the shiny feature's lineage. **[Deluxe0111](https://github.com/Deluxe0111)** developed the Generation 3 port and its new integrations/features. See **[CREDITS.md](CREDITS.md)** for distinct contributions and project context.
+
+**Release history:** Older `2.9.x` and preceding versions are retained in the changelog and tags. They are not being renamed to v3 or retroactively credited to the Gen 3 port.

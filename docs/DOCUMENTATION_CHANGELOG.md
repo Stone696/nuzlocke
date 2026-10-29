@@ -1,3 +1,25 @@
+# 3.0.0-BETA
+
+- Completed the release-facing Gen 3 **ported / adapted / new** feature matrix and recast README/RELEASE_NOTES/CHANGELOG around the final implementation rather than chronological feature development.
+- Preserved the earlier 2.9 release notes and restored the missing **v2.9.73** historical entry from its published release without claiming later Gen 3 features for that version.
+- Restored distinct original-mod, shiny-project, Gen 1/2 maintenance and Gen 3 port attribution in **CREDITS.md**.
+- Updated the Gen 3 overview, CORE, Advanced Rules, developer guide and manual test checklist to match current menus, native area splits, OHKO, Egg/Forgiveness tokens, Run Journal, Mod Support and hidden Nuz Dev recovery.
+- Flagged early Gen 3 clause-planning text as historical, not an active status catalogue; added CI checks for v3 feature/credit/version consistency and broken local documentation links.
+- Kept older user guides and legacy source documentation rather than moving or deleting them.
+- The remaining original 3.0 planning notes below document early beta authoring and should not be interpreted as final rule statuses.
+
+- Replaced the historical 2.9.x README introduction with a concise Generation 1–3 v3 beta overview and linked the legacy guide/changelogs.
+- Reconciled Gen 3 implementation status, Randomiser, levels and player-feedback documentation; beta limitations remain explicit.
+- Added Untamed Advanced visible-wild compatibility to both projects' existing README structure and credited Deluxe0111 in Untamed's CREDITS.md.
+- Documented the randomised encounter-chain identity fix: public name uses the visible defeated species, internal repeated-spawn weighting uses the authored slot.
+- Updated packaging/release-version handling for the `3.0.0-BETA` manifest and `v3.0.0-BETA` prerelease tag.
+
+# 2.9.73 — historical documentation release
+
+- Published the Gen 3 new-game-only QoL setup/resource descriptions, native PC starter loadout behaviour and deferred Poké Ball unlock notes.
+- Updated standalone startup validation cases without making claims about later v3 rule/menu/results features.
+- This entry describes the published 2.9.73 release, not the completed v3.0.0-BETA.
+
 # 2.9.72
 
 - Documented Gen-II item-reference normalization, shop non-no-op selection, unified trainer tracing, and shiny private-image isolation.
@@ -10,8 +32,8 @@
 - Documented the 2.9.71 Gen-I `world.talk` visible-field-item composition seam and its native-ownership boundaries.
 - Kept Gen1Recomp source-review baseline at 0.2.41 and preserved strict separation between source/static review and Runtime PASS.
 
-<!-- Current build: 2.9.60 -->
-# Documentation Changelog
+<!-- Historical 2.9.60 documentation snapshot; not the current v3 build. -->
+## Earlier documentation history (2.9.x and before)
 
 ## 2.9.60
 - Advanced Gen1Recomp source/documentation compatibility through 0.2.40 (`0cf543d597ce84e4d847b2aba782f1bf2799fde0`).

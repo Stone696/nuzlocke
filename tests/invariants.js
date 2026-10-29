@@ -1,6 +1,12 @@
 #!/usr/bin/env node
 'use strict';
 
+// HISTORICAL 2.5-ERA INVARIANTS ONLY.
+// Deliberately retained for source/release archaeology; not a current v3 gate.
+// Hardcoded Gen 1-only editions, schema and 15-file package expectations
+// were superseded by tests/gen3_docs_gate.js and tests/package_gate.sh.
+// Do not use its failures as evidence that the v3 player release is invalid.
+
 const fs = require('fs');
 const path = require('path');
 

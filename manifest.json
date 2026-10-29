@@ -1,9 +1,9 @@
 {
   "id": "nuzlocke",
   "name": "Nuzlocke",
-  "version": "2.9.72",
+  "version": "3.0.3-beta",
   "api": 2,
-  "entry": "main.lua",
+  "entry": "entry.lua",
   "profile": "content",
   "category": "BALANCE",
   "game_version": ">=0.2.24 <2.0.0",
@@ -20,6 +20,7 @@
     "gen1_modern_ui",
     "gen_2_randomizer_plus",
     "overworld_wild_spawns",
+    "untamed_advanced",
     "modern_party_ui",
     "delta_type",
     "dex_overflow",
@@ -57,15 +58,16 @@
     "HGSS_SPRITES"
   ],
   "conflicts": [],
-  "description": "Configurable Nuzlocke enforcement, encounter tracking, challenge rules, run status, and quality-of-life options for Red, Blue, Yellow, beta Gold/Silver, and alpha Crystal support.",
-  "github": "Stone696/nuzlocke",
+  "description": "Generation 1–3 Nuzlocke challenge rules, with the Gen 3 FireRed/Hoenn beta port, Hardcore/Shiny playstyles, native randomiser, Run Journal, memorials and optional Untamed Advanced integration.",
+  "github": "Deluxe0111/nuzlocke",
   "games": [
     "red",
     "blue",
     "yellow",
     "gold",
     "silver",
-    "crystal"
+    "crystal",
+    "gen3"
   ],
   "affects_link": true
 }

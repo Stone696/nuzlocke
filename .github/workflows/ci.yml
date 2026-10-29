@@ -1,34 +1,24 @@
-name: Nuzlocke CI
+name: Nuzlocke package integrity
 
+# Source compatibility tests for Gen 3 are in gen3-smoke.yml.
+# The retired 2.5-era invariant script hardcoded Gen 1-only versions,
+# a 15-file package and schema v4, so it cannot gate the v3 release.
 on:
   push:
     branches: [main]
   pull_request:
-    branches: [main]
   workflow_dispatch:
 
 permissions:
   contents: read
 
 jobs:
-  tests:
-    name: Static and package checks
+  package:
+    name: Reproducible player package
     runs-on: ubuntu-latest
-
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Show versions
-        run: |
-          node --version
-          python3 --version
-
-      - name: Run Nuzlocke invariants
-        run: node tests/invariants.js .
-
-      - name: Run package gate
-        run: bash tests/package_gate.sh "$RUNNER_TEMP/nuzlocke-package"
-
-      - name: Run release-gate compatibility entry point
-        run: node tests/release_gate.js main.lua
+      - uses: actions/checkout@v4
+      - name: Validate current release records and author credits
+        run: node tests/gen3_docs_gate.js
+      - name: Validate complete runtime-only player ZIP
+        run: bash tests/package_gate.sh "$RUNNER_TEMP/nuzlocke-pkg"

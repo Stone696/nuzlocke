@@ -1,0 +1,42 @@
+name: Gen 3 regression suite
+
+# Maintained Lua smoke files are discovered by name, not copied into a
+# hand-written 40-step workflow. This workflow also runs after merging.
+on:
+  push:
+    branches:
+      - main
+      - 'feature/gen3-*'
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  gen3-smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check release docs, version and credits
+        run: node tests/gen3_docs_gate.js
+      - name: Check installable runtime-only ZIP
+        run: bash tests/package_gate.sh "$RUNNER_TEMP/nuzlocke-pkg"
+      - name: Install Lua 5.1
+        run: sudo apt-get update && sudo apt-get install -y lua5.1
+      - name: Parse-check packaged Lua and all Gen 3 tests
+        run: |
+          for file in ./*.lua mod.card tests/gen3_*_smoke.lua; do
+            luac5.1 -p "$file"
+          done
+      - name: Execute all maintained Gen 3 smoke tests
+        run: bash tests/run_gen3_smoke.sh
+      - name: Upload cleaned installable mod ZIP (test build, not a release)
+        if: github.event_name == 'push' && startsWith(github.ref, 'refs/heads/feature/gen3-')
+        uses: actions/upload-artifact@v4
+        with:
+          name: nuzlocke-gen3-preview-${{ github.sha }}
+          path: ${{ runner.temp }}/nuzlocke-pkg/nuzlocke-*.zip
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 30

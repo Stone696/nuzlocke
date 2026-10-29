@@ -1,3 +1,5 @@
+> **Historical Gen 1/2 testing notes:** These older release gates are preserved for regression and forensic reference. The active Generation 3 CI suite is `.github/workflows/gen3-smoke.yml`; its manual test plan is [GEN3_TEST_CHECKLIST.md](GEN3_TEST_CHECKLIST.md).
+
 ## 2.5.23 local gate baseline
 2.5.23 adds regression ratchets for a class that normal Lua syntax compilation does not catch: an identifier intended to be a local can be referenced outside its lexical block and compile successfully as a global lookup, only failing when the runtime path executes. Critical cross-phase helpers therefore must be passed explicitly or exported through an intentional internal surface; staged runtime closures must be proven to execute before their staging slot is cleared; and wrapper tails must remain physically inside the installer that owns their captured locals.
 

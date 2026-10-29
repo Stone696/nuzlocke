@@ -1,3 +1,5 @@
+> **Edition-specific evidence:** This confidence register describes the existing Gen 1/2 certification programme; Gen 3 beta feature availability and remaining manual ROM tests are listed in the [Gen 3 matrix](GEN3_FEATURE_MATRIX.md) and [test checklist](GEN3_TEST_CHECKLIST.md). Source-reviewed or automated-smoke passing does not automatically mean runtime-certified.
+
 <!-- Current build: 2.9.72 -->
 # Feature Confidence — 2.9.72
 

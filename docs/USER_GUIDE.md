@@ -1,7 +1,9 @@
-<!-- Current build: 2.9.72 -->
-# Nuzlocke User Guide — 2.9.72
+> **Legacy Generation 1/2 guide.** This reference records the established pre-v3 rule system. For FireRed/LeafGreen/Ruby/Sapphire/Emerald, see the [Gen 3 feature matrix](GEN3_FEATURE_MATRIX.md), [overview](GEN3_PORT.md) and [manual test checklist](GEN3_TEST_CHECKLIST.md). Gen 3-specific differences are not retroactively applied to the historical instructions below.
 
-> Current documentation baseline: **Nuzlocke 2.9.72**.
+<!-- Legacy Generation 1/2 reference: Nuzlocke 2.9.72 -->
+# Legacy Generation 1/2 User Guide — 2.9.72
+
+> This is the retained historical Generation 1/2 guide. For the current **v3.0.0-BETA** and Generation 3 options, see the [main README](../README.md) and [Gen 3 overview](GEN3_PORT.md).
 
 ## Supported games and confidence
 

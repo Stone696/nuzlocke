@@ -2817,6 +2817,7 @@ return function(mod)
           ruleCategories, defaultRuleValue, {
               { key="locke_type", value_type="number", default=defaultRuleValue("locke_type"), numeric=true, min=0, max=6 },
               { key="rule_lock", value_type="boolean", default=defaultRuleValue("rule_lock") },
+              { key="run_settings_lock", value_type="boolean", default=false },
               { key="rules_locked", value_type="boolean", default=defaultRuleValue("rules_locked") },
               { key="rules_permanently_locked", value_type="boolean", default=false },
               { key="difficulty_provider_id", value_type="string", default="vanilla" },
@@ -3219,6 +3220,7 @@ return function(mod)
           end
       end
       values.locke_type = defaultRuleValue("locke_type")
+      values.run_settings_lock = false
       values.starting_money = defaultRuleValue("starting_money")
       values.starting_pokeballs = defaultRuleValue("starting_pokeballs")
       values.starting_rare_candies = defaultRuleValue("starting_rare_candies")
@@ -3262,6 +3264,7 @@ return function(mod)
       values.area_guide_enabled = H.loadAreaGuideState()
       values.rule_lock =
           mod.save:get("rule_lock", defaultRuleValue("rule_lock")) == true
+      values.run_settings_lock = mod.save:get("run_settings_lock", false) == true
       values.rules_locked =
           mod.save:get("rules_locked", defaultRuleValue("rules_locked")) == true
       values.infinite_rare_candies =
@@ -3334,6 +3337,7 @@ return function(mod)
           copy.area_guide_enabled = defaultRuleValue("area_guide_enabled")
       end
       copy.rule_lock = source and source.rule_lock == true or false
+      copy.run_settings_lock = source and source.run_settings_lock == true or false
       copy.rules_locked = source and source.rules_locked == true or false
       copy.infinite_rare_candies = source and source.infinite_rare_candies == true
           or defaultRuleValue("infinite_rare_candies")
@@ -3552,6 +3556,9 @@ return function(mod)
   end
 
   H.saveCurrentInGameRules = function()
+      if mod.save:get("run_settings_lock", false) == true then
+          return false, "run_settings_locked"
+      end
       if not pendingNewGameRules then
           pendingNewGameRules = makeRulesFromCurrentSave()
       end
@@ -3651,6 +3658,7 @@ return function(mod)
               or defaultRuleValue("locke_type")))))
       saveAreaGuideState(profile.area_guide_enabled == true)
       mod.save:set("rule_lock", profile.rule_lock == true)
+      mod.save:set("run_settings_lock", profile.run_settings_lock == true)
       if mod.save:get("rules_permanently_locked", false) == true then profile.rules_locked = true end
       mod.save:set("rules_locked", profile.rules_locked == true)
       if profile.rules_locked == true then mod.save:set("rules_permanently_locked", true) end
@@ -3724,6 +3732,9 @@ return function(mod)
           allVerified = false
       end
       if mod.save:get("rule_lock", nil) ~= (profile.rule_lock == true) then
+          allVerified = false
+      end
+      if mod.save:get("run_settings_lock", nil) ~= (profile.run_settings_lock == true) then
           allVerified = false
       end
       if mod.save:get("rules_locked", nil) ~= (profile.rules_locked == true) then
@@ -3817,6 +3828,7 @@ return function(mod)
               or defaultRuleValue("locke_type")))))
       saveAreaGuideState(profile.area_guide_enabled == true)
       mod.save:set("rule_lock", profile.rule_lock == true)
+      mod.save:set("run_settings_lock", profile.run_settings_lock == true)
       mod.save:set("rules_locked", profile.rules_locked == true)
       mod.save:set("infinite_rare_candies", profile.infinite_rare_candies == true)
       mod.save:set("pkmn_ban_species", normalizePkmnBanSet(profile.pkmn_ban_species))
@@ -3858,6 +3870,9 @@ return function(mod)
           verified = false
       end
       if mod.save:get("rule_lock", nil) ~= (profile.rule_lock == true) then
+          verified = false
+      end
+      if mod.save:get("run_settings_lock", nil) ~= (profile.run_settings_lock == true) then
           verified = false
       end
       if mod.save:get("rules_locked", nil) ~= (profile.rules_locked == true) then
@@ -8709,6 +8724,15 @@ return function(mod)
       end
 
       table.insert(list, {
+          isHeader = false, isControl = true, isRunSettingsLockControl = true,
+          rule = {
+              key = "run_settings_lock",
+              name = Strings.source("Lock Settings for Run"),
+              shortName = Strings.source("Run Lock"),
+              desc = Strings.source("Setup only. Freeze all Nuzlocke settings for this save when the run starts. Cannot be undone mid-run. Engine options and Dev tools remain separate.")
+          }
+      })
+      table.insert(list, {
           isHeader = false, isControl = true, isRuleLockControl = true,
           rule = {
               key = "rule_lock", name = Strings.source("Rule Lock"),
@@ -10232,6 +10256,7 @@ return function(mod)
   end -- loadout preview label scope
 
   mod.exports.__beta26.configRulesLocked = function(preGame)
+      if not preGame and mod.save:get("run_settings_lock", false) == true then return true end
       -- Ordinary Rule Lock is deliberately reversible. Permanent Rule Seal
       -- remains a separate dormant/WIP path and joins the effective lock only
       -- after that feature is deliberately re-enabled.
@@ -10352,6 +10377,7 @@ return function(mod)
   }
 
   local function setConfigValue(key, value, preGame, preserveDormant)
+      if not preGame and mod.save:get("run_settings_lock", false) == true then return false end
       -- Use lifecycle-stable Type Locke slot tables throughout this update.
       -- Yellow 2.5.7 runtime testing showed Type Locke edits can still reach
       -- the generic error dialog even after unrelated-rule sync was hardened.
@@ -11434,6 +11460,17 @@ return function(mod)
           end
 
           local allItemList = H.buildFlatItemList(preGame, goldMode)
+          if preGame and autoNewGame then
+              table.insert(allItemList, 1, {
+                  isHeader = false, isControl = true, alwaysVisible = true,
+                  isStartNewGameControl = true,
+                  rule = { key = "start_nuzlocke_game",
+                      name = Strings.source("START NEW GAME"),
+                      shortName = Strings.source("START GAME"),
+                      desc = Strings.source("Commit this setup to a new save and begin the normal introduction. B cancels.")
+                  }
+              })
+          end
 
           -- 2.8.22: one Randomizer hierarchy for BOTH Gen I and Gen II.
           -- Every true child is immediately below its owning parent; global
@@ -11853,18 +11890,12 @@ return function(mod)
                       self.digitIndex = 1
                       self.descScroll = 0
                   else
-                      if self.preGame and self.autoNewGame then
-                          saveCurrentSetupProfile()
-                          stageNewGameProfile()
-                          applyNewGameSnapshot()
-                          commitDurableSetupProfileToActiveSave()
-                      end
                       rememberConfigPosition()
                       self.game.stack:pop()
                       if type(self.onDone) == "function" then
                           local cb = self.onDone
                           self.onDone = nil
-                          cb()
+                          cb(false)
                       end
                   end
                   return
@@ -12048,6 +12079,25 @@ return function(mod)
                   if not isPermanentSeal then
                       self.lockConfirmStage = 0
                       self.lockConfirmReadyAt = 0
+                  end
+                  if item.isStartNewGameControl then
+                      saveCurrentSetupProfile()
+                      stageNewGameProfile()
+                      rememberConfigPosition()
+                      self.game.stack:pop()
+                      if type(self.onDone) == "function" then
+                          local cb = self.onDone
+                          self.onDone = nil
+                          cb(true)
+                      end
+                      return true
+                  end
+                  if item.isRunSettingsLockControl then
+                      if self.preGame then
+                          setConfigValue("run_settings_lock",
+                              not getConfigValue("run_settings_lock", true), true)
+                      end
+                      return true
                   end
                   if item.isLockeTypeControl then
                       if mod.exports.__beta26.configRulesLocked(self.preGame) then return true end
@@ -12297,6 +12347,11 @@ return function(mod)
 
               local function canChangeSelected(item)
                   if not item or item.isHeader then
+                      return false
+                  end
+                  if item.isStartNewGameControl then return true end
+                  if item.isRunSettingsLockControl then return self.preGame end
+                  if not self.preGame and mod.save:get("run_settings_lock", false) == true then
                       return false
                   end
 
@@ -12889,6 +12944,7 @@ return function(mod)
 
                       local key = item.rule and item.rule.key
                       if not item.rule then return "" end
+                      if item.isStartNewGameControl then return "START" end
                       if key == "wonderlocke"
                           or (key == "rules_locked"
                               and mod.exports.__beta26.permanentRuleSealWip) then
@@ -13717,8 +13773,9 @@ return function(mod)
                               Font.draw(Strings("^"), editX + valueShift + ((self.digitIndex - 1) + prefix) * 6, drawY - 8)
                           end
                       else
-                          local status = key == "dev_self_test_export" and "RUN"
-                              or (isWip and "WIP" or (val and "ON" or "OFF"))
+                          local status = item.isStartNewGameControl and "START"
+                              or (key == "dev_self_test_export" and "RUN"
+                              or (isWip and "WIP" or (val and "ON" or "OFF")))
                           Font.draw(Strings(status), 118 + valueShift, drawY)
                       end
 
@@ -14053,13 +14110,19 @@ return function(mod)
               item.onSelect = function()
                   pcall(installAutomaticDefaultNameAdapters)
                   mod.exports.__beta26.selectSetupProfileScope(game)
-                  if not pendingNewGameRules then
+                  if not pendingNewGameRules or not pendingRulesDirty then
                       pendingNewGameRules = loadSetupProfileFromDisk()
                           or makeDefaultPreGameRules()
+                      pendingRulesDirty = false
                   end
-                  saveSetupProfileToDisk(pendingNewGameRules)
-                  stageNewGameProfile()
-                  originalNewGame()
+                  -- Unlike the standalone SETUP row, NEW GAME enters
+                  -- configuration with an explicit START/CANCEL result.
+                  mod.exports.__beta26.pushNuzlockeConfigScreen(game, {
+                      preGame = true, goldMode = false, autoNewGame = true,
+                      onDone = function(accepted)
+                          if accepted then originalNewGame() end
+                      end,
+                  })
               end
           end
 
@@ -14159,13 +14222,18 @@ return function(mod)
       Strings = Strings,
       runtimeIsGen2 = mod.exports.__beta26.runtimeIsGen2,
       isSaveEditorSession = mod.exports.__beta26.isSaveEditorSession,
-      openSetup = function(game)
+      openSetup = function(game, onDone)
           mod.exports.__beta26.selectSetupProfileScope(game)
-          pendingNewGameRules = loadSetupProfileFromDisk()
-              or makeDefaultPreGameRules()
-          pendingRulesDirty = false
-          mod.exports.__beta26.pushNuzlockeConfigScreen(game,
-              { preGame = true, goldMode = true })
+          if not pendingNewGameRules or not pendingRulesDirty then
+              pendingNewGameRules = loadSetupProfileFromDisk()
+                  or makeDefaultPreGameRules()
+              pendingRulesDirty = false
+          end
+          mod.exports.__beta26.pushNuzlockeConfigScreen(game, {
+              preGame = true, goldMode = true,
+              autoNewGame = type(onDone) == "function",
+              onDone = onDone,
+          })
       end,
       stageNewGame = function(game)
           pcall(installAutomaticDefaultNameAdapters)
@@ -17545,8 +17613,9 @@ return function(mod)
       end
 
       local save = game and game.save
+      -- Only carried Balls count. Balls sitting in PC storage cannot be
+      -- thrown yet, so pre-catch areas must remain free until withdrawn.
       if save and (mod.exports.__beta26.tableContainsOwnedBall(game, save.inventory)
-          or mod.exports.__beta26.tableContainsOwnedBall(game, save.pcItems)
           or mod.exports.__beta26.tableContainsOwnedBall(game, save.bag)
           or mod.exports.__beta26.tableContainsOwnedBall(game, save.pockets)) then
           mod.exports.__beta26.clearPreArmEncounterState()

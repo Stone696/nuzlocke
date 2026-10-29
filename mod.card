@@ -1,10 +1,19 @@
 return {
-  summary = "Configurable Nuzlocke enforcement, tracking, variants, difficulty, randomizer, World Building, compatibility, and QoL for R/B/Y, beta Gold/Silver, and alpha Crystal.",
-  author = "bryanthaboi (updated by Stone696)",
-  contact = "https://github.com/Stone696/nuzlocke",
+  summary = "Nuzlocke v3.0.3-beta: Gen 3 FireRed/LeafGreen/Hoenn challenges, player-controlled starter rerolls, expanded seeded randomiser, Run Journal and optional Untamed integration.",
+  author = "bryanthaboi, Stone696 and Deluxe0111",
+  contact = "https://github.com/Deluxe0111/nuzlocke",
   tags = { "ruleset", "hardcore", "quality-of-life", "ui" },
   differences = {
     changed = {
+      "3.0.3-beta replaces automatic starter-trio balancing rolls with manual OFF/1/3/5/UNLIMITED reroll limits, persisted usage and rival-sync preservation; the optional companion Untamed/Modern Spawns enhancement ships separately.",
+      "3.0.1-beta polishes and repackages the Gen 3 beta port: lean player ZIP without dev tests, curated release notes, improved GBA menu wrapping/area labels, verified CI and retained original credits.",
+      "v3.0.0-BETA: First native FireRed/LeafGreen/Ruby/Sapphire/Emerald beta port, with all nine Advanced Rules categories, Gen 3 battle/catch/area/item/service adapters, Run Journal, terminal results posters, GBA menu, starting-resource setup and LOCK FOR RUN.",
+      "v3.0.0-BETA: Seeded Gen 3 randomiser extends starter/wild/trainer/static/gift/Egg/item/shop/TM/learnset/evolution mappings; optional Untamed Advanced integration matches visible wandering spawns to battle/capture identity. Mod Support is read-only.",
+      "v3.0.0-BETA: Hidden, test-save-audited Nuz Dev can restore only complete graveyard snapshots; ordinary Forgiveness revival remains unavailable. Wonderlocke was removed from the Gen 3 catalogue. Non-catch naming and third-party integrations still require ROM certification.",
+      "v3.0.0-BETA credits: bryanthaboi (original Nuzlocke), Stone696 (legacy maintenance), masterwebx (original Shiny Pokemon lineage) and Deluxe0111 (Gen 3 port and integrations). See CREDITS.md for full attribution.",
+      "Gen 3 PLAYSTYLES adds Shiny Nuzlocke: non-shiny wilds cannot be caught and never spend the route; eligible shinies still obey One Per Area, Failed Encounters and Dupes.",
+      "v3.0.0-BETA introduces Generation 3 CORE, CLAUSES, LEVELS and RANDOMIZER, player notices, Graveyard/Dev tools and Untamed Advanced overworld wild compatibility; special chaining follows visible species.",
+      "2.9.73 was the historical pre-v3 new-game QoL update: setup resources and native PC loadouts, deferred Poké Balls on capture unlock, and save.created resource handling. It does not include the subsequent completed v3 feature set.",
       "2.9.72 normalizes Gen-II item references, prevents legal Random Shop no-ops, exposes trainer boundary traces, and isolates shiny recoloring from shared engine ImageData; runtime retest required.",
       "2.9.71 repairs Gen-I Random Field Items by moving visible pickup composition to the public world.talk hook, adds focused hook/pipeline diagnostics, and preserves native pickup behavior; runtime retest is required.",
       "2.9.70 advances the Gen1Recomp source-review baseline to 0.2.41 and fixes normalized input-profile fallback metadata so reported profile identity matches resolved behavior; no gameplay or schema contract changes.",
@@ -232,7 +241,8 @@ return {
   credits = {
     { who = "bryanthaboi", for_ = "creator of the original Nuzlocke mod and project baseline" },
     { who = "masterwebx", for_ = "creator of the original Shiny Pokemon mod; original shiny implementation/project lineage" },
-    { who = "Stone696", for_ = "current Nuzlocke maintainer/developer and maintainer of the Shiny Pokemon fork" },
+    { who = "Stone696", for_ = "Nuzlocke Gen 1/2 maintainer/developer and maintainer of the Shiny Pokemon fork" },
+    { who = "Deluxe0111", for_ = "Generation 3 port, new features, native integration and Untamed Advanced compatibility" },
   },
   compat = { engine = ">=0.2.24 <2.0.0", modApi = 2 },
 }

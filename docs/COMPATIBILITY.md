@@ -1,3 +1,5 @@
+> **Generation scope:** This document primarily records existing Gen 1/2 engine/provider compatibility and its historical review evidence. Gen 3 has an isolated compatibility path for optional Untamed overworld spawns and recognised shiny providers; consult [Gen 3 overview](GEN3_PORT.md) and [Mod Support in the feature matrix](GEN3_FEATURE_MATRIX.md) instead of applying Gen 1/2 capability-owner settings to Gen 3.
+
 <!-- Current build: 2.9.72 -->
 # Nuzlocke Compatibility — 2.9.72
 

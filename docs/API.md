@@ -1,3 +1,5 @@
+> **API version context:** The mature Gen 1/2 compatibility and provider contracts described below are preserved. Gen 3 uses isolated `gen3_*` exports in `gen3_runtime.lua`, retains Mod API 2, and has a read-only Mod Support screen rather than Gen 1/2 owner-preference controls. See the [Gen 3 developer guide](DEVELOPER_GEN3.md).
+
 <!-- Current build: 2.9.72 -->
 # Nuzlocke API — 2.9.72
 

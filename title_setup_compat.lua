@@ -339,7 +339,17 @@ function M.installGen2(mod, deps)
                     openSetup(self.game)
                     return
                 elseif value == "new" then
-                    stageNewGame(self.game)
+                    -- NEW GAME is gated by the same Setup surface as the
+                    -- separate title SETUP row. B cancels without starting.
+                    local args = { ... }
+                    openSetup(self.game, function(accepted)
+                        if accepted then
+                            stageNewGame(self.game)
+                            vanillaChoose(self, value,
+                                (table.unpack or unpack)(args))
+                        end
+                    end)
+                    return
                 elseif value == "continue" then
                     clearContinue(self.game)
                 end

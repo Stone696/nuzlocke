@@ -1,15 +1,12 @@
 #!/usr/bin/env node
 'use strict';
 
-// Compatibility entry point for the historical release-gate command.
-// The old gate was tied to one beta version. The authoritative static gate is
-// now tests/invariants.js and derives the current build/API/schema from source.
-
-const path = require('path');
-const { spawnSync } = require('child_process');
-
-const mainArg = process.argv[2] || 'main.lua';
-const root = path.dirname(path.resolve(mainArg));
-const gate = path.join(__dirname, 'invariants.js');
-const result = spawnSync(process.execPath, [gate, root], { stdio: 'inherit' });
-process.exit(result.status == null ? 1 : result.status);
+// Compatibility entry point for existing local build commands. The historical
+// invariant script hardcoded Gen 1-only edition/schema/package expectations;
+// use the maintained v3 release/documentation gate instead.
+const path=require('path');
+const {spawnSync}=require('child_process');
+const root=path.resolve(path.dirname(process.argv[2]||'main.lua'));
+const result=spawnSync(process.execPath,[path.join(root,'tests/gen3_docs_gate.js')],
+  {stdio:'inherit',cwd:root});
+process.exit(result.status==null?1:result.status);

@@ -1,3 +1,197 @@
+# Nuzlocke v3.0.3-beta — Your Starter, Your Choice
+
+**Reroll the starters you see, not just an invisible balancing calculation.**
+
+This patch improves the Generation 3 randomiser in FireRed, LeafGreen, Ruby, Sapphire and Emerald. It continues the unofficial Nuzlocke fork's beta while preserving the original Gen 1/2 content and the expanded species/artwork features introduced in 3.0.2-beta.
+
+## What's new since 3.0.2-beta
+
+### Manual starter rerolls
+- **Starter Rerolls now means what it says:** configure **OFF / 1 / 3 / 5 / UNLIMITED** in **NUZ MENU → NUZ RULES → RANDOMIZER** before the randomiser locks. This replaces the previous automatic best-of-three/five trio selection. **Starter Balance: CHAOS / SIM BST** remains independent.
+- **Ruby/Sapphire/Emerald:** press **SELECT** on the starter-bag selection screen to reroll the whole trio; the remaining allowance is displayed on the bag.
+- **FireRed/LeafGreen:** before taking your starter, use **RANDOMIZER → REROLL STARTERS NOW** from the Nuzlocke menu in Oak's lab. The new three choices appear by name.
+- New trios are generated deterministically from the existing run seed, with distinct eligible species and the configured style, type, balance, generation and National Dex filters. The number of rerolls spent and the currently displayed trio are saved. Revisiting the starter screen or reloading does not grant free rerolls.
+- **Rival continuity:** Oak/Brendan/May's compatible starter lineage continues to use the saved choice. Failed attempts to generate a genuinely different trio do not cost a reroll, and old beta saves with already-generated starter choices are left intact. After receiving a starter, rerolls stop.
+- Existing randomiser seed and other category settings remain locked after the first randomised result; only an already-configured starter reroll action is permitted at the starter selection stage.
+
+### Untamed Advanced and Modern Spawns
+- The separate [Untamed Advanced](https://github.com/Deluxe0111/Untamed-Advanced) mod now supports per-visible-spawn species draws through Modern Spawns' COMPLETE/RANDOM pools (see its [integration PR](https://github.com/Deluxe0111/Untamed-Advanced/pull/3)). That **is not bundled with this Nuzlocke ZIP**; update the companion mod separately.
+- Nuzlocke's optional **Random Wild** integration still randomises eligible ordinary Untamed overworld species after Untamed's own source selection. When both randomisers are active, Nuzlocke may choose a different final species. Cross-mod ownership, expanded artwork and load-order behaviour require real-game validation.
+- There are **no new required mods, engine patches, Mod API revisions or saved-run migrations** in this Nuzlocke patch.
+
+## Install / update
+
+1. Download **`nuzlocke-3.0.3-beta.zip`** from the GitHub release.
+2. In Gen1Recomp select **MODS → Import mod .zip**, then enable the updated Nuzlocke.
+3. Back up your save. For manual starter-reroll testing, start a disposable **new Gen 3 run** with Random Starters enabled and set the reroll allowance before viewing the starter choices.
+4. If testing the expanded overworld combination, update **Untamed Advanced** independently and select **COMPLETE** in Modern Spawns; the six-mod stack has not yet been fully certified.
+
+**Supported games:** Red, Blue, Yellow; Gold, Silver, Crystal; and **FireRed, LeafGreen, Ruby, Sapphire, Emerald (beta)**. **Mod API:** 2. **Game engine range:** `>=0.2.24 <2.0.0`. **Gen 3 save namespace:** `gen3_classic_v1`.
+
+## Known beta limitations
+
+The current code has automated regression coverage, but all five Gen 3 ROM editions, live scripted starter-selection UI and all combinations of Untamed Advanced / Modern Spawns / National Dex / sprite providers require hands-on playtesting. Some non-catch nickname restrictions and uncommon gifts/trades remain incomplete or unverified. Ordinary Route Forgiveness does not revive Pokémon; the dev-only full-archive restore is not a normal gameplay feature. No Mega Evolution or Gigantamax battle mechanics are added by this release.
+
+**Credits:** [bryanthaboi](https://github.com/bryanthaboi) created the original Nuzlocke mod; [Stone696](https://github.com/Stone696) continued its Gen 1/2 work; [masterwebx](https://github.com/masterwebx) authored the original Shiny Pokémon mod; [Deluxe0111](https://github.com/Deluxe0111) developed this fork's Gen 3 port and integrations.
+
+[Source and credits](https://github.com/Deluxe0111/nuzlocke) · [Gen 3 feature inventory](docs/GEN3_FEATURE_MATRIX.md) · [In-game test checklist](docs/GEN3_TEST_CHECKLIST.md)
+
+---
+
+# Nuzlocke v3.0.2-beta — Expanded Pokémon & Better Memories
+
+**More Pokémon to encounter, more forms to recognise, and better ways to remember your run.**
+
+This update builds on the Generation 3 beta in FireRed, LeafGreen, Ruby, Sapphire and Emerald, without replacing the established Gen 1/2 features. It is an **unofficial community fork** maintained for the Gen 3 port by **Deluxe0111**, with the inherited work credited to its original contributors.
+
+## What's new since 3.0.1-beta
+
+### Expanded National Dex randomisation
+- **Optional National Dex Gen 3 API v2 integration** extends the Gen 3 randomiser's registered species pool to 1,025 National Dex Pokémon. Players can include newer generations and opt into supported alternate forms, while leaving the vanilla pool untouched when the provider is absent.
+- Species bans and supported catch-rule classifications recognise registered Gen 4–9 Pokémon, including individual species through #1025, instead of assuming the original 386-only cartridge.
+- Randomiser seeds and old-save behaviour stay independent of optional providers; enabling a larger pool is a deliberate configuration choice.
+
+### Correct party and memorial artwork
+- The **End Run shareable poster** resolves expanded Pokémon from their actual engine species slot and uses compatible artwork-provider hooks for normal/shiny pictures where available.
+- The **Graveyard, encounter tracker, final party and results artwork** now resolve supported regional and alternate-form names (including older saved records), rather than displaying generic base-species names or internal IDs where provider metadata is available.
+- Nicknames and existing save identities are preserved; unavailable art and unknown legacy shiny state degrade safely rather than fabricating a form or shiny appearance.
+
+### Clearer companion Mod Support
+- **MOD SUPPORT** now lists Untamed Advanced, National Dex Gen 3, G9 Battle Sprites, Modern Spawns and Gen 3 HD Sprites, plus existing shiny/randomiser diagnostics.
+- Diagnostics distinguish *detected*, *API ready*, *inactive* and *not verified*. Untamed's hook-based integration is detection-only. Finding an installed mod is **not** a claim that the six-mod combination has passed real-game tests.
+- No new mandatory dependencies, species-slot rewrites, rule-ownership overrides or save migrations are introduced by this diagnostic work.
+
+## Install / update
+
+1. Download **`nuzlocke-3.0.2-beta.zip`** from this release.
+2. In Gen1Recomp, choose **MODS → Import mod .zip**, install and enable Nuzlocke.
+3. If using National Dex Gen 3 and companion sprite/spawn mods, confirm each is enabled; expanded randomiser forms are opt-in in Nuzlocke's randomiser settings.
+4. **Back up your save**, especially for Permadeath, End Run and randomiser experimentation.
+
+**Games:** Red, Blue, Yellow; Gold, Silver, Crystal; and **FireRed, LeafGreen, Ruby, Sapphire, Emerald (beta)**. **Mod API:** 2. **Game engine range:** `>=0.2.24 <2.0.0`. **Gen 3 save namespace:** `gen3_classic_v1`.
+
+## Known beta limitations
+
+The Gen 3 regression and packaging tests cover the changes, but **all five ROM editions and the combined six-mod stack still require hands-on validation**. Third-party spawn ownership and rendered sprites are provider-dependent. Some non-catch nickname restrictions, unusual scripted gifts/trades and ordinary Route Forgiveness revival remain incomplete or unverified. The expanded National Dex, G9 sprites, Modern Spawns and HD sprite integrations are **optional**; Mega Evolution and Gigantamax battle mechanics are **not** part of Nuzlocke 3.0.2.
+
+**Credits:** [bryanthaboi](https://github.com/bryanthaboi) created the original Nuzlocke mod; [Stone696](https://github.com/Stone696) continued its Gen 1/2 development; [masterwebx](https://github.com/masterwebx) authored the original Shiny Pokémon mod; [Deluxe0111](https://github.com/Deluxe0111) developed this fork's Gen 3 port and integrations.
+
+[Source and credits](https://github.com/Deluxe0111/nuzlocke) · [Gen 3 feature inventory](docs/GEN3_FEATURE_MATRIX.md) · [In-game test checklist](docs/GEN3_TEST_CHECKLIST.md)
+
+---
+
+# Nuzlocke v3.0.1-beta — A New Generation of Challenges
+
+**Kanto and Hoenn are ready for a different kind of journey.**
+
+Every encounter is a decision. Every Pokémon has a story. And when one of your partners falls, that loss matters.
+
+Nuzlocke brings the challenge to **Pokémon FireRed, LeafGreen, Ruby, Sapphire and Emerald**, building on the original Generation 1 and 2 mod rather than replacing it. This is an **unofficial community fork**, with the Gen 3 port developed and maintained by **Deluxe0111** and the inherited Gen 1/2 work credited to its original contributors.
+
+## Your adventure, your rules
+
+Choose a traditional Nuzlocke or build something far more demanding. Switch on **Permadeath** and **one encounter per area**, enforce nicknames, customise Failed Encounters, and decide whether a whiteout ends everything or a living PC survivor offers one last chance. Your opening rival battle can have mercy, but the rest of the journey may not.
+
+Go further with **Hardcore** restrictions and level caps, hunt exclusively for shiny encounters with **Shiny Nuzlocke**, or combine the playstyles. Want a different challenge? Experiment with **Type Locke**, **Catch Draft**, **Colorlocke**, **Alphabetlocke**, species bans, battle/status clauses, item restrictions, service limitations, economy rules and configurable area splits.
+
+The new **run setup** lets you decide your rules before the first adventure begins, choose optional starting resources and **lock the settings for the entire run**.
+
+## Make familiar regions unfamiliar
+
+A **seeded Gen 3 randomiser** can reshuffle wild encounters, starters, trainers, gifts, static Pokémon, items, shops, TMs, learnsets and evolutions, using selectable pools and balancing options. Your seed makes those choices reproducible.
+
+With compatible **Untamed Advanced** installed, eligible wandering overworld Pokémon use the same randomiser: the Pokémon you **see** is the one you **fight and catch**. Untamed is optional; normal encounters work without it.
+
+## Remember the journey
+
+The **Run Journal** keeps encounter progress, important rule events and fallen partners together. The **Graveyard** preserves the Pokémon you've lost, and **End Run** provides an outcome screen for defeat, abandonment or Champion victory.
+
+Create a **shareable results image** showing the final party, graveyard and run statistics, including shiny details where available. Winning the League can be a celebration; losing your last partner can be a memorial.
+
+Readable areas, species names, a redesigned Game Boy Advance menu and a read-only **Mod Support** status screen make the Gen 3 experience easier to navigate.
+
+## What's improved in v3.0.1-beta
+
+This is the **first packaging and presentation follow-up** to the v3.0.0-BETA port, rather than a claim that every feature above was introduced in this patch.
+
+- **Smaller, cleaner installable ZIP** containing the mod runtime and essential player files instead of tests, GitHub workflows and long historical developer documents.
+- **Release presentation and documentation** rewritten around the actual Gen 3 features and clear distinctions between original, ported, adapted and new work.
+- **Game UI polish** for long descriptions, scrolling and player-facing run/area terminology.
+- **Tested release gates**, with the Gen 3 regression suite, reproducible archive verification and contributor credits checked before packaging.
+- Future releases use curated release notes and deliberately chosen versions rather than raw commit lists and automatically publishing on each main-branch push.
+
+## Installation
+
+1. Download **`nuzlocke-3.0.1-beta.zip`** from this GitHub release.
+2. In Gen1Recomp, open **MODS → Import mod .zip**, choose the downloaded archive and enable Nuzlocke.
+3. Start a supported game, configure **NEW RUN SETUP** in Gen 3, or open **NUZ MENU → NUZ RULES**. Enable Nuzlocke enforcement when you're ready.
+4. **Back up valuable saves first.** Death, terminal End Run outcomes and some advanced rules are deliberately irreversible.
+
+**Supported games:** Red, Blue, Yellow; Gold, Silver, Crystal; and **FireRed, LeafGreen, Ruby, Sapphire, Emerald (beta)**. **Mod API 2**. Compatible engine range: `>=0.2.24 <2.0.0`. Optional Untamed Advanced integration.
+
+## Beta notes
+
+Gen 3 has extensive automated tests, but not every combination of edition, progression, external mod and native event has been manually certified. Some non-catch nickname enforcement and scripted gift/trade interactions still need further testing; **ordinary Route Forgiveness Pokémon revival is not enabled**. Report bugs with your edition, Gen1Recomp version, installed mods and steps to reproduce.
+
+**Credits and collaboration:** [bryanthaboi](https://github.com/bryanthaboi) created the original Nuzlocke mod; [Stone696](https://github.com/Stone696) expanded and maintained the Gen 1/2 project; [masterwebx](https://github.com/masterwebx) created the original Shiny Pokémon project; [Deluxe0111](https://github.com/Deluxe0111) developed the Gen 3 port and integrations. This fork is offered for upstream collaboration, with the intention that Gen 3 can be maintained alongside the existing Gen 1/2 work. It is not presented as an official replacement for the original maintainers.
+
+[Source and credits](https://github.com/Deluxe0111/nuzlocke) · [Feature inventory](https://github.com/Deluxe0111/nuzlocke/blob/main/docs/GEN3_FEATURE_MATRIX.md) · [Full historical release notes](https://github.com/Deluxe0111/nuzlocke/blob/main/RELEASE_NOTES.md)
+
+---
+
+# Nuzlocke v3.0.0-BETA — Generation 3 compatibility
+
+**First Generation 3 beta release.** Adds FireRed, LeafGreen, Ruby, Sapphire and Emerald support without replacing the existing Red/Blue/Yellow/Gold/Silver/Crystal runtime.
+
+**Installed version:** `3.0.0-BETA` · **Intended GitHub tag:** `v3.0.0-BETA` (tag/release publication is separate from this documentation update) · **Mod API:** 2 · **Gen 3 save key:** `gen3_classic_v1`.
+
+## Ported from the existing Nuzlocke feature set
+
+- **CORE:** Nuzlocke Enabled, Permadeath, One Encounter Per Area, Failed Encounters, Nickname Requirement, First Rival Mercy, Whiteout Ends Run and PC Survivors.
+- **CLAUSES:** Dupes, Shiny Catch Exception and Shiny Rate, Roamer slots, Egg Encounter provenance and Route Forgiveness tokens/route reopening.
+- **Levels, Hardcore, Game Difficulty and Run/Party:** level caps, EXP Edging, battle restrictions, team limits, evolution limits and trainer difficulty options.
+- **Advanced Catch and Variants:** legendary/mythical/pseudo/BST/individual species bans, fishing and static restrictions, optional gifts/trades with AREA/BONUS accounting, Colorlocke, Alphabetlocke, Type Locke and Catch Draft.
+- **Battle and status rules:** OHKO Clause; Flinch/Trap/Setup/Evasion/Accuracy/Stat-drop restrictions; individual status bans and Sleep Clause.
+- **Other advanced rules:** battle and field items, Ball Per Encounter, heal/PP/TM/Rare Candy restrictions, services/economy, Pokémon IV/EV policies and Kanto/Hoenn area splits.
+- **Quality of life:** Instant Text, Run/Surf, Unlimited Bag Space and trade-evolution options.
+
+## Adapted and substantially reworked for Gen 3
+
+- Independent Game3 `gen3_runtime.lua`, native event/action/battle integration and isolated persisted rule state; no Gen 1/2 save migration or upstream engine patch required for the port.
+- Enforces eligible encounter counting only **after native Ball/catching access is available**, rather than consuming opening routes during early story battles.
+- Checks supported scripted gifts, trades, party, item and battle actions at their Gen 3 native transaction boundaries. Handles Pokémon death snapshots and native battle writeback safely.
+- Rebuilds the seeded randomiser for Gen 3: starters, wild/overworld, static/gift/Egg Pokémon, trainers, items, shops, TM contents/locations/compatibility, learnsets and evolutions. Supports defined pool and balancing options.
+- Uses native Gen 3 shiny identity, ROM front sprites for relevant portraits/results and standard mini-icons in party/PC boxes.
+- Uses a GBA-native **240×160** menu with active-rule status, area names and readable Pokémon details.
+
+## New Gen 3 beta features and integrations
+
+- **Shiny Nuzlocke** and **Hardcore Nuzlocke** playstyles, independently toggleable and combinable.
+- **NEW RUN SETUP**, configurable starting resources and **LOCK FOR RUN**.
+- Optional **Untamed Advanced** visible-overworld Pokémon randomisation, sharing wild seed/settings and matching the shown sprite to the battle/capture; follower, roamer and scripted actor exclusions are preserved.
+- **RUN JOURNAL** merges current run summaries, encounters, Graveyard and up to 100 recent rule-event messages.
+- **End Run / results screen** records loss, forfeit or Champion completion, integrates native saving, and creates a shareable party/graveyard/statistics image with shiny details.
+- **MOD SUPPORT** provides read-only detection of supported external integrations and shiny-rate ownership, without untested override switches.
+- Hidden, audited **NUZ DEV** testing tools: encounter resets, report and verified full-archive Pokémon restoration; developer changes taint the test save.
+
+## Explicit exclusions / work still requiring testing
+
+- Gen 3 **Wonderlocke** was removed from the menu. Old **Almanac/NUZ NOTICES** entries are consolidated in **RUN JOURNAL**; old **MOD COMPAT** is replaced by the safe read-only **MOD SUPPORT** screen.
+- Ordinary **Route Forgiveness Pokémon revival** remains unimplemented (developer-only archive restore is not a regular gameplay clause).
+- Non-catch nickname restrictions, uncommon custom gifts/trades, and certain provider-specific boundaries need further work and game verification.
+- Automated Lua smoke/CI coverage does **not** certify real ROM playthroughs across all five editions or combined third-party mod stacks.
+- Existing Gen 1/2 rules, author credits and older version history are retained. Earlier release sections below remain historical and are not amended to claim later Gen 3 functionality.
+
+**Feature inventory:** [Gen 3 feature matrix](docs/GEN3_FEATURE_MATRIX.md) · **In-game tests:** [Gen 3 checklist](docs/GEN3_TEST_CHECKLIST.md) · **Credits:** [CREDITS.md](CREDITS.md).
+
+---
+
+# Nuzlocke 2.9.73 — Historical pre-v3 setup update
+
+**Published 28 October 2026.** This preceding 2.9.x release focused on early Generation 3 new-run resource setup: native PC starter supplies, deferred Poké Ball delivery after catch unlock, the `save.created` integration and supporting regression tests. It did **not** include the completed v3 menu, rules, results, journal or developer features described above.
+
+The original public release remains available as [v2.9.73](https://github.com/Deluxe0111/nuzlocke/releases/tag/v2.9.73). Older release sections below are unchanged.
+
 # Nuzlocke 2.9.72 — Randomizer tracing and shiny isolation
 
 2.9.72 is a focused runtime-repair/diagnostic build from exact sealed 2.9.71. It addresses the confirmed Gen-II numeric item-reference mismatch, removes legal Random Shop no-op selections, exposes the existing Random Trainer pipeline end-to-end, and prevents Nuzlocke shiny recoloring from mutating shared engine ImageData.
